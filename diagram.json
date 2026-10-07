@@ -1,0 +1,200 @@
+{
+  "version": 1,
+  "editor": "wokwi",
+  "parts": [
+    {
+      "type": "board-esp32-devkit-c-v4",
+      "id": "esp",
+      "top": 240,
+      "left": 300,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-hc-sr04",
+      "id": "ultrasonic",
+      "top": 40,
+      "left": 60,
+      "attrs": {
+        "distance": "180"
+      }
+    },
+    {
+      "type": "wokwi-potentiometer",
+      "id": "rain_pot",
+      "top": 170,
+      "left": 60,
+      "attrs": {
+        "label": "Cam Bien Mua"
+      }
+    },
+    {
+      "type": "wokwi-lcd1602",
+      "id": "lcd",
+      "top": 40,
+      "left": 500,
+      "attrs": {
+        "pins": "i2c"
+      }
+    },
+    {
+      "type": "wokwi-servo",
+      "id": "servo_valve",
+      "top": 220,
+      "left": 620,
+      "attrs": {
+        "label": "Van Thoat Nuoc"
+      }
+    },
+    {
+      "type": "wokwi-relay-module",
+      "id": "relay_pump",
+      "top": 370,
+      "left": 620,
+      "attrs": {
+        "label": "May Bom 5V"
+      }
+    },
+    {
+      "type": "wokwi-buzzer",
+      "id": "buzzer",
+      "top": 450,
+      "left": 500,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-led",
+      "id": "led_green",
+      "top": 450,
+      "left": 230,
+      "attrs": {
+        "color": "green",
+        "label": "NORMAL"
+      }
+    },
+    {
+      "type": "wokwi-led",
+      "id": "led_yellow",
+      "top": 450,
+      "left": 320,
+      "attrs": {
+        "color": "yellow",
+        "label": "WARNING"
+      }
+    },
+    {
+      "type": "wokwi-led",
+      "id": "led_red",
+      "top": 450,
+      "left": 410,
+      "attrs": {
+        "color": "red",
+        "label": "DANGER/CRIT"
+      }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "r_green",
+      "top": 510,
+      "left": 230,
+      "attrs": {
+        "value": "220"
+      }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "r_yellow",
+      "top": 510,
+      "left": 320,
+      "attrs": {
+        "value": "220"
+      }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "r_red",
+      "top": 510,
+      "left": 410,
+      "attrs": {
+        "value": "220"
+      }
+    },
+    {
+      "type": "wokwi-pushbutton",
+      "id": "btn_mode",
+      "top": 280,
+      "left": 60,
+      "attrs": {
+        "color": "blue",
+        "label": "MODE (AUTO/MAN)"
+      }
+    },
+    {
+      "type": "wokwi-pushbutton",
+      "id": "btn_pump",
+      "top": 370,
+      "left": 60,
+      "attrs": {
+        "color": "green",
+        "label": "MANUAL PUMP"
+      }
+    },
+    {
+      "type": "wokwi-pushbutton",
+      "id": "btn_valve",
+      "top": 460,
+      "left": 60,
+      "attrs": {
+        "color": "orange",
+        "label": "MANUAL VALVE"
+      }
+    }
+  ],
+  "connections": [
+    [ "esp:GND.1", "ultrasonic:GND", "black", [ "v0" ] ],
+    [ "esp:5V", "ultrasonic:VCC", "red", [ "v0" ] ],
+    [ "esp:18", "ultrasonic:TRIG", "blue", [ "v0" ] ],
+    [ "esp:5", "ultrasonic:ECHO", "green", [ "v0" ] ],
+
+    [ "esp:3V3", "rain_pot:1", "red", [ "v0" ] ],
+    [ "esp:34", "rain_pot:2", "orange", [ "v0" ] ],
+    [ "esp:GND.1", "rain_pot:3", "black", [ "v0" ] ],
+
+    [ "esp:GND.1", "lcd:GND", "black", [ "v0" ] ],
+    [ "esp:5V", "lcd:VCC", "red", [ "v0" ] ],
+    [ "esp:21", "lcd:SDA", "yellow", [ "v0" ] ],
+    [ "esp:22", "lcd:SCL", "white", [ "v0" ] ],
+
+    [ "esp:GND.2", "servo_valve:GND", "black", [ "v0" ] ],
+    [ "esp:5V", "servo_valve:V+", "red", [ "v0" ] ],
+    [ "esp:13", "servo_valve:PWM", "orange", [ "v0" ] ],
+
+    [ "esp:GND.2", "relay_pump:GND", "black", [ "v0" ] ],
+    [ "esp:5V", "relay_pump:VCC", "red", [ "v0" ] ],
+    [ "esp:23", "relay_pump:IN", "purple", [ "v0" ] ],
+
+    [ "esp:GND.2", "buzzer:1", "black", [ "v0" ] ],
+    [ "esp:19", "buzzer:2", "brown", [ "v0" ] ],
+
+    [ "esp:25", "led_green:A", "green", [ "v0" ] ],
+    [ "led_green:C", "r_green:1", "black", [ "v0" ] ],
+    [ "r_green:2", "esp:GND.2", "black", [ "v0" ] ],
+
+    [ "esp:26", "led_yellow:A", "yellow", [ "v0" ] ],
+    [ "led_yellow:C", "r_yellow:1", "black", [ "v0" ] ],
+    [ "r_yellow:2", "esp:GND.2", "black", [ "v0" ] ],
+
+    [ "esp:27", "led_red:A", "red", [ "v0" ] ],
+    [ "led_red:C", "r_red:1", "black", [ "v0" ] ],
+    [ "r_red:2", "esp:GND.2", "black", [ "v0" ] ],
+
+    [ "esp:32", "btn_mode:1.l", "blue", [ "v0" ] ],
+    [ "esp:GND.1", "btn_mode:2.r", "black", [ "v0" ] ],
+
+    [ "esp:33", "btn_pump:1.l", "green", [ "v0" ] ],
+    [ "esp:GND.1", "btn_pump:2.r", "black", [ "v0" ] ],
+
+    [ "esp:14", "btn_valve:1.l", "orange", [ "v0" ] ],
+    [ "esp:GND.1", "btn_valve:2.r", "black", [ "v0" ] ]
+  ],
+  "dependencies": {}
+}

@@ -1,0 +1,41 @@
+\chapter{Kiến Trúc Phần Cứng \& Phân Công Chân}
+
+\section{Tổng Quan Kiến Trúc Hệ Thống}
+Hệ thống FloodGuard gồm 4 khối chức năng chính:
+\begin{enumerate}
+    \item \textbf{Khối xử lý trung tâm:} Vi điều khiển ESP32 DevKit V1 với chip lõi kép Xtensa 32-bit, tích hợp kết nối Wi-Fi 802.11 b/g/n, đóng vai trò trạm thu thập tín hiệu và máy chủ Web Server thời gian thực.
+    \item \textbf{Khối cảm biến (Sensors):} Cảm biến siêu âm HC-SR04 đo mực nước hồ thu và chiết áp/cảm biến mưa đo độ ẩm, lượng nước mưa.
+    \item \textbf{Khối chấp hành (Actuators):} Động cơ Servo SG90 điều khiển góc mở van xả lũ (0° – 90° – 180°) và Module Relay 5V kích đóng/ngắt máy bơm thoát nước.
+    \item \textbf{Khối cảnh báo tại chỗ (Signaling):} Cụm 3 đèn LED màu (Xanh, Vàng, Đỏ) và còi báo động Active Buzzer 5V.
+\end{enumerate}
+
+\section{Giải Pháp Điều Khiển Qua Web Thay Thế Nút Nhấn Vật Lý}
+Trong phiên bản thiết kế cải tiến, hệ thống \textbf{loại bỏ hoàn toàn các nút bấm cơ học vật lý} và chuyển sang các nút điều khiển ảo trực tiếp trên giao diện Web Dashboard. Giải pháp này mang lại nhiều ưu điểm kỹ thuật vượt trội:
+\begin{itemize}
+    \item \textbf{Độ bền cao trong môi trường ẩm ướt:} Môi trường chống ngập bão lũ có độ ẩm rất cao, nút nhấn vật lý rất dễ bị oxy hóa tiếp điểm hoặc rò rỉ nước gây chập mạch.
+    \item \textbf{An toàn cho người vận hành:} Kỹ thuật viên không cần tiếp cận trực tiếp khu vực hồ thu hay trạm bơm đang ngập sâu, mà có thể điều khiển từ xa thông qua điện thoại hoặc máy tính kết nối Wi-Fi.
+    \item \textbf{Tiết kiệm chân GPIO vi điều khiển:} Tiết kiệm được các chân GPIO ngắt ngoài để phục vụ mở rộng thêm cảm biến trong tương lai.
+\end{itemize}
+
+\section{Bảng Phân Công Chân GPIO}
+\begin{table}[H]
+\centering
+\caption{Bảng phân công chân phần cứng trên ESP32}
+\label{tab:gpio_mapping}
+\begin{tabularx}{\textwidth}{l l l X}
+\toprule
+\textbf{Thiết bị / Module} & \textbf{Chân tín hiệu} & \textbf{GPIO ESP32} & \textbf{Chức năng} \\
+\midrule
+LED Xanh & Anode (+) & \texttt{GPIO 25} & Cảnh báo mức an toàn (NORMAL) \\
+LED Vàng & Anode (+) & \texttt{GPIO 26} & Cảnh báo mức dâng sớm (WARNING) \\
+LED Đỏ & Anode (+) & \texttt{GPIO 27} & Cảnh báo mức nguy cấp (DANGER / CRITICAL) \\
+Buzzer 5V & (+) & \texttt{GPIO 19} & Còi hú báo động khẩn cấp \\
+HC-SR04 (Trig) & Trigger & \texttt{GPIO 18} & Phát xung siêu âm kích hoạt \\
+HC-SR04 (Echo) & Echo & \texttt{GPIO 5} & Nhận xung phản hồi phản xạ từ mặt nước \\
+Cảm biến mưa & Analog Out & \texttt{GPIO 34} & Đo cường độ mưa / độ ẩm \\
+Servo SG90 & PWM & \texttt{GPIO 13} & Điều khiển độ mở van thoát nước \\
+Relay 1 kênh & IN & \texttt{GPIO 23} & Kích hoạt đóng/ngắt máy bơm mini \\
+\bottomrule
+\end{tabularx}
+\end{table}
+

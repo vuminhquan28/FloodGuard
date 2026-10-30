@@ -1,0 +1,21 @@
+\chapter{Giới Thiệu Đề Tài}
+
+\section{Đặt Vấn Đề}
+Hiện tượng ngập lụt đô thị và sạt lở, tràn đê vào mùa mưa bão đang là một trong những thách thức nghiêm trọng nhất tại các đô thị lớn ở Việt Nam cũng như trên thế giới. Tình trạng này gây thiệt hại nặng nề về kinh tế, tài sản, cản trở giao thông và tiềm ẩn nhiều rủi ro về sức khỏe, tính mạng con người.
+
+Các giải pháp truyền thống như điều tiết thủ công, đo đạc bằng mắt thường hoặc vận hành trạm bơm tại chỗ bộc lộ nhiều nhược điểm:
+\begin{itemize}
+    \item \textbf{Độ trễ phản ứng cao:} Khi nước dâng nhanh đột ngột vào ban đêm, con người không kịp có mặt để vận hành máy bơm hay mở cống xả.
+    \item \textbf{Thiếu thông tin cảnh báo sớm:} Người dân trong khu vực không được cập nhật kịp thời về tốc độ và mức độ nước dâng.
+    \item \textbf{Nguy cơ hỏng hóc thiết bị:} Việc bật/tắt thiết bị công suất lớn liên tục do mực nước dập dềnh gây giảm tuổi thọ của bơm và van xả.
+\end{itemize}
+
+\section{Mục Tiêu Dự Án FloodGuard}
+Dự án \textbf{FloodGuard} hướng tới việc xây dựng một hệ thống IoT giám sát và chống ngập tự động, nhỏ gọn, hoạt động bền bỉ và phản ứng tức thời. Hệ thống tập trung vào các mục tiêu then chốt:
+\begin{enumerate}
+    \item Tự động đo lường mực nước và lượng mưa liên tục theo thời gian thực với độ chính xác cao.
+    \item Tự động ra quyết định kích hoạt máy bơm nước và góc mở van thoát lũ theo thuật toán máy trạng thái hữu hạn (\textit{Finite State Machine - FSM}) kết hợp độ trễ trễ (\textit{Hysteresis}).
+    \item Phát tín hiệu cảnh báo đa tầng thông qua hệ thống đèn LED trạng thái và còi hú báo động âm lượng lớn.
+    \item Cung cấp giao diện Web Dashboard trực quan, cho phép người quản lý theo dõi và can thiệp điều khiển thủ công (\textit{Manual Override}) từ xa qua mạng Wi-Fi.
+\end{enumerate}
+

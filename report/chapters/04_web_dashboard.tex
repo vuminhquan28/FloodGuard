@@ -1,0 +1,29 @@
+\chapter{Giao Diện Web Dashboard Giám Sát \& Can Thiệp Từ Xa}
+
+\section{Kiến Trúc Web Server Trên ESP32}
+ESP32 đóng vai trò là một HTTP Web Server hoạt động trên cổng tiêu chuẩn 80. Trang Dashboard được xây dựng theo phong cách hiện đại Dark Glassmorphism, tối ưu hóa giao diện phản hồi (\textit{Responsive Design}) cho cả trình duyệt điện thoại và máy tính để bàn.
+
+\section{Các Thành Phần Giám Sát Thời Gian Thực}
+\begin{itemize}
+    \item \textbf{Thanh đo mực nước (Water Level Gauge):} Hiển thị phần trăm dung tích chứa (0\% -- 100\%) và khoảng cách cm thực tế từ cảm biến siêu âm tới mặt nước, kèm thanh màu cảnh báo trực quan.
+    \item \textbf{Cảm biến lượng mưa:} Cập nhật trạng thái trời mưa (\textit{CÓ MƯA} / \textit{KHÔNG MƯA}) và giá trị đo thô ADC từ cảm biến.
+    \item \textbf{Thẻ trạng thái hệ thống:} Huy hiệu hiển thị trạng thái FSM hiện tại (\textit{NORMAL}, \textit{WARNING}, \textit{DANGER}, \textit{CRITICAL}) và chế độ hoạt động (\textit{AUTO} hoặc \textit{MANUAL}).
+    \item \textbf{Giám sát thiết bị chấp hành:} Hiển thị trạng thái hoạt động thực tế của Máy bơm (ĐANG BẬT / ĐÃ TẮT), góc mở của Van xả (0\% -- 50\% -- 100\%) và trạng thái Còi hú.
+\end{itemize}
+
+\section{Hệ Thống Nút Bấm Ảo \& Điều Khiển Can Thiệp Từ Xa}
+Thay vì sử dụng các nút bấm vật lý trên bo mạch (dễ hỏng trong môi trường nước và mưa bão), giao diện Web Dashboard tích hợp cụm nút bấm điều khiển số hóa trực tiếp:
+
+\begin{itemize}
+    \item \textbf{Nút Đổi Chế Độ (\texttt{mode\_toggle}):} Cho phép chuyển đổi linh hoạt giữa chế độ vận hành tự động (\textit{AUTO}) và điều khiển thủ công (\textit{MANUAL}).
+    \item \textbf{Nút Bật/Tắt Máy Bơm (\texttt{pump\_toggle}):} Trong chế độ MANUAL, kỹ thuật viên có thể chủ động kích hoạt hoặc ngắt máy bơm mini ngay tức thì.
+    \item \textbf{Cụm nút điều chỉnh Van xả (\texttt{valve\_0}, \texttt{valve\_50}, \texttt{valve\_100}):} Điều khiển van xả theo 3 mức khẩu độ linh hoạt: Đóng hoàn toàn (0\%), Mở 50\% (góc 90°) hoặc Mở thoát lũ tối đa 100\% (góc 180°).
+\end{itemize}
+
+\section{Giao Thức Truyền Nhận Dữ Liệu HTTP REST API}
+Giao diện Web liên tục đồng bộ dữ liệu với ESP32 thông qua kỹ thuật bất đồng bộ AJAX/Fetch API mỗi giây mà không cần tải lại toàn bộ trang web:
+\begin{itemize}
+    \item \textbf{\texttt{GET /api/status}:} Trả về chuỗi định dạng JSON chứa toàn bộ dữ liệu đo đạc (khoảng cách, lượng mưa, trạng thái máy bơm, góc van, chế độ hoạt động).
+    \item \textbf{\texttt{GET /api/control?action=\{cmd\}}:} Nhận lệnh điều khiển từ các nút bấm ảo trên giao diện để cập nhật biến trạng thái bên trong vi điều khiển ESP32.
+\end{itemize}
+

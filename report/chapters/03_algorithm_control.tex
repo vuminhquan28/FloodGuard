@@ -1,0 +1,27 @@
+\chapter{Thuật Toán Điều Khiển \& Vận Hành}
+
+\section{Máy Trạng Thái Hữu Hạn (FSM)}
+Để đảm bảo hệ thống phản ứng tin cậy và không bị nhiễu động, hệ thống sử dụng mô hình Máy trạng thái hữu hạn (\textit{Finite State Machine - FSM}) với 4 trạng thái cốt lõi:
+
+\begin{itemize}
+    \item \textbf{Trạng thái 1: [NORMAL] (Mực nước 0\% -- 20\%):} 
+    Mực nước ở ngưỡng an toàn tuyệt đối. Đèn LED xanh sáng liên tục, máy bơm ở trạng thái OFF, van xả đóng hoàn toàn (góc 0°), còi báo động tắt.
+    
+    \item \textbf{Trạng thái 2: [WARNING] (Mực nước 21\% -- 40\%):} 
+    Nước bắt đầu dâng vào hồ thu. Đèn LED vàng sáng cảnh báo sớm cho kỹ thuật viên và người dân, các cơ cấu bơm và xả vẫn ở chế độ chờ.
+    
+    \item \textbf{Trạng thái 3: [DANGER] (Mực nước 41\% -- 70\%):} 
+    Mực nước vượt ngưỡng kiểm soát thông thường. Đèn LED đỏ bật sáng, Relay đóng kích hoạt máy bơm nước mini chạy hết công suất, động cơ servo xoay 90° để mở 50\% khẩu độ van xả lũ.
+    
+    \item \textbf{Trạng thái 4: [CRITICAL] (Mực nước 71\% -- 100\%):} 
+    Tình trạng ngập lụt nghiêm trọng, đe dọa tràn hồ. Đèn LED đỏ nhấp nháy liên tục với tần số cao, còi hú dồn dập, máy bơm tiếp tục hoạt động, động cơ servo xoay góc tối đa 180° để mở 100\% van thoát nước.
+\end{itemize}
+
+\section{Nguyên Lý Chống Dao Động (Hysteresis Band)}
+Trong thực tế, mặt nước trong hồ thu thường có hiện tượng gợn sóng hoặc dao động liên tục xung quanh các mốc ngưỡng chuyển trạng thái (ví dụ mức 40\% hoặc 70\%). Nếu không có cơ chế bù trừ, máy bơm và van xả sẽ bị bật/tắt liên tục trong thời gian ngắn, gây cháy cuộn hút relay hoặc hỏng động cơ.
+
+FloodGuard áp dụng dải trễ (\textit{Hysteresis}):
+\begin{itemize}
+    \item \textbf{Khi nước dâng:} Hệ thống chỉ kích hoạt Bơm và Van khi nước đạt hoặc vượt quá ngưỡng 41\%.
+    \item \textbf{Khi nước rút:} Bơm và Van vẫn duy trì trạng thái xả nước cho tới khi mực nước hạ hẳn xuống dưới \textbf{40\%} mới bắt đầu ngắt bơm đóng van, và phải hạ sâu dưới \textbf{20\%} thì hệ thống mới khôi phục lại trạng thái NORMAL.
+\end{itemize}

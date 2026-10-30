@@ -28,15 +28,6 @@
       }
     },
     {
-      "type": "wokwi-lcd1602",
-      "id": "lcd",
-      "top": 40,
-      "left": 500,
-      "attrs": {
-        "pins": "i2c"
-      }
-    },
-    {
       "type": "wokwi-servo",
       "id": "servo_valve",
       "top": 220,
@@ -117,36 +108,6 @@
       "attrs": {
         "value": "220"
       }
-    },
-    {
-      "type": "wokwi-pushbutton",
-      "id": "btn_mode",
-      "top": 280,
-      "left": 60,
-      "attrs": {
-        "color": "blue",
-        "label": "MODE (AUTO/MAN)"
-      }
-    },
-    {
-      "type": "wokwi-pushbutton",
-      "id": "btn_pump",
-      "top": 370,
-      "left": 60,
-      "attrs": {
-        "color": "green",
-        "label": "MANUAL PUMP"
-      }
-    },
-    {
-      "type": "wokwi-pushbutton",
-      "id": "btn_valve",
-      "top": 460,
-      "left": 60,
-      "attrs": {
-        "color": "orange",
-        "label": "MANUAL VALVE"
-      }
     }
   ],
   "connections": [
@@ -158,11 +119,6 @@
     [ "esp:3V3", "rain_pot:1", "red", [ "v0" ] ],
     [ "esp:34", "rain_pot:2", "orange", [ "v0" ] ],
     [ "esp:GND.1", "rain_pot:3", "black", [ "v0" ] ],
-
-    [ "esp:GND.1", "lcd:GND", "black", [ "v0" ] ],
-    [ "esp:5V", "lcd:VCC", "red", [ "v0" ] ],
-    [ "esp:21", "lcd:SDA", "yellow", [ "v0" ] ],
-    [ "esp:22", "lcd:SCL", "white", [ "v0" ] ],
 
     [ "esp:GND.2", "servo_valve:GND", "black", [ "v0" ] ],
     [ "esp:5V", "servo_valve:V+", "red", [ "v0" ] ],
@@ -185,16 +141,7 @@
 
     [ "esp:27", "led_red:A", "red", [ "v0" ] ],
     [ "led_red:C", "r_red:1", "black", [ "v0" ] ],
-    [ "r_red:2", "esp:GND.2", "black", [ "v0" ] ],
-
-    [ "esp:32", "btn_mode:1.l", "blue", [ "v0" ] ],
-    [ "esp:GND.1", "btn_mode:2.r", "black", [ "v0" ] ],
-
-    [ "esp:33", "btn_pump:1.l", "green", [ "v0" ] ],
-    [ "esp:GND.1", "btn_pump:2.r", "black", [ "v0" ] ],
-
-    [ "esp:14", "btn_valve:1.l", "orange", [ "v0" ] ],
-    [ "esp:GND.1", "btn_valve:2.r", "black", [ "v0" ] ]
+    [ "r_red:2", "esp:GND.2", "black", [ "v0" ] ]
   ],
   "dependencies": {}
 }

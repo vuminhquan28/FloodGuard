@@ -13,3 +13,14 @@
 *.bin
 *.elf
 *.hex
+
+# LaTeX Auxiliaries
+*.aux
+*.log
+*.out
+*.toc
+*.lof
+*.lot
+*.synctex.gz
+*.fdb_latexmk
+*.fls

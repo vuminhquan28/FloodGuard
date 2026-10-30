@@ -1,6 +1,4 @@
 #include <Arduino.h>
-#include <Wire.h>
-#include <LiquidCrystal_I2C.h>
 #include <ESP32Servo.h>
 #include <WiFi.h>
 #include <WebServer.h>
@@ -17,11 +15,6 @@
 #define PIN_LED_GREEN   25   // LED trạng thái NORMAL
 #define PIN_LED_YELLOW  26   // LED trạng thái WARNING
 #define PIN_LED_RED     27   // LED trạng thái DANGER / CRITICAL
-
-// Nút bấm vật lý (Active LOW - INPUT_PULLUP)
-#define PIN_BTN_MODE    32   // Chuyển AUTO <-> MANUAL
-#define PIN_BTN_PUMP    33   // Bật / Tắt Bơm khi ở MANUAL
-#define PIN_BTN_VALVE   14   // Chuyển góc Van khi ở MANUAL
 
 // ==========================================
 // THÔNG SỐ ĐO VÀ NGƯỠNG MỰC NƯỚC
@@ -44,7 +37,6 @@ enum SystemState {
 // ==========================================
 // KHAI BÁO THIẾT BỊ NGOẠI VI
 // ==========================================
-LiquidCrystal_I2C lcd(0x27, 16, 2);
 Servo valveServo;
 WebServer server(80);
 
@@ -63,14 +55,8 @@ SystemState sysState  = STATE_NORMAL;
 
 // Biến điều khiển thời gian non-blocking
 unsigned long lastSensorRead   = 0;
-unsigned long lastLcdUpdate    = 0;
 unsigned long lastBuzzerBlink  = 0;
 bool buzzerToggle              = false;
-
-// Debounce cho nút bấm
-unsigned long lastDebounceMode  = 0;
-unsigned long lastDebouncePump  = 0;
-unsigned long lastDebounceValve = 0;
 
 // ==========================================
 // HÀM ĐỌC CẢM BIẾN
@@ -206,68 +192,6 @@ void applyOutputs() {
   }
 }
 
-// ==========================================
-// HIỂN THỊ LCD 1602 (UC02)
-// ==========================================
-void updateLCD() {
-  lcd.setCursor(0, 0);
-  char line0[17];
-  snprintf(line0, sizeof(line0), "WATER:%3d%% [%s]", waterPercent, isAutoMode ? "AUTO" : "MAN ");
-  lcd.print(line0);
-
-  lcd.setCursor(0, 1);
-  char line1[17];
-  const char* stStr = "NORMAL ";
-  if (sysState == STATE_WARNING)  stStr = "WARNING";
-  if (sysState == STATE_DANGER)   stStr = "DANGER ";
-  if (sysState == STATE_CRITICAL) stStr = "CRITIC!";
-
-  snprintf(line1, sizeof(line1), "%-7s P:%s V:%d%%", 
-           stStr, 
-           pumpState ? "ON " : "OFF", 
-           valvePercent);
-  lcd.print(line1);
-}
-
-// ==========================================
-// XỬ LÝ NÚT BẤM VẬT LÝ (UC09, UC10)
-// ==========================================
-void handleButtons() {
-  unsigned long now = millis();
-
-  // Nút 1: Chuyển đổi MODE (AUTO <-> MANUAL)
-  if (digitalRead(PIN_BTN_MODE) == LOW) {
-    if (now - lastDebounceMode > 300) {
-      isAutoMode = !isAutoMode;
-      lastDebounceMode = now;
-      Serial.printf("[BUTTON] Chuyen che do: %s\n", isAutoMode ? "AUTO" : "MANUAL");
-    }
-  }
-
-  // Nút 2: Bật/Tắt Bơm (chỉ có tác dụng khi MANUAL)
-  if (digitalRead(PIN_BTN_PUMP) == LOW) {
-    if (now - lastDebouncePump > 300) {
-      if (!isAutoMode) {
-        pumpState = !pumpState;
-        Serial.printf("[BUTTON] Manual Pump: %s\n", pumpState ? "ON" : "OFF");
-      }
-      lastDebouncePump = now;
-    }
-  }
-
-  // Nút 3: Đổi góc Van 0% -> 50% -> 100% -> 0% (chỉ khi MANUAL)
-  if (digitalRead(PIN_BTN_VALVE) == LOW) {
-    if (now - lastDebounceValve > 300) {
-      if (!isAutoMode) {
-        if (valvePercent == 0) valvePercent = 50;
-        else if (valvePercent == 50) valvePercent = 100;
-        else valvePercent = 0;
-        Serial.printf("[BUTTON] Manual Valve: %d%%\n", valvePercent);
-      }
-      lastDebounceValve = now;
-    }
-  }
-}
 
 // ==========================================
 // WEB SERVER TELEMETRY & DASHBOARD (UC07, UC08)
@@ -500,11 +424,6 @@ void setup() {
   pinMode(PIN_LED_YELLOW, OUTPUT);
   pinMode(PIN_LED_RED, OUTPUT);
 
-  // Nút nhấn kéo lên nội bộ
-  pinMode(PIN_BTN_MODE, INPUT_PULLUP);
-  pinMode(PIN_BTN_PUMP, INPUT_PULLUP);
-  pinMode(PIN_BTN_VALVE, INPUT_PULLUP);
-
   digitalWrite(PIN_RELAY, LOW);
   digitalWrite(PIN_LED_GREEN, LOW);
   digitalWrite(PIN_LED_YELLOW, LOW);
@@ -514,16 +433,6 @@ void setup() {
   // Khởi tạo Servo
   valveServo.attach(PIN_SERVO, 500, 2400);
   valveServo.write(0);
-
-  // Khởi tạo LCD
-  lcd.init();
-  lcd.backlight();
-  lcd.setCursor(0, 0);
-  lcd.print("   FLOODGUARD   ");
-  lcd.setCursor(0, 1);
-  lcd.print("He Thong Smart  ");
-  delay(1200);
-  lcd.clear();
 
   // Khởi tạo Wi-Fi Wokwi
   Serial.print("Ket noi WiFi Wokwi-GUEST...");
@@ -554,10 +463,7 @@ void loop() {
   // 1. Phục vụ yêu cầu Web Server
   server.handleClient();
 
-  // 2. Xử lý nút bấm vật lý
-  handleButtons();
-
-  // 3. Chu kỳ đọc cảm biến và đánh giá logic (mỗi 100ms)
+  // 2. Chu kỳ đọc cảm biến và đánh giá logic (mỗi 100ms)
   unsigned long now = millis();
   if (now - lastSensorRead >= 100) {
     lastSensorRead = now;
@@ -566,11 +472,6 @@ void loop() {
     applyOutputs();
   }
 
-  // 4. Cập nhật màn hình LCD (mỗi 250ms)
-  if (now - lastLcdUpdate >= 250) {
-    lastLcdUpdate = now;
-    updateLCD();
-  }
 
   delay(10);
 }

@@ -1,27 +1,40 @@
 \chapter{Thuật Toán Điều Khiển \& Vận Hành}
 
+\section{Mô Hình Quy Đổi Mực Nước \& Dải Đo Cảm Biến}
+Hệ thống sử dụng cảm biến siêu âm HC-SR04 đặt cố định phía trên hồ thu để đo khoảng cách tới mặt nước ($d$). Khoảng cách đo được thiết lập theo kích thước thực nghiệm của mô hình hồ thu:
+\begin{itemize}
+    \item \textbf{Khoảng cách đáy hồ (Cạn hoàn toàn - 0\%):} $d_{\text{empty}} = 50\text{ cm}$.
+    \item \textbf{Khoảng cách đỉnh hồ (Đầy tràn - 100\%):} $d_{\text{full}} = 5\text{ cm}$.
+    \item \textbf{Chiều cao hiệu dụng của hồ thu:} $\Delta d = d_{\text{empty}} - d_{\text{full}} = 50 - 5 = 45\text{ cm}$.
+\end{itemize}
+
+Phần trăm mực nước hiện tại trong hồ ($P_{\text{water}}$) được tính toán theo công thức:
+\begin{equation}
+P_{\text{water}} = \frac{d_{\text{empty}} - d}{d_{\text{empty}} - d_{\text{full}}} \times 100\% = \frac{50 - d}{45} \times 100\%
+\end{equation}
+
 \section{Máy Trạng Thái Hữu Hạn (FSM)}
-Để đảm bảo hệ thống phản ứng tin cậy và không bị nhiễu động, hệ thống sử dụng mô hình Máy trạng thái hữu hạn (\textit{Finite State Machine - FSM}) với 4 trạng thái cốt lõi:
+Để đảm bảo hệ thống phản ứng tin cậy và không bị nhiễu động, hệ thống sử dụng mô hình Máy trạng thái hữu hạn (\textit{Finite State Machine - FSM}) với 4 trạng thái cốt lõi tương ứng với dải khoảng cách vật lý:
 
 \begin{itemize}
-    \item \textbf{Trạng thái 1: [NORMAL] (Mực nước 0\% -- 20\%):} 
-    Mực nước ở ngưỡng an toàn tuyệt đối. Đèn LED xanh sáng liên tục, máy bơm ở trạng thái OFF, van xả đóng hoàn toàn (góc 0°), còi báo động tắt.
+    \item \textbf{Trạng thái 1: [NORMAL] (Mực nước 0\% -- 20\%, khoảng cách 50cm -- 41cm):} 
+    Mực nước ở ngưỡng an toàn tuyệt đối. Đèn LED xanh sáng liên tục, máy bơm ở trạng thái OFF, van xả đóng hoàn toàn (góc 0°), còi báo động tắt hoàn toàn (yên lặng).
     
-    \item \textbf{Trạng thái 2: [WARNING] (Mực nước 21\% -- 40\%):} 
-    Nước bắt đầu dâng vào hồ thu. Đèn LED vàng sáng cảnh báo sớm cho kỹ thuật viên và người dân, các cơ cấu bơm và xả vẫn ở chế độ chờ.
+    \item \textbf{Trạng thái 2: [WARNING] (Mực nước 21\% -- 40\%, khoảng cách 40.5cm -- 32cm):} 
+    Nước bắt đầu dâng vào hồ thu. Đèn LED vàng sáng cảnh báo sớm, còi phát âm thanh báo nhẹ với tiếng bíp ngắn ngắt quãng thưa (chu kỳ 1.5 giây, phát âm 120ms) nhằm nhắc nhở kỹ thuật viên theo dõi.
     
-    \item \textbf{Trạng thái 3: [DANGER] (Mực nước 41\% -- 70\%):} 
-    Mực nước vượt ngưỡng kiểm soát thông thường. Đèn LED đỏ bật sáng, Relay đóng kích hoạt máy bơm nước mini chạy hết công suất, động cơ servo xoay 90° để mở 50\% khẩu độ van xả lũ.
+    \item \textbf{Trạng thái 3: [DANGER] (Mực nước 41\% -- 70\%, khoảng cách 31.5cm -- 18.5cm):} 
+    Mực nước vượt ngưỡng kiểm soát thông thường. Đèn LED đỏ bật sáng, Relay đóng kích hoạt máy bơm mini, động cơ servo xoay 90° mở 50\% van xả lũ, còi phát tín hiệu báo dồn dập (nhịp bíp nhanh chu kỳ 300ms: phát 150ms / ngắt 150ms).
     
-    \item \textbf{Trạng thái 4: [CRITICAL] (Mực nước 71\% -- 100\%):} 
-    Tình trạng ngập lụt nghiêm trọng, đe dọa tràn hồ. Đèn LED đỏ nhấp nháy liên tục với tần số cao, còi hú dồn dập, máy bơm tiếp tục hoạt động, động cơ servo xoay góc tối đa 180° để mở 100\% van thoát nước.
+    \item \textbf{Trạng thái 4: [CRITICAL] (Mực nước 71\% -- 100\%, khoảng cách 18cm -- 5cm):} 
+    Tình trạng ngập lụt nghiêm trọng, đe dọa tràn hồ. Đèn LED đỏ nhấp nháy dồn dập, còi hú liên tục không ngắt quãng (\textit{Continuous Alarm}) với tần số cao, máy bơm hoạt động hết công suất, động cơ servo mở 100\% van thoát lũ (góc 180°).
 \end{itemize}
 
 \section{Nguyên Lý Chống Dao Động (Hysteresis Band)}
-Trong thực tế, mặt nước trong hồ thu thường có hiện tượng gợn sóng hoặc dao động liên tục xung quanh các mốc ngưỡng chuyển trạng thái (ví dụ mức 40\% hoặc 70\%). Nếu không có cơ chế bù trừ, máy bơm và van xả sẽ bị bật/tắt liên tục trong thời gian ngắn, gây cháy cuộn hút relay hoặc hỏng động cơ.
+Trong thực tế, mặt nước trong hồ thu thường có hiện tượng gợn sóng hoặc dao động liên tục xung quanh các mốc ngưỡng chuyển trạng thái (ví dụ mức 40\% tương ứng $32\text{ cm}$ hoặc 70\% tương ứng $18.5\text{ cm}$). Nếu không có cơ chế bù trừ, máy bơm và van xả sẽ bị bật/tắt liên tục trong thời gian ngắn, gây cháy cuộn hút relay hoặc hỏng động cơ.
 
 FloodGuard áp dụng dải trễ (\textit{Hysteresis}):
 \begin{itemize}
-    \item \textbf{Khi nước dâng:} Hệ thống chỉ kích hoạt Bơm và Van khi nước đạt hoặc vượt quá ngưỡng 41\%.
-    \item \textbf{Khi nước rút:} Bơm và Van vẫn duy trì trạng thái xả nước cho tới khi mực nước hạ hẳn xuống dưới \textbf{40\%} mới bắt đầu ngắt bơm đóng van, và phải hạ sâu dưới \textbf{20\%} thì hệ thống mới khôi phục lại trạng thái NORMAL.
+    \item \textbf{Khi nước dâng:} Hệ thống chỉ kích hoạt Bơm và Van khi nước đạt hoặc vượt quá ngưỡng 41\% ($d \le 31.5\text{ cm}$).
+    \item \textbf{Khi nước rút:} Bơm và Van vẫn duy trì trạng thái xả nước cho tới khi mực nước hạ hẳn xuống dưới \textbf{40\%} ($d > 32\text{ cm}$) mới bắt đầu ngắt bơm đóng van, và phải hạ sâu dưới \textbf{20\%} ($d > 41\text{ cm}$) thì hệ thống mới khôi phục lại trạng thái NORMAL.
 \end{itemize}

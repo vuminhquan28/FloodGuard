@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FloodGuard Dashboard - Preview & Design Mode</title>
+  <style>
+    :root {
+      --bg: #0b132b;
+      --card-bg: rgba(28, 37, 65, 0.7);
+      --border: rgba(255, 255, 255, 0.1);
+      --text: #ffffff;
+      --text-muted: #94a3b8;
+      --accent: #3a86ff;
+      --green: #10b981;
+      --yellow: #f59e0b;
+      --red: #ef4444;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    body { background: var(--bg); color: var(--text); padding: 20px; min-height: 100vh; padding-bottom: 120px; }
+    .container { max-width: 900px; margin: 0 auto; }
+    header { text-align: center; margin-bottom: 24px; }
+    header h1 { font-size: 1.8rem; font-weight: 700; color: #38bdf8; letter-spacing: 1px; }
+    header p { color: var(--text-muted); font-size: 0.9rem; margin-top: 4px; }
+    .network-badge { display: inline-block; background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 999px; padding: 4px 12px; font-size: 0.75rem; font-weight: 600; margin-top: 8px; }
+    
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin-bottom: 20px; }
+    .card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 14px; padding: 18px; backdrop-filter: blur(10px); }
+    .card-title { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); margin-bottom: 12px; }
+    .card-value { font-size: 1.8rem; font-weight: 700; margin-bottom: 6px; }
+    
+    .progress-bar-bg { width: 100%; height: 12px; background: rgba(255,255,255,0.1); border-radius: 6px; overflow: hidden; margin-top: 8px; }
+    .progress-bar { height: 100%; width: 0%; background: var(--green); transition: width 0.4s ease, background 0.4s ease; }
+    
+    .status-badge { display: inline-block; padding: 4px 10px; border-radius: 6px; font-weight: 600; font-size: 0.85rem; }
+    .badge-normal   { background: rgba(16, 185, 129, 0.2); color: var(--green); border: 1px solid var(--green); }
+    .badge-warning  { background: rgba(245, 158, 11, 0.2); color: var(--yellow); border: 1px solid var(--yellow); }
+    .badge-danger   { background: rgba(239, 68, 68, 0.2); color: var(--red); border: 1px solid var(--red); }
+    .badge-critical { background: var(--red); color: white; animation: pulse 1s infinite alternate; }
+    
+    @keyframes pulse { from { opacity: 0.7; } to { opacity: 1; } }
+
+    .control-btn { background: #1e293b; color: white; border: 1px solid var(--border); padding: 10px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: 0.2s; margin-right: 8px; margin-top: 8px; font-size: 0.85rem; }
+    .control-btn:hover { background: #334155; transform: translateY(-1px); }
+    .control-btn-primary { background: #2563eb; border-color: #3b82f6; }
+    .control-btn-primary:hover { background: #1d4ed8; }
+    .control-btn-danger  { background: #dc2626; border-color: #ef4444; }
+    .control-btn-danger:hover  { background: #b91c1c; }
+
+    /* Thanh công cụ giả lập thử nghiệm giao diện (Chỉ xuất hiện khi Preview trên máy tính) */
+    .preview-toolbar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: #111827;
+      border-top: 2px solid #3b82f6;
+      padding: 12px 20px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 15px;
+      z-index: 9999;
+      box-shadow: 0 -4px 20px rgba(0,0,0,0.5);
+    }
+    .preview-toolbar h4 { font-size: 0.85rem; color: #38bdf8; text-transform: uppercase; }
+    .preview-controls { display: flex; align-items: center; gap: 15px; flex-wrap: wrap; }
+    .preview-controls label { font-size: 0.8rem; color: #cbd5e1; }
+    .preview-controls input[type="range"] { vertical-align: middle; cursor: pointer; }
+    .preview-controls select, .preview-controls button {
+      background: #1f2937; color: white; border: 1px solid #4b5563; padding: 4px 10px; border-radius: 6px; font-size: 0.8rem; cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>FLOODGUARD DASHBOARD</h1>
+      <p>Hệ Thống Chống Ngập Thông Minh (Giao Diện Giám Sát Web)</p>
+      <div class="network-badge">📶 Wi-Fi: FloodGuard_AP | IP: 192.168.4.1</div>
+    </header>
+
+    <div class="grid">
+      <!-- Mực nước -->
+      <div class="card">
+        <div class="card-title">Mực Nước Hồ Thu</div>
+        <div class="card-value" id="waterVal">0%</div>
+        <div style="font-size: 0.85rem; color: var(--text-muted);">Khoảng cách: <span id="distVal">--</span> cm <span style="font-size: 0.75rem; color: #64748b;">(50cm - 5cm)</span></div>
+        <div class="progress-bar-bg">
+          <div class="progress-bar" id="waterBar"></div>
+        </div>
+      </div>
+
+      <!-- Trạng thái hệ thống -->
+      <div class="card">
+        <div class="card-title">Cảnh Báo & Chế Độ</div>
+        <div style="margin-bottom: 10px;">
+          <span id="stateBadge" class="status-badge badge-normal">NORMAL</span>
+        </div>
+        <div style="font-size: 0.85rem; color: var(--text-muted);">Chế độ: <span id="modeBadge" class="status-badge">AUTO</span></div>
+        <div style="margin-top: 10px; font-size: 0.85rem; color: var(--text-muted);">
+          Thời tiết: <span id="rainVal" style="font-weight: 600;">--</span> (ADC: <span id="rainAdcVal">--</span>)
+        </div>
+      </div>
+
+      <!-- Thiết bị chấp hành -->
+      <div class="card">
+        <div class="card-title">Trạng Thái Thiết Bị</div>
+        <div style="font-size: 0.9rem; margin-bottom: 6px;">Máy bơm 5V: <span id="pumpVal" style="font-weight: 700;">--</span></div>
+        <div style="font-size: 0.9rem; margin-bottom: 6px;">Van xả nước: <span id="valveVal" style="font-weight: 700;">--</span></div>
+        <div style="font-size: 0.9rem;">Còi báo động: <span id="buzzerVal" style="font-weight: 700;">--</span></div>
+      </div>
+    </div>
+
+    <!-- Cụm điều khiển ảo -->
+    <div class="card">
+      <div class="card-title">Bảng Điều Khiển Can Thiệp Thủ Công (Manual Override)</div>
+      <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 12px;">
+        Chuyển sang chế độ MANUAL để tự do bật/tắt bơm và xoay góc mở van xả.
+      </p>
+      <div>
+        <button class="control-btn control-btn-primary" onclick="sendCommand('mode_toggle')">Đổi Chế Độ (AUTO / MANUAL)</button>
+        <button class="control-btn" id="btnWebPump" onclick="sendCommand('pump_toggle')">Bật/Tắt Bơm (Manual)</button>
+        <button class="control-btn" onclick="sendCommand('valve_0')">Van 0% (Đóng)</button>
+        <button class="control-btn" onclick="sendCommand('valve_50')">Van 50% (Mở Nửa)</button>
+        <button class="control-btn control-btn-danger" onclick="sendCommand('valve_100')">Van 100% (Mở Hết)</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- THANH CÔNG CỤ XEM TRƯỚC VÀ THỬ NGHIỆM GIAO DIỆN -->
+  <div class="preview-toolbar" id="previewToolbar">
+    <div>
+      <h4>🛠️ Thanh Công Cụ Test Giao Diện</h4>
+      <span style="font-size: 0.75rem; color: #94a3b8;">Kéo thanh trượt để thử các trạng thái UI</span>
+    </div>
+    <div class="preview-controls">
+      <label>
+        Mực nước: <b id="sliderVal" style="color: #38bdf8;">15%</b>
+        <input type="range" id="waterSlider" min="0" max="100" value="15" oninput="onWaterSlider(this.value)">
+      </label>
+      <label>
+        Mưa: 
+        <input type="checkbox" id="rainCheckbox" onchange="onRainToggle(this.checked)">
+      </label>
+      <button onclick="mockAutoState()">Tự động đánh giá FSM</button>
+      <button onclick="resetMock()">Reset Mặc Định</button>
+    </div>
+  </div>
+
+  <script>
+    // Dữ liệu giả lập nội bộ phục vụ xem trước (Mock Data)
+    let mockData = {
+      water: 15,
+      distance: 43.3,
+      rain: false,
+      rain_adc: 3800,
+      state: "NORMAL",
+      mode: "AUTO",
+      pump: false,
+      valve: 0,
+      buzzer: "OFF"
+    };
+
+    function renderUI(data) {
+      document.getElementById('waterVal').innerText = data.water + '%';
+      document.getElementById('distVal').innerText = data.distance;
+      
+      const bar = document.getElementById('waterBar');
+      bar.style.width = data.water + '%';
+      bar.style.background = data.water < 21 ? 'var(--green)' :
+                             data.water < 41 ? 'var(--yellow)' : 'var(--red)';
+
+      const sBadge = document.getElementById('stateBadge');
+      sBadge.innerText = data.state;
+      sBadge.className = 'status-badge ' + (
+        data.state === 'NORMAL'   ? 'badge-normal'  :
+        data.state === 'WARNING'  ? 'badge-warning' :
+        data.state === 'DANGER'   ? 'badge-danger'  : 'badge-critical'
+      );
+
+      document.getElementById('rainVal').innerText = data.rain ? 'CÓ MƯA !' : 'KHÔNG MƯA';
+      document.getElementById('rainVal').style.color = data.rain ? '#38bdf8' : '#94a3b8';
+      document.getElementById('rainAdcVal').innerText = data.rain_adc;
+
+      const mBadge = document.getElementById('modeBadge');
+      mBadge.innerText = data.mode;
+      mBadge.className = 'status-badge ' + (data.mode === 'AUTO' ? 'badge-normal' : 'badge-warning');
+
+      const pVal = document.getElementById('pumpVal');
+      pVal.innerText = data.pump ? 'ĐANG BẬT (ON)' : 'ĐÃ TẮT (OFF)';
+      pVal.style.color = data.pump ? '#10b981' : '#f87171';
+
+      document.getElementById('valveVal').innerText = data.valve + '%';
+      const bVal = document.getElementById('buzzerVal');
+      if (data.state === 'CRITICAL' || data.buzzer === 'CONTINUOUS') {
+        bVal.innerText = 'HÚ LIÊN TỤC (KHẨN CẤP)';
+        bVal.style.color = '#ef4444';
+      } else if (data.state === 'DANGER' || data.buzzer === 'FAST') {
+        bVal.innerText = 'BÁO DỒN DẬP';
+        bVal.style.color = '#f97316';
+      } else if (data.state === 'WARNING' || data.buzzer === 'SLOW') {
+        bVal.innerText = 'BÁO NHẸ (BÍP THƯA)';
+        bVal.style.color = '#f59e0b';
+      } else {
+        bVal.innerText = 'YÊN LẶNG (TẮT)';
+        bVal.style.color = '#94a3b8';
+      }
+    }
+
+    // Các hàm tương tác với thanh trượt xem trước
+    function onWaterSlider(val) {
+      mockData.water = parseInt(val);
+      mockData.distance = (50 - (val / 100 * 45)).toFixed(1);
+      document.getElementById('sliderVal').innerText = val + '%';
+      evaluateMockFSM();
+      renderUI(mockData);
+    }
+
+    function onRainToggle(checked) {
+      mockData.rain = checked;
+      mockData.rain_adc = checked ? 1200 : 3800;
+      renderUI(mockData);
+    }
+
+    function evaluateMockFSM() {
+      if (mockData.mode === 'AUTO') {
+        if (mockData.water >= 71) {
+          mockData.state = "CRITICAL";
+          mockData.pump = true;
+          mockData.valve = 100;
+          mockData.buzzer = "CONTINUOUS";
+        } else if (mockData.water >= 41) {
+          mockData.state = "DANGER";
+          mockData.pump = true;
+          mockData.valve = 50;
+          mockData.buzzer = "FAST";
+        } else if (mockData.water >= 21) {
+          mockData.state = "WARNING";
+          mockData.pump = false;
+          mockData.valve = 0;
+          mockData.buzzer = "SLOW";
+        } else {
+          mockData.state = "NORMAL";
+          mockData.pump = false;
+          mockData.valve = 0;
+          mockData.buzzer = "OFF";
+        }
+      }
+    }
+
+    function sendCommand(cmd) {
+      if (cmd === 'mode_toggle') {
+        mockData.mode = (mockData.mode === 'AUTO') ? 'MANUAL' : 'AUTO';
+        if (mockData.mode === 'AUTO') evaluateMockFSM();
+      } else if (cmd === 'pump_toggle') {
+        if (mockData.mode === 'MANUAL') {
+          mockData.pump = !mockData.pump;
+        } else {
+          alert('Hãy bấm Đổi Chế Độ sang MANUAL trước khi can thiệp thủ công!');
+        }
+      } else if (cmd.startsWith('valve_')) {
+        if (mockData.mode === 'MANUAL') {
+          mockData.valve = parseInt(cmd.replace('valve_', ''));
+        } else {
+          alert('Hãy bấm Đổi Chế Độ sang MANUAL trước khi can thiệp van xả!');
+        }
+      }
+      renderUI(mockData);
+    }
+
+    function resetMock() {
+      mockData.water = 15;
+      mockData.mode = "AUTO";
+      document.getElementById('waterSlider').value = 15;
+      document.getElementById('sliderVal').innerText = "15%";
+      document.getElementById('rainCheckbox').checked = false;
+      evaluateMockFSM();
+      renderUI(mockData);
+    }
+
+    // Khởi chạy hiển thị lần đầu
+    evaluateMockFSM();
+    renderUI(mockData);
+  </script>
+</body>
+</html>
+

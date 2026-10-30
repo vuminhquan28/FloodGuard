@@ -7,40 +7,43 @@ Hệ thống IoT ứng dụng **ESP32** kết hợp cảm biến siêu âm HC-SR
 ## 🛠️ Danh Sách Linh Kiện & Bảng Phân Công Chân (GPIO Mapping)
 
 ### 1. Bảng phân công chân phần cứng (GPIO Mapping)
-| Thiết bị / Module | Chân tín hiệu | Vị trí chân GPIO trên ESP32 | Ghi chú |
-| :--- | :--- | :--- | :--- |
-| **LED Xanh** (Mức an toàn) | Anode (+) | `GPIO 25` | Qua trở hạn dòng 220Ω |
-| **LED Vàng** (Cảnh báo vừa) | Anode (+) | `GPIO 26` | Qua trở hạn dòng 220Ω |
-| **LED Đỏ** (Cảnh báo nguy cấp) | Anode (+) | `GPIO 27` | Qua trở hạn dòng 220Ω |
-| **Còi Buzzer** | (+) | `GPIO 19` | Active Buzzer cảnh báo khẩn cấp |
-| **HC-SR04 (Trig)** | Trig | `GPIO 18` | Phát xung kích hoạt |
-| **HC-SR04 (Echo)** | Echo | `GPIO 5` | Nhận xung phản hồi |
-| **Cảm biến mưa (Potentiometer)** | Analog Out | `GPIO 34` | Đo cường độ mưa / độ ẩm hồ thu |
-| **Servo SG90** | PWM | `GPIO 13` | Điều khiển góc mở van xả lũ (0° – 90° – 180°) |
-| **Relay 1 kênh 5V** | IN | `GPIO 23` | Kích hoạt đóng/ngắt máy bơm mini |
-| **Nút điều khiển (Mode, Pump, Valve)** | *Ảo (Web)* | *Giao diện Web* | **Điều khiển hoàn toàn qua Web Dashboard** (không dùng nút vật lý) |
+| STT | Thiết bị / Module | Chân tín hiệu | GPIO ESP32 | Vị trí Breadboard | Ghi chú |
+| :-: | :--- | :--- | :--- | :--- | :--- |
+| 1 | **HC-SR04** (Siêu âm) | Trig | `GPIO 13` (D13) | Lỗ g38 bo trái | Phát xung siêu âm đo mặt nước |
+| 1 | **HC-SR04** (Siêu âm) | Echo | `GPIO 12` (D12) | Lỗ g37 bo trái | Nhận xung phản hồi (nối tiếp trở hạn dòng) |
+| 2 | **Cảm biến mưa** | DO (Digital) | `GPIO 34` (D34) | Lỗ b31 bo phải | Phát hiện mưa/khô – Input-only |
+| 2 | **Cảm biến mưa** | AO (Analog) | `GPIO 35` (D35) | Lỗ b32 bo phải | Đo cường độ mưa qua ADC – Input-only |
+| 3 | **Servo SG90** | PWM (Dây cam) | `GPIO 27` (D27) | Lỗ g35 bo trái | Điều khiển van xả lũ (0°, 90°, 180°) |
+| 4 | **Relay 1 kênh** | IN | `GPIO 23` (D23) | Lỗ b37 bo phải | Đóng/ngắt máy bơm 5V – **Active LOW** |
+| 5 | **LED Đỏ** (Nguy cấp) | Anode (+) | `GPIO 18` (D18) | Lỗ b39 bo phải | Báo CRITICAL / DANGER – qua trở 220Ω |
+| 6 | **LED Vàng** (Cảnh báo) | Anode (+) | `GPIO 19` (D19) | Lỗ b38 bo phải | Báo WARNING – qua trở 220Ω |
+| 7 | **LED Xanh** (An toàn) | Anode (+) | `GPIO 21` (D21) | Lỗ b36 bo phải | Báo NORMAL – qua trở 220Ω |
+| 8 | **Buzzer 5V** | Cực (+) | `GPIO 4` (D4) | Lỗ b34 bo phải | Còi cảnh báo âm thanh đa cấp độ |
+| – | **Nút điều khiển** | *Ảo (Web)* | *Giao diện Web* | – | **Điều khiển qua Web Dashboard** (không dùng nút vật lý) |
 
 ### 2. Danh sách linh kiện phần cứng tổng hợp
 | STT | Linh kiện | Mô tả / Chân ESP32 |
 | :-: | :--- | :--- |
 | 1 | **ESP32 DevKit V1** | Vi điều khiển trung tâm (tích hợp Wi-Fi & Web Server) |
-| 2 | **HC-SR04** | Đo khoảng cách mực nước (`TRIG: 18`, `ECHO: 5`) |
-| 3 | **Cảm biến mưa / Chiết áp** | Giả lập lượng mưa / độ ẩm (`ADC: GPIO 34`) |
-| 4 | **Servo SG90** | Điều khiển góc mở van xả 0° – 90° – 180° (`PWM: 13`) |
-| 5 | **Relay 1 kênh 5V** | Điều khiển bật/tắt máy bơm mini (`IN: 23`) |
-| 6 | **Buzzer 5V** | Còi báo động mức nguy cấp (`SIG: 19` - Active Buzzer) |
-| 7 | **Cụm 3 LED + Điện trở** | Xanh (`GPIO 25`), Vàng (`GPIO 26`), Đỏ (`GPIO 27`) kèm trở 220Ω |
+| 2 | **HC-SR04** | Đo khoảng cách mực nước (`TRIG: GPIO 13`, `ECHO: GPIO 12`), dải đo: 50cm (0% - cạn) đến 5cm (100% - đầy tràn) |
+| 3 | **Cảm biến mưa** | Phát hiện và đo cường độ mưa (`DO: GPIO 34`, `AO: GPIO 35` – cả 2 chân Input-only) |
+| 4 | **Servo SG90** | Điều khiển góc mở van xả 0° – 90° – 180° (`PWM: GPIO 27`) |
+| 5 | **Relay 1 kênh 5V** | Điều khiển bật/tắt máy bơm mini (`IN: GPIO 23` – **Active LOW**) |
+| 6 | **Buzzer 5V** | Còi báo động đa cấp độ (`SIG: GPIO 4`) |
+| 7 | **Cụm 3 LED + Điện trở** | Xanh (`GPIO 21`), Vàng (`GPIO 19`), Đỏ (`GPIO 18`) kèm trở 220Ω |
 | 8 | **Web Dashboard Controls** | Hệ thống nút bấm điều khiển ảo trên trình duyệt (chuyển Mode, Bật/Tắt Bơm, Đổi góc Van) |
 
 ---
 
 ## 🚦 Các Trạng Thái Vận Hành & Ngưỡng Kích Hoạt
-Hệ thống áp dụng thuật toán **FSM & Hysteresis** chống dao động bật/tắt thiết bị:
-- **🟢 NORMAL (0 – 20%)**: Mực nước an toàn. LED xanh sáng, Bơm OFF, Van đóng 0%, Còi OFF.
-- **🟡 WARNING (21 – 40%)**: Nước bắt đầu dâng. LED vàng sáng, cảnh báo sớm.
-- **🔴 DANGER (41 – 70%)**: Nguy cơ ngập. LED đỏ sáng, Bơm ON, Van mở 50% (90°).
-- **🚨 CRITICAL (71 – 100%)**: Ngập nghiêm trọng. LED đỏ nhấp nháy, Còi hú dồn dập, Bơm ON, Van mở 100% (180°).
-- **Hysteresis khi nước rút**: Khi mực nước giảm, Bơm và Van vẫn duy trì thoát nước cho đến khi mực nước rút hẳn xuống dưới **40%** mới ngắt Bơm đóng Van, và giảm dưới **20%** mới trở lại NORMAL.
+Hệ thống sử dụng cảm biến siêu âm với **khoảng đo từ 50cm (đáy hồ/cạn hoàn toàn - 0%) đến 5cm (mặt hồ đầy tràn - 100%)**, dải chênh lệch $45\text{ cm}$.
+
+Áp dụng thuật toán **FSM & Hysteresis** chống dao động bật/tắt thiết bị với hệ thống cảnh báo đa tầng:
+- **🟢 NORMAL (0 – 20% | Khoảng cách 50cm – 41cm)**: Mực nước an toàn. LED xanh sáng, Bơm OFF, Van đóng 0%, Còi OFF (yên lặng).
+- **🟡 WARNING (21 – 40% | Khoảng cách 40.5cm – 32cm)**: Nước bắt đầu dâng. LED vàng sáng, **Còi báo nhẹ (tiếng bíp ngắn ngắt quãng thưa)** nhắc nhở kỹ thuật viên.
+- **🔴 DANGER (41 – 70% | Khoảng cách 31.5cm – 18.5cm)**: Nguy cơ ngập. LED đỏ sáng, Bơm ON, Van mở 50% (90°), **Còi báo dồn dập (nhịp bíp nhanh)** cảnh báo nguy hiểm.
+- **🚨 CRITICAL (71 – 100% | Khoảng cách 18cm – 5cm)**: Ngập nghiêm trọng. LED đỏ nhấp nháy dồn dập, **Còi hú liên tục không ngắt**, Bơm ON, Van mở thoát lũ tối đa 100% (180°).
+- **Hysteresis khi nước rút**: Khi mực nước giảm, Bơm và Van vẫn duy trì thoát nước cho đến khi mực nước rút hẳn xuống dưới **40% (khoảng cách > 32cm)** mới ngắt Bơm đóng Van, và giảm sâu dưới **20% (khoảng cách > 41cm)** mới trở lại NORMAL.
 
 ---
 

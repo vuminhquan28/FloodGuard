@@ -15,7 +15,7 @@
       "top": 40,
       "left": 60,
       "attrs": {
-        "distance": "180"
+        "distance": "45"
       }
     },
     {
@@ -42,7 +42,8 @@
       "top": 370,
       "left": 620,
       "attrs": {
-        "label": "May Bom 5V"
+        "label": "May Bom 5V",
+        "transistor": "pnp"
       }
     },
     {
@@ -113,33 +114,33 @@
   "connections": [
     [ "esp:GND.1", "ultrasonic:GND", "black", [ "v0" ] ],
     [ "esp:5V", "ultrasonic:VCC", "red", [ "v0" ] ],
-    [ "esp:18", "ultrasonic:TRIG", "blue", [ "v0" ] ],
-    [ "esp:5", "ultrasonic:ECHO", "green", [ "v0" ] ],
+    [ "esp:13", "ultrasonic:TRIG", "blue", [ "v0" ] ],
+    [ "esp:12", "ultrasonic:ECHO", "green", [ "v0" ] ],
 
     [ "esp:3V3", "rain_pot:1", "red", [ "v0" ] ],
-    [ "esp:34", "rain_pot:2", "orange", [ "v0" ] ],
+    [ "esp:35", "rain_pot:2", "orange", [ "v0" ] ],
     [ "esp:GND.1", "rain_pot:3", "black", [ "v0" ] ],
 
     [ "esp:GND.2", "servo_valve:GND", "black", [ "v0" ] ],
     [ "esp:5V", "servo_valve:V+", "red", [ "v0" ] ],
-    [ "esp:13", "servo_valve:PWM", "orange", [ "v0" ] ],
+    [ "esp:27", "servo_valve:PWM", "orange", [ "v0" ] ],
 
     [ "esp:GND.2", "relay_pump:GND", "black", [ "v0" ] ],
     [ "esp:5V", "relay_pump:VCC", "red", [ "v0" ] ],
     [ "esp:23", "relay_pump:IN", "purple", [ "v0" ] ],
 
     [ "esp:GND.2", "buzzer:1", "black", [ "v0" ] ],
-    [ "esp:19", "buzzer:2", "brown", [ "v0" ] ],
+    [ "esp:4", "buzzer:2", "brown", [ "v0" ] ],
 
-    [ "esp:25", "led_green:A", "green", [ "v0" ] ],
+    [ "esp:21", "led_green:A", "green", [ "v0" ] ],
     [ "led_green:C", "r_green:1", "black", [ "v0" ] ],
     [ "r_green:2", "esp:GND.2", "black", [ "v0" ] ],
 
-    [ "esp:26", "led_yellow:A", "yellow", [ "v0" ] ],
+    [ "esp:19", "led_yellow:A", "yellow", [ "v0" ] ],
     [ "led_yellow:C", "r_yellow:1", "black", [ "v0" ] ],
     [ "r_yellow:2", "esp:GND.2", "black", [ "v0" ] ],
 
-    [ "esp:27", "led_red:A", "red", [ "v0" ] ],
+    [ "esp:18", "led_red:A", "red", [ "v0" ] ],
     [ "led_red:C", "r_red:1", "black", [ "v0" ] ],
     [ "r_red:2", "esp:GND.2", "black", [ "v0" ] ]
   ],

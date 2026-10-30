@@ -45,11 +45,15 @@ Sau khi biên dịch thành công:
 
 ### Bước 3: Tương tác và theo dõi hệ thống
 * **Serial Monitor:** Cửa sổ Terminal sẽ tự động hiển thị log từ lệnh `Serial.print()` của ESP32 với tốc độ baud `115200`.
-* **Cảm biến siêu âm (HC-SR04):** Nhấp chuột vào cảm biến HC-SR04 trên sơ đồ mô phỏng để kéo thanh trượt thay đổi khoảng cách mực nước.
+* **Cảm biến siêu âm (HC-SR04):** Nhấp chuột vào cảm biến HC-SR04 trên sơ đồ mô phỏng để kéo thanh trượt thay đổi khoảng cách mực nước trong dải thiết kế **50cm (0% - cạn hoàn toàn)** đến **5cm (100% - đầy tràn)**.
 * **Cảm biến mưa (Rain Potentiometer):** Xoay núm biến trở để giả lập độ ẩm/nước mưa.
 * **Quan sát thiết bị chấp hành:**
   * **Đèn LED (Xanh / Vàng / Đỏ):** Hiển thị các mức trạng thái nước an toàn, cảnh báo, nguy cấp.
-  * **Còi Buzzer:** Kêu khi đạt ngưỡng cảnh báo nghiêm trọng.
+  * **Còi Buzzer đa cấp độ:**
+    * *Mức NORMAL:* Yên lặng (tắt).
+    * *Mức WARNING:* Còi báo nhẹ (tiếng bíp ngắn thưa ngắt quãng).
+    * *Mức DANGER:* Còi báo dồn dập (nhịp bíp nhanh liên hồi).
+    * *Mức CRITICAL:* Còi hú liên tục không ngắt báo động khẩn cấp.
   * **Động cơ Servo:** Quay góc 0° – 90° – 180° tương ứng các mức độ mở van xả.
   * **Relay:** Đóng/ngắt để kích hoạt máy bơm nước.
 * **Điều khiển thủ công qua Web Dashboard:** Toàn bộ việc chuyển đổi chế độ (AUTO/MANUAL), bật/tắt Bơm và xoay góc mở Van xả được thực hiện trực tiếp thông qua hệ thống nút bấm ảo trên giao diện Web Dashboard (địa chỉ IP hiển thị trên Serial Monitor, hoặc endpoint `/api/control`). Hệ thống không còn sử dụng nút bấm cơ học giúp tối giản phần cứng và chống hư hỏng trong môi trường nước.

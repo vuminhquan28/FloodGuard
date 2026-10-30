@@ -22,19 +22,20 @@ Trong phiên bản thiết kế cải tiến, hệ thống \textbf{loại bỏ h
 \centering
 \caption{Bảng phân công chân phần cứng trên ESP32}
 \label{tab:gpio_mapping}
-\begin{tabularx}{\textwidth}{l l l X}
+\begin{tabularx}{\textwidth}{c l l l X}
 \toprule
-\textbf{Thiết bị / Module} & \textbf{Chân tín hiệu} & \textbf{GPIO ESP32} & \textbf{Chức năng} \\
+\textbf{STT} & \textbf{Thiết bị / Module} & \textbf{Chân tín hiệu} & \textbf{GPIO ESP32} & \textbf{Chức năng} \\
 \midrule
-LED Xanh & Anode (+) & \texttt{GPIO 25} & Cảnh báo mức an toàn (NORMAL) \\
-LED Vàng & Anode (+) & \texttt{GPIO 26} & Cảnh báo mức dâng sớm (WARNING) \\
-LED Đỏ & Anode (+) & \texttt{GPIO 27} & Cảnh báo mức nguy cấp (DANGER / CRITICAL) \\
-Buzzer 5V & (+) & \texttt{GPIO 19} & Còi hú báo động khẩn cấp \\
-HC-SR04 (Trig) & Trigger & \texttt{GPIO 18} & Phát xung siêu âm kích hoạt \\
-HC-SR04 (Echo) & Echo & \texttt{GPIO 5} & Nhận xung phản hồi phản xạ từ mặt nước \\
-Cảm biến mưa & Analog Out & \texttt{GPIO 34} & Đo cường độ mưa / độ ẩm \\
-Servo SG90 & PWM & \texttt{GPIO 13} & Điều khiển độ mở van thoát nước \\
-Relay 1 kênh & IN & \texttt{GPIO 23} & Kích hoạt đóng/ngắt máy bơm mini \\
+1 & HC-SR04 (Siêu âm) & Trig & \texttt{GPIO 13 (D13)} & Phát xung siêu âm kích hoạt đo mặt nước \\
+1 & HC-SR04 (Siêu âm) & Echo & \texttt{GPIO 12 (D12)} & Nhận xung phản hồi (nối tiếp trở hạn dòng) \\
+2 & Cảm biến mưa & DO (Digital) & \texttt{GPIO 34 (D34)} & Phát hiện mưa/khô -- Input-only \\
+2 & Cảm biến mưa & AO (Analog) & \texttt{GPIO 35 (D35)} & Đo cường độ mưa qua ADC -- Input-only \\
+3 & Servo SG90 & PWM (Dây cam) & \texttt{GPIO 27 (D27)} & Điều khiển van xả lũ (0\textdegree{} -- 90\textdegree{} -- 180\textdegree{}) \\
+4 & Relay 1 kênh & IN & \texttt{GPIO 23 (D23)} & Đóng/ngắt máy bơm 5V -- \textbf{Active LOW} \\
+5 & LED Đỏ (Nguy cấp) & Anode (+) & \texttt{GPIO 18 (D18)} & Báo động CRITICAL / DANGER \\
+6 & LED Vàng (Cảnh báo) & Anode (+) & \texttt{GPIO 19 (D19)} & Báo động mức WARNING \\
+7 & LED Xanh (An toàn) & Anode (+) & \texttt{GPIO 21 (D21)} & Báo trạng thái NORMAL \\
+8 & Buzzer 5V & Cực (+) & \texttt{GPIO 4 (D4)} & Còi cảnh báo âm thanh đa cấp độ \\
 \bottomrule
 \end{tabularx}
 \end{table}

@@ -93,7 +93,7 @@ Phù hợp khi triển khai ngoài hiện trường không có sóng Wi-Fi hoặ
 
 ## 💻 3. Cấu Trúc Mã Nguồn Web Server (Cổng 80)
 
-Mã nguồn trong [src/main.cpp](src/main.cpp) của bạn đã được lập trình sẵn gồm 4 phần:
+Mã nguồn trong [src/main_hardware.cpp](src/main_hardware.cpp) và [src/main_wokwi.cpp](src/main_wokwi.cpp) đã được lập trình sẵn gồm 4 phần:
 
 ### 1. Khai báo thư viện và khởi tạo
 ```cpp
@@ -119,11 +119,11 @@ server.begin();
 ```
 
 ### 3. Logic xử lý API
-* **Endpoint `/api/status`:** Trả về chuỗi JSON chứa toàn bộ tham số:
+* **Endpoint `/api/status`:** Trả về chuỗi JSON chứa toàn bộ tham số (dải đo $50\text{cm} - 5\text{cm}$):
   ```json
   {
     "water": 45,
-    "distance": 110.0,
+    "distance": 29.8,
     "rain": false,
     "rain_adc": 820,
     "state": "DANGER",

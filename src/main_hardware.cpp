@@ -8,15 +8,20 @@
 // CẤU HÌNH PHẦN CỨNG THẬT (ESP32 HARDWARE)
 // Chế độ: SoftAP (ESP32 tự phát Wi-Fi)
 // ==========================================
-#define PIN_TRIG        18
-#define PIN_ECHO        5
-#define PIN_RAIN_ADC    34   // Cảm biến mưa (Chân Analog AO)
-#define PIN_SERVO       13   // Điều khiển van xả nước SG90
-#define PIN_RELAY       23   // Điều khiển Relay máy bơm 5V
-#define PIN_BUZZER      19   // Còi báo động Active Buzzer
-#define PIN_LED_GREEN   25   // LED trạng thái NORMAL
-#define PIN_LED_YELLOW  26   // LED trạng thái WARNING
-#define PIN_LED_RED     27   // LED trạng thái DANGER / CRITICAL
+#define PIN_TRIG        13   // Cảm biến siêu âm Trig (D13 - Lỗ g38 bo trái)
+#define PIN_ECHO        12   // Cảm biến siêu âm Echo (D12 - Lỗ g37 bo trái - qua trở hạn dòng)
+#define PIN_RAIN_DO     34   // Cảm biến mưa Digital Out (D34 - Lỗ b31 bo phải - Input-only)
+#define PIN_RAIN_ADC    35   // Cảm biến mưa Analog Out (D35 - Lỗ b32 bo phải - Input-only)
+#define PIN_SERVO       27   // Điều khiển van xả nước SG90 PWM (D27 - Lỗ g35 bo trái)
+#define PIN_RELAY       23   // Điều khiển Relay máy bơm 5V (D23 - Lỗ b37 bo phải - Active LOW)
+#define PIN_BUZZER      4    // Còi báo động Active Buzzer 5V (D4 - Lỗ b34 bo phải)
+#define PIN_LED_GREEN   21   // LED trạng thái NORMAL (D21 - Lỗ b36 bo phải)
+#define PIN_LED_YELLOW  19   // LED trạng thái WARNING (D19 - Lỗ b38 bo phải)
+#define PIN_LED_RED     18   // LED trạng thái DANGER / CRITICAL (D18 - Lỗ b39 bo phải)
+
+// Logic kích hoạt Relay máy bơm (Module Relay 1 kênh Active LOW)
+#define RELAY_ON        LOW
+#define RELAY_OFF       HIGH
 
 // Thông tin mạng Wi-Fi do ESP32 tự phát (SoftAP)
 const char* AP_SSID = "FloodGuard_AP";
@@ -25,8 +30,8 @@ const char* AP_PASS = "12345678"; // Tối thiểu 8 ký tự (hoặc để "" n
 // ==========================================
 // THÔNG SỐ ĐO VÀ NGƯỠNG MỰC NƯỚC
 // ==========================================
-const float DISTANCE_EMPTY = 200.0; // Khoảng cách cạn hồ (cm) - 0%
-const float DISTANCE_FULL  = 20.0;  // Khoảng cách đầy tràn (cm) - 100%
+const float DISTANCE_EMPTY = 50.0;  // Khoảng cách cạn hồ (cm) - 0%
+const float DISTANCE_FULL  = 5.0;   // Khoảng cách đầy tràn (cm) - 100%
 
 // Dải trễ (Hysteresis)
 const int THRESHOLD_WARN_ENTER   = 21;
@@ -52,7 +57,7 @@ WebServer server(80);
 
 SystemState sysState  = STATE_NORMAL;
 int waterPercent      = 0;
-float currentDistance = 200.0;
+float currentDistance = 50.0;
 bool isRaining        = false;
 int rainRawADC        = 0;
 
@@ -92,10 +97,12 @@ void updateSensors() {
   float pct = ((DISTANCE_EMPTY - currentDistance) / (DISTANCE_EMPTY - DISTANCE_FULL)) * 100.0;
   waterPercent = (int)constrain(pct, 0.0, 100.0);
 
-  // Đọc cảm biến mưa (ESP32 ADC 12-bit: 0 - 4095)
-  // Khi có nước mưa tiếp xúc -> Điện trở giảm -> Giá trị ADC giảm (< 2500)
+  // Đọc cảm biến mưa (Chân DO GPIO 34 và AO GPIO 35)
+  // - DO: LOW khi phát hiện đọng nước mưa (qua bộ so sánh LM393)
+  // - AO: ADC 12-bit (0 - 4095), điện trở giảm khi có nước tiếp xúc -> ADC < 2500
   rainRawADC = analogRead(PIN_RAIN_ADC);
-  isRaining = (rainRawADC < 2500);
+  bool rainDO = (digitalRead(PIN_RAIN_DO) == LOW);
+  isRaining = rainDO || (rainRawADC < 2500);
 }
 
 // ==========================================
@@ -159,51 +166,56 @@ void evaluateSystemStateAuto() {
 // ÁP ĐẶT ĐẦU RA (ACTUATORS & LEDS)
 // ==========================================
 void applyOutputs() {
-  // 1. Máy bơm (Relay kích HIGH/LOW tùy module, ở đây HIGH là BẬT)
-  digitalWrite(PIN_RELAY, pumpState ? HIGH : LOW);
+  // 1. Máy bơm (Module Relay 1 kênh Active LOW: LOW = BẬT bơm, HIGH = TẮT bơm)
+  digitalWrite(PIN_RELAY, pumpState ? RELAY_ON : RELAY_OFF);
 
   // 2. Góc mở Servo (0% = 0 độ, 50% = 90 độ, 100% = 180 độ)
   int angle = map(valvePercent, 0, 100, 0, 180);
   valveServo.write(angle);
 
-  // 3. Đèn LED chỉ thị
+  // 3. Đèn LED chỉ thị & Còi Buzzer đa cấp độ
+  unsigned long now = millis();
   switch (sysState) {
     case STATE_NORMAL:
       digitalWrite(PIN_LED_GREEN, HIGH);
       digitalWrite(PIN_LED_YELLOW, LOW);
       digitalWrite(PIN_LED_RED, LOW);
       noTone(PIN_BUZZER);
+      digitalWrite(PIN_BUZZER, LOW);
       break;
 
     case STATE_WARNING:
+      // Mức dâng: LED Vàng sáng, Còi báo nhẹ ngắt quãng thưa (chu kỳ 1500ms: kêu 120ms, tắt 1380ms)
       digitalWrite(PIN_LED_GREEN, LOW);
       digitalWrite(PIN_LED_YELLOW, HIGH);
       digitalWrite(PIN_LED_RED, LOW);
-      noTone(PIN_BUZZER);
+      if (now % 1500 < 120) {
+        tone(PIN_BUZZER, 1000);
+      } else {
+        noTone(PIN_BUZZER);
+        digitalWrite(PIN_BUZZER, LOW);
+      }
       break;
 
     case STATE_DANGER:
+      // Nguy cơ ngập: LED Đỏ sáng, Còi báo dồn dập (chu kỳ 300ms: kêu 150ms, tắt 150ms)
       digitalWrite(PIN_LED_GREEN, LOW);
       digitalWrite(PIN_LED_YELLOW, LOW);
       digitalWrite(PIN_LED_RED, HIGH);
-      noTone(PIN_BUZZER);
+      if (now % 300 < 150) {
+        tone(PIN_BUZZER, 1800);
+      } else {
+        noTone(PIN_BUZZER);
+        digitalWrite(PIN_BUZZER, LOW);
+      }
       break;
 
     case STATE_CRITICAL:
+      // Ngập nghiêm trọng: LED Đỏ chớp dồn dập (chu kỳ 250ms), Còi hú liên tục không ngắt
       digitalWrite(PIN_LED_GREEN, LOW);
       digitalWrite(PIN_LED_YELLOW, LOW);
-      // Chớp nháy LED đỏ và còi hú khẩn cấp (non-blocking)
-      unsigned long now = millis();
-      if (now - lastBuzzerBlink >= 200) {
-        lastBuzzerBlink = now;
-        buzzerToggle = !buzzerToggle;
-        digitalWrite(PIN_LED_RED, buzzerToggle ? HIGH : LOW);
-        if (buzzerToggle) {
-          tone(PIN_BUZZER, 2000);
-        } else {
-          noTone(PIN_BUZZER);
-        }
-      }
+      digitalWrite(PIN_LED_RED, (now % 250 < 125) ? HIGH : LOW);
+      tone(PIN_BUZZER, 2500);
       break;
   }
 }
@@ -275,7 +287,7 @@ const char HTML_DASHBOARD[] PROGMEM = R"rawliteral(
       <div class="card">
         <div class="card-title">Mực Nước Hồ Thu</div>
         <div class="card-value" id="waterVal">0%</div>
-        <div style="font-size: 0.85rem; color: var(--text-muted);">Khoảng cách: <span id="distVal">--</span> cm</div>
+        <div style="font-size: 0.85rem; color: var(--text-muted);">Khoảng cách: <span id="distVal">--</span> cm <span style="font-size: 0.75rem; color: #64748b;">(50cm - 5cm)</span></div>
         <div class="progress-bar-bg">
           <div class="progress-bar" id="waterBar"></div>
         </div>
@@ -353,7 +365,20 @@ const char HTML_DASHBOARD[] PROGMEM = R"rawliteral(
         pVal.style.color = data.pump ? '#10b981' : '#f87171';
 
         document.getElementById('valveVal').innerText = data.valve + '%';
-        document.getElementById('buzzerVal').innerText = data.buzzer ? 'ĐANG CÒI HÚ' : 'YÊN LẶNG';
+        const bVal = document.getElementById('buzzerVal');
+        if (data.state === 'CRITICAL' || data.buzzer === 'CONTINUOUS' || data.buzzer === 'true') {
+          bVal.innerText = 'HÚ LIÊN TỤC';
+          bVal.style.color = '#ef4444';
+        } else if (data.state === 'DANGER' || data.buzzer === 'FAST') {
+          bVal.innerText = 'DỒN DẬP';
+          bVal.style.color = '#f97316';
+        } else if (data.state === 'WARNING' || data.buzzer === 'SLOW') {
+          bVal.innerText = 'BÁO NHẸ (BÍP THƯA)';
+          bVal.style.color = '#f59e0b';
+        } else {
+          bVal.innerText = 'YÊN LẶNG (TẮT)';
+          bVal.style.color = '#94a3b8';
+        }
       } catch (err) {
         console.error('Loi cap nhat status:', err);
       }
@@ -384,13 +409,21 @@ void handleRoot() {
 
 void handleStatusApi() {
   const char* stStr = "NORMAL";
-  if (sysState == STATE_WARNING)  stStr = "WARNING";
-  if (sysState == STATE_DANGER)   stStr = "DANGER";
-  if (sysState == STATE_CRITICAL) stStr = "CRITICAL";
+  const char* bzStr = "OFF";
+  if (sysState == STATE_WARNING) {
+    stStr = "WARNING";
+    bzStr = "SLOW";
+  } else if (sysState == STATE_DANGER) {
+    stStr = "DANGER";
+    bzStr = "FAST";
+  } else if (sysState == STATE_CRITICAL) {
+    stStr = "CRITICAL";
+    bzStr = "CONTINUOUS";
+  }
 
   char json[256];
   snprintf(json, sizeof(json),
-    "{\"water\":%d,\"distance\":%.1f,\"rain\":%s,\"rain_adc\":%d,\"state\":\"%s\",\"mode\":\"%s\",\"pump\":%s,\"valve\":%d,\"buzzer\":%s}",
+    "{\"water\":%d,\"distance\":%.1f,\"rain\":%s,\"rain_adc\":%d,\"state\":\"%s\",\"mode\":\"%s\",\"pump\":%s,\"valve\":%d,\"buzzer\":\"%s\"}",
     waterPercent,
     currentDistance,
     isRaining ? "true" : "false",
@@ -399,7 +432,7 @@ void handleStatusApi() {
     isAutoMode ? "AUTO" : "MANUAL",
     pumpState ? "true" : "false",
     valvePercent,
-    (sysState == STATE_CRITICAL) ? "true" : "false"
+    bzStr
   );
 
   server.send(200, "application/json", json);
@@ -438,7 +471,8 @@ void setup() {
   // Khởi tạo GPIO
   pinMode(PIN_TRIG, OUTPUT);
   pinMode(PIN_ECHO, INPUT);
-  pinMode(PIN_RAIN_ADC, INPUT);
+  pinMode(PIN_RAIN_DO, INPUT);   // Cảm biến mưa chân Digital (Input-only GPIO 34)
+  pinMode(PIN_RAIN_ADC, INPUT);  // Cảm biến mưa chân Analog (Input-only GPIO 35)
 
   pinMode(PIN_RELAY, OUTPUT);
   pinMode(PIN_BUZZER, OUTPUT);
@@ -446,7 +480,7 @@ void setup() {
   pinMode(PIN_LED_YELLOW, OUTPUT);
   pinMode(PIN_LED_RED, OUTPUT);
 
-  digitalWrite(PIN_RELAY, LOW);
+  digitalWrite(PIN_RELAY, RELAY_OFF); // Active LOW: HIGH = TẮT bơm khi khởi động
   digitalWrite(PIN_LED_GREEN, LOW);
   digitalWrite(PIN_LED_YELLOW, LOW);
   digitalWrite(PIN_LED_RED, LOW);
@@ -488,14 +522,16 @@ void loop() {
   // 1. Phục vụ yêu cầu Web Server
   server.handleClient();
 
-  // 2. Chu kỳ đọc cảm biến và đánh giá logic (mỗi 100ms)
+  // 2. Chu kỳ đọc cảm biến và đánh giá logic FSM (mỗi 100ms)
   unsigned long now = millis();
   if (now - lastSensorRead >= 100) {
     lastSensorRead = now;
     updateSensors();
     evaluateSystemStateAuto();
-    applyOutputs();
   }
+
+  // 3. Cập nhật thiết bị chấp hành, LED và nhịp còi liên tục (non-blocking)
+  applyOutputs();
 
   delay(10);
 }

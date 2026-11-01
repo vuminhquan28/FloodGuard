@@ -19,13 +19,9 @@
 #define PIN_LED_YELLOW  19   // LED trạng thái WARNING (D19 - Lỗ b38 bo phải)
 #define PIN_LED_RED     18   // LED trạng thái DANGER / CRITICAL (D18 - Lỗ b39 bo phải)
 
-// Logic kích hoạt Relay máy bơm (Module Relay 1 kênh Active LOW)
-#define RELAY_ON        LOW
-#define RELAY_OFF       HIGH
-
 // Thông tin mạng Wi-Fi do ESP32 tự phát (SoftAP)
 const char* AP_SSID = "FloodGuard_AP";
-const char* AP_PASS = "12345678"; // Tối thiểu 8 ký tự (hoặc để "" nếu không cần pass)
+const char* AP_PASS = "12345678"; // Tối thiểu 8 ký tự
 
 // ==========================================
 // THÔNG SỐ ĐO VÀ NGƯỠNG MỰC NƯỚC
@@ -33,13 +29,25 @@ const char* AP_PASS = "12345678"; // Tối thiểu 8 ký tự (hoặc để "" n
 const float DISTANCE_EMPTY = 50.0;  // Khoảng cách cạn hồ (cm) - 0%
 const float DISTANCE_FULL  = 5.0;   // Khoảng cách đầy tràn (cm) - 100%
 
-// Dải trễ (Hysteresis)
+// Dải trễ (Hysteresis) FSM - Vào trạng thái mực nước
 const int THRESHOLD_WARN_ENTER   = 21;
 const int THRESHOLD_DANGER_ENTER = 41;
 const int THRESHOLD_CRIT_ENTER   = 71;
 
+// Dải trễ (Hysteresis) FSM - Thoát trạng thái (khi nước rút)
 const int THRESHOLD_DANGER_EXIT  = 40;
 const int THRESHOLD_WARN_EXIT    = 20;
+
+// ==========================================
+// CẤP ĐỘ CẢM BIẾN MƯA (ESP32 ADC 12-bit: 0 - 4095)
+// ==========================================
+// - Khô ráo (Không mưa): ADC ~ 3200 - 4095
+// - Mưa nhỏ / Vài giọt (Light Rain): ADC < 2800 hoặc DO == LOW -> Mức WARNING
+// - Mưa to / Nhúng 1 phần (Heavy Rain): ADC < 1800 -> Mức DANGER (Bơm BẬT, Van 50%)
+// - Nhúng hết vào nước / Mưa bão cực to (Submerged): ADC < 1100 -> Mức CRITICAL (Bơm BẬT, Van 100%)
+const int RAIN_ADC_LIGHT       = 2800;
+const int RAIN_ADC_HEAVY       = 1800;
+const int RAIN_ADC_SUBMERGED   = 1100;
 
 // Các trạng thái của hệ thống (FSM)
 enum SystemState {
@@ -58,6 +66,7 @@ WebServer server(80);
 SystemState sysState  = STATE_NORMAL;
 int waterPercent      = 0;
 float currentDistance = 50.0;
+float lastValidDistance = 50.0; // Giá trị hợp lệ gần nhất (Median Filter fallback)
 bool isRaining        = false;
 int rainRawADC        = 0;
 
@@ -67,13 +76,16 @@ bool isAutoMode       = true;
 
 // Biến điều khiển thời gian non-blocking
 unsigned long lastSensorRead   = 0;
-unsigned long lastBuzzerBlink  = 0;
+unsigned long lastDebugPrint   = 0;  // Debug Serial mỗi 2 giây
 bool buzzerToggle              = false;
 
 // ==========================================
-// HÀM ĐỌC CẢM BIẾN
+// [KỸ THUẬT 2] ĐỌC CẢM BIẾN - MEDIAN FILTER 3 MẪU
+// Chống nhiễu EMI từ Relay/Motor bơm (xung gai điện từ làm pulseIn() timeout)
 // ==========================================
-float readUltrasonicCM() {
+
+// Đọc 1 mẫu khoảng cách từ HC-SR04 (trả về -1.0 nếu timeout hoặc ngoài dải)
+float readUltrasonicSingleCM() {
   digitalWrite(PIN_TRIG, LOW);
   delayMicroseconds(2);
   digitalWrite(PIN_TRIG, HIGH);
@@ -81,10 +93,58 @@ float readUltrasonicCM() {
   digitalWrite(PIN_TRIG, LOW);
 
   long duration = pulseIn(PIN_ECHO, HIGH, 30000); // Timeout 30ms (~5m)
-  if (duration <= 0) return currentDistance;
+  if (duration <= 0) return -1.0f;
 
-  float dist = (duration * 0.0343) / 2.0;
+  float dist = (duration * 0.0343f) / 2.0f;
+  // Loại bỏ mẫu ngoài dải vật lý hợp lệ (2cm - 300cm)
+  if (dist < 2.0f || dist > 300.0f) return -1.0f;
   return dist;
+}
+
+// Lấy trung vị (Median) của 3 mẫu cách nhau 12ms
+// - Loại bỏ mẫu đột biến do EMI (nhiễu đỉnh)
+// - Nếu cả 3 đều lỗi: giữ nguyên lastValidDistance
+float readUltrasonicCM() {
+  float samples[3];
+  int validCount = 0;
+
+  for (int i = 0; i < 3; i++) {
+    samples[i] = readUltrasonicSingleCM();
+    if (samples[i] > 0) validCount++;
+    if (i < 2) delay(12); // Khoảng cách giữa các lần phát xung (10-15ms)
+  }
+
+  // Nếu cả 3 mẫu đều lỗi (sụt áp thoáng qua khi relay đóng ngắt)
+  // -> giữ giá trị hợp lệ gần nhất tránh FSM nhảy lung tung
+  if (validCount == 0) return lastValidDistance;
+
+  // Bubble sort 3 phần tử: đẩy các mẫu -1 (lỗi) lên đầu mảng
+  for (int i = 0; i < 2; i++) {
+    for (int j = 0; j < 2 - i; j++) {
+      if (samples[j] < 0 || (samples[j+1] > 0 && samples[j] > samples[j+1])) {
+        float tmp    = samples[j];
+        samples[j]   = samples[j+1];
+        samples[j+1] = tmp;
+      }
+    }
+  }
+
+  float result = lastValidDistance;
+  if (validCount == 1) {
+    // Chỉ có 1 mẫu hợp lệ - dùng luôn
+    for (int i = 0; i < 3; i++) { if (samples[i] > 0) { result = samples[i]; break; } }
+  } else if (validCount == 2) {
+    // 2 mẫu hợp lệ - lấy trung bình
+    float sum = 0; int cnt = 0;
+    for (int i = 0; i < 3; i++) { if (samples[i] > 0) { sum += samples[i]; cnt++; } }
+    result = sum / cnt;
+  } else {
+    // 3 mẫu đều hợp lệ - lấy phần tử giữa (Median)
+    result = samples[1];
+  }
+
+  lastValidDistance = result; // Cập nhật fallback
+  return result;
 }
 
 void updateSensors() {
@@ -93,16 +153,27 @@ void updateSensors() {
   if (d > DISTANCE_EMPTY) d = DISTANCE_EMPTY;
   currentDistance = d;
 
-  // Tính phần trăm mực nước
-  float pct = ((DISTANCE_EMPTY - currentDistance) / (DISTANCE_EMPTY - DISTANCE_FULL)) * 100.0;
-  waterPercent = (int)constrain(pct, 0.0, 100.0);
+  // Tính phần trăm mực nước (50cm = 0%, 5cm = 100%)
+  float pct = ((DISTANCE_EMPTY - currentDistance) / (DISTANCE_EMPTY - DISTANCE_FULL)) * 100.0f;
+  waterPercent = (int)constrain(pct, 0.0f, 100.0f);
 
   // Đọc cảm biến mưa (Chân DO GPIO 34 và AO GPIO 35)
   // - DO: LOW khi phát hiện đọng nước mưa (qua bộ so sánh LM393)
-  // - AO: ADC 12-bit (0 - 4095), điện trở giảm khi có nước tiếp xúc -> ADC < 2500
+  // - AO: ADC 12-bit (0 - 4095), điện trở giảm khi có nước tiếp xúc
   rainRawADC = analogRead(PIN_RAIN_ADC);
   bool rainDO = (digitalRead(PIN_RAIN_DO) == LOW);
-  isRaining = rainDO || (rainRawADC < 2500);
+  isRaining = rainDO || (rainRawADC < RAIN_ADC_LIGHT);
+
+  // [DEBUG] In ra Serial Monitor mỗi 1 giây để theo dõi rõ các giá trị
+  static unsigned long lastSensorLog = 0;
+  if (millis() - lastSensorLog >= 1000) {
+    lastSensorLog = millis();
+    const char* rainLevelStr = (rainRawADC < RAIN_ADC_SUBMERGED) ? "NGAP_NUOC (CRITICAL)" :
+                               (rainRawADC < RAIN_ADC_HEAVY)     ? "MUA_TO (DANGER)" :
+                               (isRaining)                       ? "MUA_NHO (WARNING)" : "KHO_RAO (NORMAL)";
+    Serial.printf("[SENSOR] Dist=%.1fcm (%d%%) | RainDO=%d | RainADC=%d | Muc: %s\n",
+      currentDistance, waterPercent, rainDO ? 1 : 0, rainRawADC, rainLevelStr);
+  }
 }
 
 // ==========================================
@@ -111,54 +182,79 @@ void updateSensors() {
 void evaluateSystemStateAuto() {
   if (!isAutoMode) return;
 
+  // Xác định các cấp độ mưa
+  bool isLightRain = isRaining;                         // ADC < 2800 hoặc DO == LOW (Mưa nhỏ)
+  bool isHeavyRain = (rainRawADC < RAIN_ADC_HEAVY);     // ADC < 1800 (Mưa to / nhúng 1 phần)
+  bool isSubmerged = (rainRawADC < RAIN_ADC_SUBMERGED); // ADC < 1100 (Nhúng ngập hết vào nước / mưa xối xả)
+
+  // --- Chuyển trạng thái FSM (kết hợp cả Mực nước và Cảm biến mưa) ---
   switch (sysState) {
+
     case STATE_NORMAL:
-      if (waterPercent >= THRESHOLD_WARN_ENTER) {
-        sysState = STATE_WARNING;
+      if (waterPercent >= THRESHOLD_CRIT_ENTER || isSubmerged) {
+        sysState = STATE_CRITICAL; // Mực nước ngập sâu hoặc nhúng chìm cảm biến mưa
+      } else if (waterPercent >= THRESHOLD_DANGER_ENTER || isHeavyRain || (isLightRain && waterPercent >= THRESHOLD_WARN_ENTER)) {
+        sysState = STATE_DANGER;   // Mực nước nguy hiểm hoặc mưa to
+      } else if (waterPercent >= THRESHOLD_WARN_ENTER || isLightRain) {
+        sysState = STATE_WARNING;  // Mực nước dâng hoặc có mưa nhỏ
       }
       break;
 
     case STATE_WARNING:
-      if (waterPercent >= THRESHOLD_DANGER_ENTER) {
+      if (waterPercent >= THRESHOLD_CRIT_ENTER || isSubmerged) {
+        sysState = STATE_CRITICAL;
+      } else if (waterPercent >= THRESHOLD_DANGER_ENTER || isHeavyRain || (isLightRain && waterPercent >= 30)) {
         sysState = STATE_DANGER;
-      } else if (waterPercent < THRESHOLD_WARN_EXIT) {
-        sysState = STATE_NORMAL;
+      } else if (waterPercent < THRESHOLD_WARN_EXIT && !isLightRain) {
+        sysState = STATE_NORMAL;   // Nước cạn và tạnh mưa hoàn toàn
       }
       break;
 
     case STATE_DANGER:
-      if (waterPercent >= THRESHOLD_CRIT_ENTER) {
+      if (waterPercent >= THRESHOLD_CRIT_ENTER || isSubmerged || (isHeavyRain && waterPercent >= 30)) {
         sysState = STATE_CRITICAL;
-      } else if (waterPercent < THRESHOLD_DANGER_EXIT) {
-        sysState = STATE_WARNING;
+      } else if (waterPercent < THRESHOLD_DANGER_EXIT && !isHeavyRain) {
+        sysState = STATE_WARNING;  // Nước rút và lượng mưa giảm
       }
       break;
 
     case STATE_CRITICAL:
-      if (waterPercent < THRESHOLD_CRIT_ENTER) {
-        sysState = STATE_DANGER;
+      if (waterPercent < THRESHOLD_CRIT_ENTER && !isSubmerged) {
+        sysState = STATE_DANGER;   // Rút khỏi mức ngập nghiêm trọng
       }
       break;
   }
 
-  // Gán đầu ra theo trạng thái AUTO
+  // --- Điều khiển Bơm và Van theo trạng thái FSM (Hysteresis) ---
   switch (sysState) {
     case STATE_NORMAL:
       pumpState    = false;
-      valvePercent = 0;
+      valvePercent = 0;    // Van đóng hoàn toàn 0°
       break;
+
     case STATE_WARNING:
       pumpState    = false;
-      valvePercent = 0;
+      valvePercent = 0;    // Van đóng hoàn toàn 0°
       break;
+
     case STATE_DANGER:
-      pumpState    = true;
-      valvePercent = 50;
+      pumpState    = true; // BẬT máy bơm 5V
+      valvePercent = 50;   // Mở van thoát lũ 50% (90°)
       break;
+
     case STATE_CRITICAL:
-      pumpState    = true;
-      valvePercent = 100;
+      pumpState    = true; // BẬT máy bơm 5V
+      valvePercent = 100;  // Mở van thoát lũ tối đa 100% (180°)
       break;
+  }
+
+  // [DEBUG] In trạng thái FSM ra Serial khi có thay đổi
+  static SystemState lastDebugState = (SystemState)99;
+  if (sysState != lastDebugState) {
+    const char* stNames[] = {"NORMAL", "WARNING", "DANGER", "CRITICAL"};
+    Serial.printf("\n>>> [FSM CHUYEN TRANG THAI] %s | Nuoc: %d%% | RainADC: %d | Bom: %s | Van: %d%%\n\n",
+      stNames[sysState], waterPercent, rainRawADC, pumpState ? "BAT" : "TAT", valvePercent);
+    lastDebugState = sysState;
   }
 }
 
@@ -166,17 +262,26 @@ void evaluateSystemStateAuto() {
 // ÁP ĐẶT ĐẦU RA (ACTUATORS & LEDS)
 // ==========================================
 void applyOutputs() {
-  // 1. Máy bơm (Module Relay 1 kênh Active LOW: LOW = BẬT bơm, HIGH = TẮT bơm)
-  digitalWrite(PIN_RELAY, pumpState ? RELAY_ON : RELAY_OFF);
+  // [KỸ THUẬT 1] Điều khiển Relay bằng High-Z (INPUT) khi tắt bơm
+  // Vấn đề: ESP32 xuất HIGH (3.3V) không đủ ngắt cuộn opto 5V
+  //         -> rò dòng ~1.5mA -> bơm chạy rỉ hoặc đèn tín hiệu relay luôn sáng.
+  // Giải pháp: Thả nổi chân thành High-Z (INPUT) để triệt tiêu hoàn toàn dòng rò.
+  if (pumpState) {
+    pinMode(PIN_RELAY, OUTPUT);
+    digitalWrite(PIN_RELAY, LOW);   // LOW -> opto kích -> Relay đóng -> Bơm BẬT
+  } else {
+    pinMode(PIN_RELAY, INPUT);      // High-Z -> không có dòng chạy qua opto -> Bơm TẮT hoàn toàn
+  }
 
-  // 2. Góc mở Servo (0% = 0 độ, 50% = 90 độ, 100% = 180 độ)
+  // 2. Góc mở Servo (0% = 0°, 50% = 90°, 100% = 180°)
   int angle = map(valvePercent, 0, 100, 0, 180);
   valveServo.write(angle);
 
-  // 3. Đèn LED chỉ thị & Còi Buzzer đa cấp độ
+  // [KỸ THUẬT 3] Đèn LED & Còi Buzzer đa cấp độ - Non-blocking bằng millis()
   unsigned long now = millis();
   switch (sysState) {
     case STATE_NORMAL:
+      // LED xanh sáng, còi yên lặng
       digitalWrite(PIN_LED_GREEN, HIGH);
       digitalWrite(PIN_LED_YELLOW, LOW);
       digitalWrite(PIN_LED_RED, LOW);
@@ -185,7 +290,7 @@ void applyOutputs() {
       break;
 
     case STATE_WARNING:
-      // Mức dâng: LED Vàng sáng, Còi báo nhẹ ngắt quãng thưa (chu kỳ 1500ms: kêu 120ms, tắt 1380ms)
+      // LED vàng sáng, còi báo nhẹ ngắt quãng thưa (chu kỳ 1500ms: kêu 120ms, tắt 1380ms)
       digitalWrite(PIN_LED_GREEN, LOW);
       digitalWrite(PIN_LED_YELLOW, HIGH);
       digitalWrite(PIN_LED_RED, LOW);
@@ -198,7 +303,7 @@ void applyOutputs() {
       break;
 
     case STATE_DANGER:
-      // Nguy cơ ngập: LED Đỏ sáng, Còi báo dồn dập (chu kỳ 300ms: kêu 150ms, tắt 150ms)
+      // LED đỏ sáng, còi dồn dập (chu kỳ 300ms: kêu 150ms, tắt 150ms)
       digitalWrite(PIN_LED_GREEN, LOW);
       digitalWrite(PIN_LED_YELLOW, LOW);
       digitalWrite(PIN_LED_RED, HIGH);
@@ -211,10 +316,10 @@ void applyOutputs() {
       break;
 
     case STATE_CRITICAL:
-      // Ngập nghiêm trọng: LED Đỏ chớp dồn dập (chu kỳ 250ms), Còi hú liên tục không ngắt
+      // LED đỏ chớp nháy rất nhanh (chu kỳ 100ms), còi hú liên tục 2500Hz
       digitalWrite(PIN_LED_GREEN, LOW);
       digitalWrite(PIN_LED_YELLOW, LOW);
-      digitalWrite(PIN_LED_RED, (now % 250 < 125) ? HIGH : LOW);
+      digitalWrite(PIN_LED_RED, (now % 100 < 50) ? HIGH : LOW);
       tone(PIN_BUZZER, 2500);
       break;
   }
@@ -279,7 +384,7 @@ const char HTML_DASHBOARD[] PROGMEM = R"rawliteral(
     <header>
       <h1>FLOODGUARD DASHBOARD</h1>
       <p>Hệ Thống Chống Ngập Thông Minh (ESP32 Hardware AP Mode)</p>
-      <div class="network-badge">📶 Wi-Fi: FloodGuard_AP | IP: 192.168.4.1</div>
+      <div class="network-badge">Wi-Fi: FloodGuard_AP | IP: 192.168.4.1</div>
     </header>
 
     <div class="grid">
@@ -352,8 +457,20 @@ const char HTML_DASHBOARD[] PROGMEM = R"rawliteral(
           data.state === 'DANGER'   ? 'badge-danger'  : 'badge-critical'
         );
 
-        document.getElementById('rainVal').innerText = data.rain ? 'CÓ MƯA !' : 'KHÔNG MƯA';
-        document.getElementById('rainVal').style.color = data.rain ? '#38bdf8' : '#94a3b8';
+        let rainText = 'KHONG MUA';
+        let rainColor = '#94a3b8';
+        if (data.rain_adc < 1100) {
+          rainText = 'NGAP / MUA CUC TO !';
+          rainColor = '#ef4444';
+        } else if (data.rain_adc < 1800) {
+          rainText = 'MUA TO !';
+          rainColor = '#f59e0b';
+        } else if (data.rain) {
+          rainText = 'MUA NHO';
+          rainColor = '#38bdf8';
+        }
+        document.getElementById('rainVal').innerText = rainText;
+        document.getElementById('rainVal').style.color = rainColor;
         document.getElementById('rainAdcVal').innerText = data.rain_adc;
 
         const mBadge = document.getElementById('modeBadge');
@@ -361,22 +478,22 @@ const char HTML_DASHBOARD[] PROGMEM = R"rawliteral(
         mBadge.className = 'status-badge ' + (data.mode === 'AUTO' ? 'badge-normal' : 'badge-warning');
 
         const pVal = document.getElementById('pumpVal');
-        pVal.innerText = data.pump ? 'ĐANG BẬT (ON)' : 'ĐÃ TẮT (OFF)';
+        pVal.innerText = data.pump ? 'DANG BAT (ON)' : 'DA TAT (OFF)';
         pVal.style.color = data.pump ? '#10b981' : '#f87171';
 
         document.getElementById('valveVal').innerText = data.valve + '%';
         const bVal = document.getElementById('buzzerVal');
-        if (data.state === 'CRITICAL' || data.buzzer === 'CONTINUOUS' || data.buzzer === 'true') {
-          bVal.innerText = 'HÚ LIÊN TỤC';
+        if (data.state === 'CRITICAL' || data.buzzer === 'CONTINUOUS') {
+          bVal.innerText = 'HU LIEN TUC';
           bVal.style.color = '#ef4444';
         } else if (data.state === 'DANGER' || data.buzzer === 'FAST') {
-          bVal.innerText = 'DỒN DẬP';
+          bVal.innerText = 'DON DAP';
           bVal.style.color = '#f97316';
         } else if (data.state === 'WARNING' || data.buzzer === 'SLOW') {
-          bVal.innerText = 'BÁO NHẸ (BÍP THƯA)';
+          bVal.innerText = 'BAO NHE (BIP THUA)';
           bVal.style.color = '#f59e0b';
         } else {
-          bVal.innerText = 'YÊN LẶNG (TẮT)';
+          bVal.innerText = 'YEN LANG (TAT)';
           bVal.style.color = '#94a3b8';
         }
       } catch (err) {
@@ -468,19 +585,22 @@ void setup() {
   Serial.println("FLOODGUARD - CHE DO ACCESS POINT (HARDWARE)");
   Serial.println("==========================================");
 
-  // Khởi tạo GPIO
+  // Khởi tạo GPIO cảm biến
   pinMode(PIN_TRIG, OUTPUT);
   pinMode(PIN_ECHO, INPUT);
   pinMode(PIN_RAIN_DO, INPUT);   // Cảm biến mưa chân Digital (Input-only GPIO 34)
-  pinMode(PIN_RAIN_ADC, INPUT);  // Cảm biến mưa chân Analog (Input-only GPIO 35)
+  pinMode(PIN_RAIN_ADC, INPUT);  // Cảm biến mưa chân Analog  (Input-only GPIO 35)
 
-  pinMode(PIN_RELAY, OUTPUT);
+  // [KỸ THUẬT 1] Relay: Khởi động ở High-Z (INPUT)
+  // Đảm bảo bơm TẮT hoàn toàn khi boot, tránh GPIO floating kích relay
+  pinMode(PIN_RELAY, INPUT);
+
+  // Khởi tạo GPIO đầu ra
   pinMode(PIN_BUZZER, OUTPUT);
   pinMode(PIN_LED_GREEN, OUTPUT);
   pinMode(PIN_LED_YELLOW, OUTPUT);
   pinMode(PIN_LED_RED, OUTPUT);
 
-  digitalWrite(PIN_RELAY, RELAY_OFF); // Active LOW: HIGH = TẮT bơm khi khởi động
   digitalWrite(PIN_LED_GREEN, LOW);
   digitalWrite(PIN_LED_YELLOW, LOW);
   digitalWrite(PIN_LED_RED, LOW);
@@ -519,20 +639,21 @@ void setup() {
 }
 
 void loop() {
+  // [KỸ THUẬT 3] Toàn bộ non-blocking - không có delay() chặn luồng
+
   // 1. Phục vụ yêu cầu Web Server
   server.handleClient();
 
-  // 2. Chu kỳ đọc cảm biến và đánh giá logic FSM (mỗi 100ms)
   unsigned long now = millis();
-  if (now - lastSensorRead >= 100) {
+
+  // 2. Chu kỳ đọc cảm biến và đánh giá FSM (mỗi 150ms)
+  //    Tăng lên 150ms vì readUltrasonicCM() mất ~36ms (3 mẫu x 12ms)
+  if (now - lastSensorRead >= 150) {
     lastSensorRead = now;
     updateSensors();
     evaluateSystemStateAuto();
   }
 
-  // 3. Cập nhật thiết bị chấp hành, LED và nhịp còi liên tục (non-blocking)
+  // 3. Cập nhật thiết bị chấp hành, LED và nhịp còi (non-blocking)
   applyOutputs();
-
-  delay(10);
 }
-

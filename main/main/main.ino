@@ -29,7 +29,7 @@ const char* AP_PASS = "12345678"; // Tối thiểu 8 ký tự
 const float DISTANCE_EMPTY = 50.0;  // Khoảng cách cạn hồ (cm) - 0%
 const float DISTANCE_FULL  = 5.0;   // Khoảng cách đầy tràn (cm) - 100%
 
-// Dải trễ (Hysteresis) FSM - Vào trạng thái
+// Dải trễ (Hysteresis) FSM - Vào trạng thái mực nước
 const int THRESHOLD_WARN_ENTER   = 21;
 const int THRESHOLD_DANGER_ENTER = 41;
 const int THRESHOLD_CRIT_ENTER   = 71;
@@ -38,10 +38,16 @@ const int THRESHOLD_CRIT_ENTER   = 71;
 const int THRESHOLD_DANGER_EXIT  = 40;
 const int THRESHOLD_WARN_EXIT    = 20;
 
-// [KỸ THUẬT 4] Hysteresis riêng cho Bơm chống rung giật (Chattering) Relay:
-// Bật bơm khi nước >=65%, Tắt bơm khi nước <40%
-const int PUMP_ON_THRESHOLD   = 65;
-const int PUMP_OFF_THRESHOLD  = 40;
+// ==========================================
+// CẤP ĐỘ CẢM BIẾN MƯA (ESP32 ADC 12-bit: 0 - 4095)
+// ==========================================
+// - Khô ráo (Không mưa): ADC ~ 3200 - 4095
+// - Mưa nhỏ / Vài giọt (Light Rain): ADC < 2800 hoặc DO == LOW -> Mức WARNING
+// - Mưa to / Nhúng 1 phần (Heavy Rain): ADC < 1800 -> Mức DANGER (Bơm BẬT, Van 50%)
+// - Nhúng hết vào nước / Mưa bão cực to (Submerged): ADC < 1100 -> Mức CRITICAL (Bơm BẬT, Van 100%)
+const int RAIN_ADC_LIGHT       = 2800;
+const int RAIN_ADC_HEAVY       = 1800;
+const int RAIN_ADC_SUBMERGED   = 1100;
 
 // Các trạng thái của hệ thống (FSM)
 enum SystemState {
@@ -153,14 +159,21 @@ void updateSensors() {
 
   // Đọc cảm biến mưa (Chân DO GPIO 34 và AO GPIO 35)
   // - DO: LOW khi phát hiện đọng nước mưa (qua bộ so sánh LM393)
-  // - AO: ADC 12-bit (0 - 4095), điện trở giảm khi có nước tiếp xúc -> ADC < 2500
+  // - AO: ADC 12-bit (0 - 4095), điện trở giảm khi có nước tiếp xúc
   rainRawADC = analogRead(PIN_RAIN_ADC);
   bool rainDO = (digitalRead(PIN_RAIN_DO) == LOW);
-  isRaining = rainDO || (rainRawADC < 2500);
+  isRaining = rainDO || (rainRawADC < RAIN_ADC_LIGHT);
 
-  // [DEBUG] In ra Serial Monitor mỗi lần đọc cảm biến
-  Serial.printf("[SENSOR] Dist=%.1fcm | Water=%d%% | RainDO=%d | RainADC=%d | Raining=%d\n",
-    currentDistance, waterPercent, rainDO ? 1 : 0, rainRawADC, isRaining ? 1 : 0);
+  // [DEBUG] In ra Serial Monitor mỗi 1 giây để theo dõi rõ các giá trị
+  static unsigned long lastSensorLog = 0;
+  if (millis() - lastSensorLog >= 1000) {
+    lastSensorLog = millis();
+    const char* rainLevelStr = (rainRawADC < RAIN_ADC_SUBMERGED) ? "NGAP_NUOC (CRITICAL)" :
+                               (rainRawADC < RAIN_ADC_HEAVY)     ? "MUA_TO (DANGER)" :
+                               (isRaining)                       ? "MUA_NHO (WARNING)" : "KHO_RAO (NORMAL)";
+    Serial.printf("[SENSOR] Dist=%.1fcm (%d%%) | RainDO=%d | RainADC=%d | Muc: %s\n",
+      currentDistance, waterPercent, rainDO ? 1 : 0, rainRawADC, rainLevelStr);
+  }
 }
 
 // ==========================================
@@ -169,73 +182,78 @@ void updateSensors() {
 void evaluateSystemStateAuto() {
   if (!isAutoMode) return;
 
-  // --- Chuyển trạng thái FSM ---
-  // Cảm biến mưa (isRaining) kết hợp với mực nước (waterPercent) để xác định trạng thái.
-  // isRaining một mình có thể kích WARNING (cảnh báo dự phòng trước khi nước dâng).
-  // Khi nước dâng cao (>= ngưỡng DANGER/CRITICAL), FSM leo thang bất kể trạng thái mưa.
+  // Xác định các cấp độ mưa
+  bool isLightRain = isRaining;                         // ADC < 2800 hoặc DO == LOW (Mưa nhỏ)
+  bool isHeavyRain = (rainRawADC < RAIN_ADC_HEAVY);     // ADC < 1800 (Mưa to / nhúng 1 phần)
+  bool isSubmerged = (rainRawADC < RAIN_ADC_SUBMERGED); // ADC < 1100 (Nhúng ngập hết vào nước / mưa xối xả)
+
+  // --- Chuyển trạng thái FSM (kết hợp cả Mực nước và Cảm biến mưa) ---
   switch (sysState) {
 
     case STATE_NORMAL:
-      if (waterPercent >= THRESHOLD_WARN_ENTER) {
-        sysState = STATE_WARNING;  // Mực nước dâng
-      } else if (isRaining) {
-        sysState = STATE_WARNING;  // [FIX] Phát hiện mưa -> cảnh báo sớm
+      if (waterPercent >= THRESHOLD_CRIT_ENTER || isSubmerged) {
+        sysState = STATE_CRITICAL; // Mực nước ngập sâu hoặc nhúng chìm cảm biến mưa
+      } else if (waterPercent >= THRESHOLD_DANGER_ENTER || isHeavyRain || (isLightRain && waterPercent >= THRESHOLD_WARN_ENTER)) {
+        sysState = STATE_DANGER;   // Mực nước nguy hiểm hoặc mưa to
+      } else if (waterPercent >= THRESHOLD_WARN_ENTER || isLightRain) {
+        sysState = STATE_WARNING;  // Mực nước dâng hoặc có mưa nhỏ
       }
       break;
 
     case STATE_WARNING:
-      if (waterPercent >= THRESHOLD_DANGER_ENTER) {
-        sysState = STATE_DANGER;
-      } else if (waterPercent < THRESHOLD_WARN_EXIT && !isRaining) {
-        // [FIX] Thoát WARNING chỉ khi VỪA mực nước thấp VỪA không còn mưa
-        sysState = STATE_NORMAL;
-      }
-      break;
-
-    case STATE_DANGER:
-      if (waterPercent >= THRESHOLD_CRIT_ENTER) {
+      if (waterPercent >= THRESHOLD_CRIT_ENTER || isSubmerged) {
         sysState = STATE_CRITICAL;
-      } else if (waterPercent < THRESHOLD_DANGER_EXIT) {
-        sysState = STATE_WARNING;
+      } else if (waterPercent >= THRESHOLD_DANGER_ENTER || isHeavyRain || (isLightRain && waterPercent >= 30)) {
+        sysState = STATE_DANGER;
+      } else if (waterPercent < THRESHOLD_WARN_EXIT && !isLightRain) {
+        sysState = STATE_NORMAL;   // Nước cạn và tạnh mưa hoàn toàn
+      }
+      break;
+
+    case STATE_DANGER:
+      if (waterPercent >= THRESHOLD_CRIT_ENTER || isSubmerged || (isHeavyRain && waterPercent >= 30)) {
+        sysState = STATE_CRITICAL;
+      } else if (waterPercent < THRESHOLD_DANGER_EXIT && !isHeavyRain) {
+        sysState = STATE_WARNING;  // Nước rút và lượng mưa giảm
       }
       break;
 
     case STATE_CRITICAL:
-      if (waterPercent < THRESHOLD_CRIT_ENTER) {
-        sysState = STATE_DANGER;
+      if (waterPercent < THRESHOLD_CRIT_ENTER && !isSubmerged) {
+        sysState = STATE_DANGER;   // Rút khỏi mức ngập nghiêm trọng
       }
       break;
   }
 
-  // --- [KỸ THUẬT 4] Hysteresis riêng cho Bơm ---
-  // Bơm bật từ ngưỡng DANGER (41%) để xả nước kịp thời.
-  // Chỉ tắt bơm khi nước rút sâu xuống <40% tránh relay đóng/ngắt chập chờn.
-  if (!pumpState && waterPercent >= THRESHOLD_DANGER_ENTER) {
-    pumpState = true;   // Bật bơm khi đạt ngưỡng DANGER
-  } else if (pumpState && waterPercent < PUMP_OFF_THRESHOLD) {
-    pumpState = false;  // Tắt bơm khi nước rút đủ sâu
-  }
-
-  // --- Gán Van theo trạng thái FSM ---
+  // --- Điều khiển Bơm và Van theo trạng thái FSM (Hysteresis) ---
   switch (sysState) {
     case STATE_NORMAL:
+      pumpState    = false;
+      valvePercent = 0;    // Van đóng hoàn toàn 0°
+      break;
+
     case STATE_WARNING:
-      valvePercent = 0;
+      pumpState    = false;
+      valvePercent = 0;    // Van đóng hoàn toàn 0°
       break;
+
     case STATE_DANGER:
-      valvePercent = 50;
+      pumpState    = true; // BẬT máy bơm 5V
+      valvePercent = 50;   // Mở van thoát lũ 50% (90°)
       break;
+
     case STATE_CRITICAL:
-      valvePercent = 100;
+      pumpState    = true; // BẬT máy bơm 5V
+      valvePercent = 100;  // Mở van thoát lũ tối đa 100% (180°)
       break;
   }
 
-  // [DEBUG] In trạng thái FSM ra Serial
+  // [DEBUG] In trạng thái FSM ra Serial khi có thay đổi
   static SystemState lastDebugState = (SystemState)99;
   if (sysState != lastDebugState) {
     const char* stNames[] = {"NORMAL", "WARNING", "DANGER", "CRITICAL"};
-    Serial.printf("[FSM] State: %s | Water: %d%% | Rain: %d | Pump: %d | Valve: %d%%\n",
-      stNames[sysState], waterPercent, isRaining ? 1 : 0, pumpState ? 1 : 0, valvePercent);
+    Serial.printf("\n>>> [FSM CHUYEN TRANG THAI] %s | Nuoc: %d%% | RainADC: %d | Bom: %s | Van: %d%%\n\n",
+      stNames[sysState], waterPercent, rainRawADC, pumpState ? "BAT" : "TAT", valvePercent);
     lastDebugState = sysState;
   }
 }
@@ -439,8 +457,20 @@ const char HTML_DASHBOARD[] PROGMEM = R"rawliteral(
           data.state === 'DANGER'   ? 'badge-danger'  : 'badge-critical'
         );
 
-        document.getElementById('rainVal').innerText = data.rain ? 'CO MUA !' : 'KHONG MUA';
-        document.getElementById('rainVal').style.color = data.rain ? '#38bdf8' : '#94a3b8';
+        let rainText = 'KHONG MUA';
+        let rainColor = '#94a3b8';
+        if (data.rain_adc < 1100) {
+          rainText = 'NGAP / MUA CUC TO !';
+          rainColor = '#ef4444';
+        } else if (data.rain_adc < 1800) {
+          rainText = 'MUA TO !';
+          rainColor = '#f59e0b';
+        } else if (data.rain) {
+          rainText = 'MUA NHO';
+          rainColor = '#38bdf8';
+        }
+        document.getElementById('rainVal').innerText = rainText;
+        document.getElementById('rainVal').style.color = rainColor;
         document.getElementById('rainAdcVal').innerText = data.rain_adc;
 
         const mBadge = document.getElementById('modeBadge');

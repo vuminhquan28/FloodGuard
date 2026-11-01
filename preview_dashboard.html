@@ -141,8 +141,13 @@
         <input type="range" id="waterSlider" min="0" max="100" value="15" oninput="onWaterSlider(this.value)">
       </label>
       <label>
-        Mưa: 
-        <input type="checkbox" id="rainCheckbox" onchange="onRainToggle(this.checked)">
+        Cảm biến mưa: 
+        <select id="rainSelect" onchange="onRainSelect(this.value)" style="background: #1e293b; color: white; border: 1px solid #475569; padding: 4px 8px; border-radius: 6px; font-size: 0.8rem;">
+          <option value="none">Khô ráo (Không mưa)</option>
+          <option value="light">Mưa nhỏ (WARNING)</option>
+          <option value="heavy">Mưa to (DANGER)</option>
+          <option value="submerged">Nhúng ngập nước (CRITICAL)</option>
+        </select>
       </label>
       <button onclick="mockAutoState()">Tự động đánh giá FSM</button>
       <button onclick="resetMock()">Reset Mặc Định</button>
@@ -180,8 +185,20 @@
         data.state === 'DANGER'   ? 'badge-danger'  : 'badge-critical'
       );
 
-      document.getElementById('rainVal').innerText = data.rain ? 'CÓ MƯA !' : 'KHÔNG MƯA';
-      document.getElementById('rainVal').style.color = data.rain ? '#38bdf8' : '#94a3b8';
+      let rainText = 'KHÔNG MƯA';
+      let rainColor = '#94a3b8';
+      if (data.rain_adc < 1100) {
+        rainText = 'NGẬP / MƯA CỰC TO !';
+        rainColor = '#ef4444';
+      } else if (data.rain_adc < 1800) {
+        rainText = 'MƯA TO !';
+        rainColor = '#f59e0b';
+      } else if (data.rain) {
+        rainText = 'MƯA NHỎ';
+        rainColor = '#38bdf8';
+      }
+      document.getElementById('rainVal').innerText = rainText;
+      document.getElementById('rainVal').style.color = rainColor;
       document.getElementById('rainAdcVal').innerText = data.rain_adc;
 
       const mBadge = document.getElementById('modeBadge');
@@ -218,25 +235,41 @@
       renderUI(mockData);
     }
 
-    function onRainToggle(checked) {
-      mockData.rain = checked;
-      mockData.rain_adc = checked ? 1200 : 3800;
+    function onRainSelect(level) {
+      if (level === 'submerged') {
+        mockData.rain = true;
+        mockData.rain_adc = 650;
+      } else if (level === 'heavy') {
+        mockData.rain = true;
+        mockData.rain_adc = 1450;
+      } else if (level === 'light') {
+        mockData.rain = true;
+        mockData.rain_adc = 2300;
+      } else {
+        mockData.rain = false;
+        mockData.rain_adc = 3850;
+      }
+      evaluateMockFSM();
       renderUI(mockData);
     }
 
     function evaluateMockFSM() {
       if (mockData.mode === 'AUTO') {
-        if (mockData.water >= 71) {
+        const isSubmerged = mockData.rain_adc < 1100;
+        const isHeavy = mockData.rain_adc < 1800;
+        const isLight = mockData.rain;
+
+        if (mockData.water >= 71 || isSubmerged) {
           mockData.state = "CRITICAL";
           mockData.pump = true;
           mockData.valve = 100;
           mockData.buzzer = "CONTINUOUS";
-        } else if (mockData.water >= 41) {
+        } else if (mockData.water >= 41 || isHeavy || (isLight && mockData.water >= 21)) {
           mockData.state = "DANGER";
           mockData.pump = true;
           mockData.valve = 50;
           mockData.buzzer = "FAST";
-        } else if (mockData.water >= 21) {
+        } else if (mockData.water >= 21 || isLight) {
           mockData.state = "WARNING";
           mockData.pump = false;
           mockData.valve = 0;

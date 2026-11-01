@@ -29,7 +29,11 @@
 // 5cm  = Đỉnh bể / Tràn đầy (100%)
 const float DISTANCE_EMPTY = 50.0;
 const float DISTANCE_FULL  = 5.0;
-const int   RAIN_THRESHOLD = 1800; // ADC > 1800 xem như có mưa
+
+// Ngưỡng cảm biến mưa (Chiết áp / ADC 12-bit: 0 - 4095)
+const int RAIN_ADC_LIGHT      = 2800; // Mưa nhỏ / ẩm ướt
+const int RAIN_ADC_HEAVY      = 1800; // Mưa to / vặn chiết áp thấp
+const int RAIN_ADC_SUBMERGED  = 1100; // Ngập hoàn toàn / vặn chiết áp sát 0
 
 // Định nghĩa trạng thái hệ thống
 enum SystemState {
@@ -86,60 +90,74 @@ void updateSensors() {
   waterPercent = (int)constrain(round(rawPercent), 0, 100);
 
   rainRawADC = analogRead(PIN_RAIN_ADC);
-  isRaining = (rainRawADC > RAIN_THRESHOLD);
+  isRaining = (rainRawADC < RAIN_ADC_LIGHT);
 }
 
 // ==========================================
 // THUẬT TOÁN FSM & HYSTERESIS (UC03, UC04, UC05)
 // ==========================================
 void evaluateSystemStateAuto() {
-  // Logic Hysteresis chống dao động ngưỡng:
-  // 1. Khi nước dâng cao
-  if (waterPercent >= 71) {
-    sysState = STATE_CRITICAL;
-  } else if (waterPercent >= 41) {
-    if (sysState == STATE_CRITICAL && waterPercent > 65) {
-      // Giữ CRITICAL nếu chưa giảm rõ rệt
-      sysState = STATE_CRITICAL;
-    } else {
-      sysState = STATE_DANGER;
-    }
-  } else if (waterPercent >= 21) {
-    // Nếu đang ở DANGER và giảm xuống, chỉ tắt bơm khi nước rút < 40% (UC04)
-    if (sysState == STATE_DANGER && waterPercent >= 40) {
-      sysState = STATE_DANGER;
-    } else {
-      sysState = STATE_WARNING;
-    }
-  } else {
-    // Mực nước <= 20%
-    if (sysState == STATE_WARNING && waterPercent > 18) {
-      sysState = STATE_WARNING;
-    } else {
-      sysState = STATE_NORMAL;
-    }
+  if (!isAutoMode) return;
+
+  bool isLightRain = isRaining;
+  bool isHeavyRain = (rainRawADC < RAIN_ADC_HEAVY);
+  bool isSubmerged = (rainRawADC < RAIN_ADC_SUBMERGED);
+
+  // Logic Hysteresis kết hợp mực nước và cấp độ mưa:
+  switch (sysState) {
+    case STATE_NORMAL:
+      if (waterPercent >= 71 || isSubmerged) {
+        sysState = STATE_CRITICAL;
+      } else if (waterPercent >= 41 || isHeavyRain || (isLightRain && waterPercent >= 21)) {
+        sysState = STATE_DANGER;
+      } else if (waterPercent >= 21 || isLightRain) {
+        sysState = STATE_WARNING;
+      }
+      break;
+
+    case STATE_WARNING:
+      if (waterPercent >= 71 || isSubmerged) {
+        sysState = STATE_CRITICAL;
+      } else if (waterPercent >= 41 || isHeavyRain || (isLightRain && waterPercent >= 30)) {
+        sysState = STATE_DANGER;
+      } else if (waterPercent < 20 && !isLightRain) {
+        sysState = STATE_NORMAL;
+      }
+      break;
+
+    case STATE_DANGER:
+      if (waterPercent >= 71 || isSubmerged || (isHeavyRain && waterPercent >= 30)) {
+        sysState = STATE_CRITICAL;
+      } else if (waterPercent < 40 && !isHeavyRain) {
+        sysState = STATE_WARNING;
+      }
+      break;
+
+    case STATE_CRITICAL:
+      if (waterPercent < 71 && !isSubmerged) {
+        sysState = STATE_DANGER;
+      }
+      break;
   }
 
   // Tự động điều khiển Bơm và Van theo trạng thái FSM (AUTO)
-  if (isAutoMode) {
-    switch (sysState) {
-      case STATE_NORMAL:
-        pumpState = false;
-        valvePercent = 0;
-        break;
-      case STATE_WARNING:
-        pumpState = false;
-        valvePercent = 0;
-        break;
-      case STATE_DANGER:
-        pumpState = true;
-        valvePercent = 50;
-        break;
-      case STATE_CRITICAL:
-        pumpState = true;
-        valvePercent = 100;
-        break;
-    }
+  switch (sysState) {
+    case STATE_NORMAL:
+      pumpState = false;
+      valvePercent = 0;
+      break;
+    case STATE_WARNING:
+      pumpState = false;
+      valvePercent = 0;
+      break;
+    case STATE_DANGER:
+      pumpState = true;
+      valvePercent = 50;
+      break;
+    case STATE_CRITICAL:
+      pumpState = true;
+      valvePercent = 100;
+      break;
   }
 }
 

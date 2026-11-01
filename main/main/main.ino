@@ -70,7 +70,7 @@ bool isAutoMode       = true;
 
 // Biến điều khiển thời gian non-blocking
 unsigned long lastSensorRead   = 0;
-unsigned long lastBuzzerBlink  = 0;
+unsigned long lastDebugPrint   = 0;  // Debug Serial mỗi 2 giây
 bool buzzerToggle              = false;
 
 // ==========================================
@@ -157,6 +157,10 @@ void updateSensors() {
   rainRawADC = analogRead(PIN_RAIN_ADC);
   bool rainDO = (digitalRead(PIN_RAIN_DO) == LOW);
   isRaining = rainDO || (rainRawADC < 2500);
+
+  // [DEBUG] In ra Serial Monitor mỗi lần đọc cảm biến
+  Serial.printf("[SENSOR] Dist=%.1fcm | Water=%d%% | RainDO=%d | RainADC=%d | Raining=%d\n",
+    currentDistance, waterPercent, rainDO ? 1 : 0, rainRawADC, isRaining ? 1 : 0);
 }
 
 // ==========================================
@@ -165,18 +169,25 @@ void updateSensors() {
 void evaluateSystemStateAuto() {
   if (!isAutoMode) return;
 
-  // --- Chuyển trạng thái FSM (dựa theo mực nước) ---
+  // --- Chuyển trạng thái FSM ---
+  // Cảm biến mưa (isRaining) kết hợp với mực nước (waterPercent) để xác định trạng thái.
+  // isRaining một mình có thể kích WARNING (cảnh báo dự phòng trước khi nước dâng).
+  // Khi nước dâng cao (>= ngưỡng DANGER/CRITICAL), FSM leo thang bất kể trạng thái mưa.
   switch (sysState) {
+
     case STATE_NORMAL:
       if (waterPercent >= THRESHOLD_WARN_ENTER) {
-        sysState = STATE_WARNING;
+        sysState = STATE_WARNING;  // Mực nước dâng
+      } else if (isRaining) {
+        sysState = STATE_WARNING;  // [FIX] Phát hiện mưa -> cảnh báo sớm
       }
       break;
 
     case STATE_WARNING:
       if (waterPercent >= THRESHOLD_DANGER_ENTER) {
         sysState = STATE_DANGER;
-      } else if (waterPercent < THRESHOLD_WARN_EXIT) {
+      } else if (waterPercent < THRESHOLD_WARN_EXIT && !isRaining) {
+        // [FIX] Thoát WARNING chỉ khi VỪA mực nước thấp VỪA không còn mưa
         sysState = STATE_NORMAL;
       }
       break;
@@ -197,12 +208,12 @@ void evaluateSystemStateAuto() {
   }
 
   // --- [KỸ THUẬT 4] Hysteresis riêng cho Bơm ---
-  // Tách rời khỏi FSM trạng thái để tránh relay đóng/ngắt liên tục ở vùng biên ngưỡng.
-  // Bật bơm khi nước >=65%, chỉ tắt bơm khi nước rút xuống <40%.
-  if (!pumpState && waterPercent >= PUMP_ON_THRESHOLD) {
-    pumpState = true;
+  // Bơm bật từ ngưỡng DANGER (41%) để xả nước kịp thời.
+  // Chỉ tắt bơm khi nước rút sâu xuống <40% tránh relay đóng/ngắt chập chờn.
+  if (!pumpState && waterPercent >= THRESHOLD_DANGER_ENTER) {
+    pumpState = true;   // Bật bơm khi đạt ngưỡng DANGER
   } else if (pumpState && waterPercent < PUMP_OFF_THRESHOLD) {
-    pumpState = false;
+    pumpState = false;  // Tắt bơm khi nước rút đủ sâu
   }
 
   // --- Gán Van theo trạng thái FSM ---
@@ -217,6 +228,15 @@ void evaluateSystemStateAuto() {
     case STATE_CRITICAL:
       valvePercent = 100;
       break;
+  }
+
+  // [DEBUG] In trạng thái FSM ra Serial
+  static SystemState lastDebugState = (SystemState)99;
+  if (sysState != lastDebugState) {
+    const char* stNames[] = {"NORMAL", "WARNING", "DANGER", "CRITICAL"};
+    Serial.printf("[FSM] State: %s | Water: %d%% | Rain: %d | Pump: %d | Valve: %d%%\n",
+      stNames[sysState], waterPercent, isRaining ? 1 : 0, pumpState ? 1 : 0, valvePercent);
+    lastDebugState = sysState;
   }
 }
 
@@ -594,9 +614,10 @@ void loop() {
   // 1. Phục vụ yêu cầu Web Server
   server.handleClient();
 
+  unsigned long now = millis();
+
   // 2. Chu kỳ đọc cảm biến và đánh giá FSM (mỗi 150ms)
   //    Tăng lên 150ms vì readUltrasonicCM() mất ~36ms (3 mẫu x 12ms)
-  unsigned long now = millis();
   if (now - lastSensorRead >= 150) {
     lastSensorRead = now;
     updateSensors();

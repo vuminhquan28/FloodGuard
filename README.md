@@ -37,10 +37,17 @@ Hệ thống IoT ứng dụng **ESP32** kết hợp cảm biến siêu âm HC-SR
 
 ## 📋 Phân Tích & Đặc Tả 10 Trường Hợp Sử Dụng (Use Cases)
 
-Trong thiết kế hệ thống nhúng thời gian thực (Real-Time Embedded Systems), **Ranh giới hệ thống (System Boundary)** được xác định là **Firmware / Bộ điều khiển trung tâm ESP32**. Mọi đối tượng bên ngoài ranh giới này tương tác, tạo kích thích (*Stimulus*) hoặc nhận phản hồi (*Response*) đều là **Tác nhân (Actor)**:
-1. **Tác nhân Môi trường vật lý (Environmental Actors):** Mặt nước hồ thu / Khối nước lũ (phản xạ sóng siêu âm), Hạt mưa / Nước đọng (thay đổi điện trở bề mặt bản cực cảm biến).
-2. **Tác nhân Ngoại vi phần cứng (Hardware Peripheral Actors):** Khối cảm biến (HC-SR04, Cảm biến mưa FC-37/LM393), Khối chấp hành (Relay & Máy bơm 5V, Servo SG90, Cụm 3 LED, Còi Buzzer 5V).
-3. **Tác nhân Con người & Hệ thống mạng (Human & Network Actors):** Người vận hành / Giám sát viên qua Trình duyệt Web, Hạ tầng mạng Wi-Fi (SoftAP / Station).
+### 🎯 Phân định Ranh giới Hệ thống & Tác nhân (Strict UML Actors)
+Theo chuẩn mô hình hóa Use Case UML, ranh giới hệ thống (**System Boundary**) bao trùm toàn bộ **Hệ thống Trạm FloodGuard** gồm: Vi điều khiển ESP32, các cảm biến (HC-SR04, cảm biến mưa FC-37), các cơ cấu chấp hành (Relay, máy bơm, Servo van xả) và khối chỉ thị (LED, còi Buzzer).
+
+Tất cả các sensor, linh kiện, còi, đèn là **thành phần nội tại của hệ thống**, trực tiếp nhận tín hiệu vật lý hoặc tác động ra ngoài. **Chỉ có các thực thể bên ngoài tương tác với trạm mới là Tác nhân (Actors)**:
+1. **Tác nhân Môi trường Tự nhiên (Environmental Actors):**
+   * *Mặt nước hồ thu (Mực nước lũ):* Phản xạ sóng siêu âm 40kHz; chịu tác động hút xả của máy bơm và van xả lũ.
+   * *Hiện tượng mưa rơi:* Hạt nước rơi làm giảm điện trở tiếp xúc trên bề mặt cảm biến mưa.
+   * *Khối nước tiêu thoát & Hồ chứa:* Nhận dòng chảy nước lũ xả ra từ cống thoát.
+2. **Tác nhân Con người (Human Actors):**
+   * *Người vận hành / Giám sát viên (Remote Supervisor):* Giám sát từ xa qua Web Dashboard, chuyển đổi chế độ và can thiệp cưỡng chế thiết bị.
+   * *Người dân & Kỹ thuật viên tại chỗ (Local Residents):* Tiếp nhận âm thanh báo động từ còi hú và ánh sáng chỉ thị từ cụm 3 LED tại trạm.
 
 ---
 
@@ -50,17 +57,15 @@ Trong thiết kế hệ thống nhúng thời gian thực (Real-Time Embedded Sy
 
 ```mermaid
 graph LR
-    subgraph Môi_Trường_Vật_Lý["Tác nhân Môi Trường"]
+    subgraph Tác_Nhân_Môi_Trường["Tác nhân Môi Trường (Bên Ngoài)"]
         WaterSurface["🌊 Mặt nước lũ hồ thu"]
         RainWater["🌧️ Hiện tượng mưa rơi"]
+        DrainBasin["🏞️ Hồ chứa & Khối nước xả"]
     end
 
-    subgraph Ngoại_Vi_Đầu_Vào["Khối Cảm Biến"]
-        HCSR04["📡 Cảm biến siêu âm HC-SR04"]
-        RainSensor["🌧️ Cảm biến mưa FC-37"]
-    end
-
-    subgraph FloodGuard_ESP32["Ranh giới Hệ Thống: Trạm ESP32 FloodGuard"]
+    subgraph FloodGuard_Subsystem["«subsystem» Hệ Thống Trạm FloodGuard (ESP32 & Ngoại Vi)"]
+        Sensors["📡 Khối Cảm Biến: HC-SR04 & Cảm biến mưa"]
+        
         UC01(("UC01: Đọc & Tiền Xử Lý Cảm Biến"))
         UC02(("UC02: Đánh Giá FSM & Hysteresis"))
         UC03(("UC03: Tự Động Điều Khiển Bơm"))
@@ -71,45 +76,37 @@ graph LR
         UC08(("UC08: Giám Sát Web Dashboard"))
         UC09(("UC09: Chuyển Chế Độ AUTO/MANUAL"))
         UC10(("UC10: Can Thiệp Cưỡng Chế Web"))
+        
+        Actuators["⚡ Khối Chấp Hành: Relay/Bơm, Servo Van, LED, Còi"]
     end
 
-    subgraph Khối_Chấp_Hành["Khối Chấp Hành Ngoại Vi"]
-        PumpRelay["⚡ Relay & Máy bơm mini 5V"]
-        ServoGate["🚪 Động cơ Servo SG90 Van xả"]
-        AlertUnits["🚨 Cụm 3 LED & Còi Buzzer"]
+    subgraph Tác_Nhân_Con_Người["Tác nhân Con Người (Bên Ngoài)"]
+        Operator["👤 Giám sát viên / Kỹ thuật viên (Từ xa)"]
+        Residents["👥 Người dân quanh trạm (Tại chỗ)"]
     end
 
-    subgraph Người_Dùng_Mạng["Người Dùng & Mạng"]
-        Operator["👤 Giám sát viên / Kỹ thuật viên"]
-        WiFiNet["📶 Mạng Wi-Fi & Web Browser"]
-    end
-
-    WaterSurface -->|Phản xạ sóng âm 40kHz| HCSR04
-    RainWater -->|Tiếp xúc giảm điện trở| RainSensor
-    HCSR04 -->|Xung Echo D12| UC01
-    RainSensor -->|ADC D35 & DO D34| UC01
+    WaterSurface -->|Phản xạ sóng siêu âm| Sensors
+    RainWater -->|Tiếp xúc dẫn điện bản cực| Sensors
+    Sensors -->|Xung Echo & ADC| UC01
 
     UC01 --> UC02
     UC02 --> UC03
     UC02 --> UC04
     UC02 --> UC05
 
-    UC03 -->|Active LOW & High-Z D23| PumpRelay
-    UC04 -->|Xung PWM D27| ServoGate
-    UC05 -->|Mức logic & Tần số D4/D18/D19/D21| AlertUnits
+    UC03 --> Actuators
+    UC04 --> Actuators
+    UC05 --> Actuators
 
-    PumpRelay -->|Bơm hút dòng chảy| WaterSurface
-    ServoGate -->|Kéo mở cửa cống| WaterSurface
-    AlertUnits -->|Âm thanh & Ánh sáng| Operator
+    Actuators -->|Bơm hút & xả lũ| DrainBasin
+    Actuators -->|Âm thanh còi & ánh sáng LED| Residents
 
-    WiFiNet --> UC06
-    UC07 <-->|JSON REST API| WiFiNet
-    Operator <-->|Theo dõi & Thao tác| WiFiNet
-    WiFiNet --> UC08
-    WiFiNet --> UC09
-    WiFiNet --> UC10
-    UC10 -.-> PumpRelay
-    UC10 -.-> ServoGate
+    Operator <-->|Theo dõi qua Web & API| UC07
+    Operator -->|Giám sát từ xa| UC08
+    Operator -->|Chuyển đổi AUTO/MANUAL| UC09
+    Operator -->|Can thiệp cưỡng chế| UC10
+    UC10 -.-> Actuators
+    Operator -.->|Mất kết nối timeout| UC06
 ```
 
 ---
@@ -137,7 +134,8 @@ graph LR
 
 #### 🔹 UC02: Tự động đánh giá ngưỡng trạng thái và xử lý chống rung (Hysteresis)
 * **Mã định danh:** `UC02`
-* **Tác nhân:** ESP32 Firmware (Máy trạng thái hữu hạn - Finite State Machine).
+* **Tác nhân ngoài:** Môi trường mưa lũ (biến thiên liên tục của mặt nước và lượng mưa dập dềnh).
+* **Thành phần hệ thống tham gia:** Firmware máy trạng thái hữu hạn (FSM) trên ESP32.
 * **Mục tiêu:** Xác định trạng thái vận hành của trạm và triệt tiêu hiện tượng rung giật đóng/ngắt thiết bị liên tục (chattering/jittering) khi mặt nước dập dềnh quanh biên ngưỡng.
 * **Tiền điều kiện:** Hệ thống đang ở chế độ `AUTO MODE` và dữ liệu cảm biến từ `UC01` đã sẵn sàng.
 * **Luồng sự kiện chính:**
@@ -158,10 +156,8 @@ graph LR
 
 #### 🔹 UC03: Tự động điều khiển máy bơm thoát nước
 * **Mã định danh:** `UC03`
-* **Tác nhân:** 
-  * *Tác nhân Vi điều khiển:* ESP32 (GPIO 23).
-  * *Tác nhân Ngoại vi:* Module Relay 1 kênh 5V (Active LOW, optocoupler), Máy bơm chìm mini 5V.
-  * *Tác nhân Môi trường:* Khối nước cần được bơm tiêu thoát ra ngoài bể chứa.
+* **Tác nhân ngoài:** Khối nước hồ thu cần tiêu thoát (chịu lực hút xả của máy bơm ra ngoài).
+* **Thành phần hệ thống tham gia:** Vi điều khiển ESP32 (GPIO 23), Module Relay 1 kênh 5V (Active LOW, optocoupler), Máy bơm chìm mini 5V.
 * **Mục tiêu:** Tự động kích hoạt máy bơm khi đạt ngưỡng nguy cơ và ngừng bơm khi nước đã rút về mức an toàn.
 * **Tiền điều kiện:** Chế độ `isAutoMode == true`.
 * **Luồng sự kiện chính:**
@@ -175,10 +171,8 @@ graph LR
 
 #### 🔹 UC04: Tự động điều khiển góc mở van thoát lũ
 * **Mã định danh:** `UC04`
-* **Tác nhân:** 
-  * *Tác nhân Vi điều khiển:* ESP32 (GPIO 27 - PWM Timer Hardware).
-  * *Tác nhân Ngoại vi:* Động cơ Servo SG90, Cửa van xả lũ hồ thu.
-  * *Tác nhân Môi trường:* Lưu lượng dòng chảy nước lũ xả qua cửa cống.
+* **Tác nhân ngoài:** Dòng chảy xả lũ & Hồ chứa nước (nhận lưu lượng nước qua cửa cống).
+* **Thành phần hệ thống tham gia:** Vi điều khiển ESP32 (GPIO 27 - PWM Timer), Động cơ Servo SG90, Cửa van xả lũ hồ thu.
 * **Mục tiêu:** Điều tiết lưu lượng xả lũ tự động tương ứng theo mức độ ngập của trạm.
 * **Tiền điều kiện:** Chế độ `isAutoMode == true`.
 * **Luồng sự kiện chính:**
@@ -195,10 +189,8 @@ graph LR
 
 #### 🔹 UC05: Tự động phát tín hiệu cảnh báo tại trạm (LED & Buzzer)
 * **Mã định danh:** `UC05`
-* **Tác nhân:** 
-  * *Tác nhân Vi điều khiển:* ESP32 (GPIO 21, 19, 18, 4).
-  * *Tác nhân Ngoại vi:* Cụm 3 LED chỉ thị (Xanh D21, Vàng D19, Đỏ D18), Còi báo động Active Buzzer 5V (D4).
-  * *Tác nhân Con người:* Người dân và kỹ thuật viên xung quanh trạm đo (tiếp nhận âm thanh/ánh sáng).
+* **Tác nhân ngoài:** Người dân quanh trạm & Cán bộ thực địa (tiếp nhận âm thanh/ánh sáng).
+* **Thành phần hệ thống tham gia:** Vi điều khiển ESP32 (GPIO 21, 19, 18, 4), Cụm 3 LED chỉ thị (Xanh D21, Vàng D19, Đỏ D18), Còi báo động Active Buzzer 5V (D4).
 * **Mục tiêu:** Cảnh báo trực quan tại chỗ bằng đèn LED và âm thanh đa cấp độ mà không gây chặn luồng xử lý (*Non-blocking*).
 * **Tiền điều kiện:** Chân GPIO LED và Buzzer được khởi tạo OUTPUT.
 * **Luồng sự kiện chính:**
@@ -215,9 +207,8 @@ graph LR
 
 #### 🔹 UC06: Tự động chuyển đổi an toàn khi mất kết nối mạng (Failsafe to AUTO)
 * **Mã định danh:** `UC06`
-* **Tác nhân:** 
-  * *Tác nhân Hệ thống:* Bộ định thời giám sát Watchdog / Heartbeat của ESP32.
-  * *Tác nhân Mạng:* Kết nối Wi-Fi Client / Sóng vô tuyến RF.
+* **Tác nhân ngoài:** Người vận hành từ xa (bị ngắt kết nối mạng hoặc rớt sóng Wi-Fi).
+* **Thành phần hệ thống tham gia:** Bộ định thời giám sát Heartbeat Timeout trên firmware ESP32.
 * **Mục tiêu:** Bảo vệ trạm tự động chống ngập úng khi người vận hành mất quyền giám sát từ xa hoặc rớt mạng Wi-Fi.
 * **Tiền điều kiện:** Hệ thống đang bị người vận hành gạt sang `MANUAL MODE`.
 * **Luồng sự kiện chính:**
@@ -226,7 +217,7 @@ graph LR
      * ESP32 lập tức phát tín hiệu cảnh báo mất kết nối.
      * Cưỡng chế đảo cờ `isAutoMode = true` (chuyển ngay về `AUTO MODE`).
      * Trao lại quyền điều khiển van xả và máy bơm cho thuật toán FSM và cảm biến.
-* **Hậu điều kiện:** Trạm duy trì tính năng tự trị (*Autonomous Controller*), ngăn chặn sự cố tràn bể nước do người dùng để quên ở chế độ thủ công.
+* **Hậu điều kiện:** Trạm duy trì tính năng tự trị (*Autonomous Controller*), ngăn ngừa rủi ro ngập úng khi người dùng để quên ở chế độ thủ công.
 
 ![Sơ đồ UC06](figures/uc06_network_failsafe.png)
 
@@ -234,9 +225,8 @@ graph LR
 
 #### 🔹 UC07: Truyền nhận dữ liệu thời gian thực qua giao thức Web (Telemetry & API)
 * **Mã định danh:** `UC07`
-* **Tác nhân:** 
-  * *Tác nhân Vi điều khiển:* ESP32 Web Server (thư viện `WebServer.h`, cổng 80).
-  * *Tác nhân Mạng & Ngoại vi:* Trình duyệt Web máy tính / điện thoại qua mạng Wi-Fi (SoftAP hoặc Station).
+* **Tác nhân ngoài:** Người vận hành / Giám sát viên (gửi HTTP request và nhận dữ liệu telemetry).
+* **Thành phần hệ thống tham gia:** ESP32 Web Server (thư viện `WebServer.h`, cổng 80).
 * **Mục tiêu:** Cung cấp các giao diện lập trình ứng dụng (REST API endpoints) đóng gói JSON để truyền tải thông số đo và nhận lệnh điều khiển.
 * **Tiền điều kiện:** Web Server khởi động thành công (`server.begin()`) trên cổng 80; Client kết nối chung dải mạng.
 * **Luồng sự kiện chính:**
@@ -254,9 +244,8 @@ graph LR
 
 #### 🔹 UC08: Giám sát trạng thái trạm từ xa trên Giao diện Web
 * **Mã định danh:** `UC08`
-* **Tác nhân:** 
-  * *Tác nhân Con người:* Người giám sát / Kỹ thuật viên vận hành trạm.
-  * *Tác nhân Phần mềm:* Trình duyệt Web (Chrome, Edge, Safari).
+* **Tác nhân ngoài:** Người giám sát / Kỹ thuật viên vận hành trạm.
+* **Thành phần hệ thống tham gia:** Giao diện Web Dashboard SPA (Single Page Application) phục vụ từ ESP32.
 * **Mục tiêu:** Hiển thị trực quan dữ liệu đo đạc và trạng thái phần cứng trên máy tính/điện thoại mà không cần màn hình LCD vật lý tại trạm.
 * **Tiền điều kiện:** Thiết bị người dùng đã kết nối vào mạng Wi-Fi của trạm (`FloodGuard_AP`) hoặc cùng Router Wi-Fi.
 * **Luồng sự kiện chính:**
@@ -275,9 +264,8 @@ graph LR
 
 #### 🔹 UC09: Chuyển đổi chế độ vận hành từ xa (AUTO / MANUAL)
 * **Mã định danh:** `UC09`
-* **Tác nhân:** 
-  * *Tác nhân Con người:* Kỹ thuật viên vận hành.
-  * *Tác nhân Phần mềm & Phần cứng:* Trình duyệt Web, ESP32 Controller.
+* **Tác nhân ngoài:** Kỹ thuật viên / Người vận hành.
+* **Thành phần hệ thống tham gia:** Web Dashboard và bộ điều phối trạng thái ESP32 Controller.
 * **Mục tiêu:** Phân quyền điều khiển linh hoạt giữa thuật toán tự động thông minh và sự can thiệp thủ công của con người.
 * **Tiền điều kiện:** Giao diện Web Dashboard đang kết nối bình thường với ESP32.
 * **Luồng sự kiện chính:**
@@ -295,9 +283,10 @@ graph LR
 
 #### 🔹 UC10: Điều khiển cưỡng chế thiết bị chấp hành từ Giao diện Web
 * **Mã định danh:** `UC10`
-* **Tác nhân:** 
-  * *Tác nhân Con người:* Kỹ thuật viên vận hành.
-  * *Tác nhân Vi điều khiển & Chấp hành:* ESP32, Module Relay máy bơm, Động cơ Servo van xả.
+* **Tác nhân ngoài:**
+  * *Người vận hành (Giám sát viên):* Thao tác nhấp nút điều khiển trực tiếp.
+  * *Khối nước hồ thu & Cửa cống:* Tiếp nhận hành động bơm xả theo lệnh cưỡng chế.
+* **Thành phần hệ thống tham gia:** Web Dashboard, ESP32, Module Relay máy bơm, Động cơ Servo van xả.
 * **Mục tiêu:** Bật/tắt bơm hoặc xoay góc van xả thủ công phục vụ kiểm tra thiết bị định kỳ, xả cặn đáy hồ, hoặc xử lý sự cố khẩn cấp.
 * **Tiền điều kiện:** Hệ thống đang ở chế độ `MANUAL MODE` (`isAutoMode == false`).
 * **Luồng sự kiện chính:**

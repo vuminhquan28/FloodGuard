@@ -84,23 +84,27 @@ graph LR
         WiFiNet["📶 Mạng Wi-Fi & Web Browser"]
     end
 
-    WaterSurface --> HCSR04
-    RainWater --> RainSensor
-    HCSR04 --> UC01
-    RainSensor --> UC01
+    WaterSurface -->|Phản xạ sóng âm 40kHz| HCSR04
+    RainWater -->|Tiếp xúc giảm điện trở| RainSensor
+    HCSR04 -->|Xung Echo D12| UC01
+    RainSensor -->|ADC D35 & DO D34| UC01
 
     UC01 --> UC02
     UC02 --> UC03
     UC02 --> UC04
     UC02 --> UC05
 
-    UC03 --> PumpRelay
-    UC04 --> ServoGate
-    UC05 --> AlertUnits
+    UC03 -->|Active LOW & High-Z D23| PumpRelay
+    UC04 -->|Xung PWM D27| ServoGate
+    UC05 -->|Mức logic & Tần số D4/D18/D19/D21| AlertUnits
+
+    PumpRelay -->|Bơm hút dòng chảy| WaterSurface
+    ServoGate -->|Kéo mở cửa cống| WaterSurface
+    AlertUnits -->|Âm thanh & Ánh sáng| Operator
 
     WiFiNet --> UC06
-    UC07 <--> WiFiNet
-    Operator --> WiFiNet
+    UC07 <-->|JSON REST API| WiFiNet
+    Operator <-->|Theo dõi & Thao tác| WiFiNet
     WiFiNet --> UC08
     WiFiNet --> UC09
     WiFiNet --> UC10

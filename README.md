@@ -37,17 +37,18 @@ Hệ thống IoT ứng dụng **ESP32** kết hợp cảm biến siêu âm HC-SR
 
 ## 📋 Phân Tích & Đặc Tả 10 Trường Hợp Sử Dụng (Use Cases)
 
-### 🎯 Phân định Ranh giới Hệ thống & Tác nhân (Strict UML Actors)
-Theo chuẩn mô hình hóa Use Case UML, ranh giới hệ thống (**System Boundary**) bao trùm toàn bộ **Hệ thống Trạm FloodGuard** gồm: Vi điều khiển ESP32, các cảm biến (HC-SR04, cảm biến mưa FC-37), các cơ cấu chấp hành (Relay, máy bơm, Servo van xả) và khối chỉ thị (LED, còi Buzzer).
-
-Tất cả các sensor, linh kiện, còi, đèn là **thành phần nội tại của hệ thống**, trực tiếp nhận tín hiệu vật lý hoặc tác động ra ngoài. **Chỉ có các thực thể bên ngoài tương tác với trạm mới là Tác nhân (Actors)**:
-1. **Tác nhân Môi trường Tự nhiên (Environmental Actors):**
-   * *Mặt nước hồ thu (Mực nước lũ):* Phản xạ sóng siêu âm 40kHz; chịu tác động hút xả của máy bơm và van xả lũ.
-   * *Hiện tượng mưa rơi:* Hạt nước rơi làm giảm điện trở tiếp xúc trên bề mặt cảm biến mưa.
-   * *Khối nước tiêu thoát & Hồ chứa:* Nhận dòng chảy nước lũ xả ra từ cống thoát.
-2. **Tác nhân Con người (Human Actors):**
-   * *Người vận hành / Giám sát viên (Remote Supervisor):* Giám sát từ xa qua Web Dashboard, chuyển đổi chế độ và can thiệp cưỡng chế thiết bị.
-   * *Người dân & Kỹ thuật viên tại chỗ (Local Residents):* Tiếp nhận âm thanh báo động từ còi hú và ánh sáng chỉ thị từ cụm 3 LED tại trạm.
+### 🎯 Phân định Ranh giới Hệ thống & Tác nhân (Chuẩn UML 2.5)
+Theo chuẩn mô hình hóa Use Case UML 2.5 cho hệ thống nhúng và IoT:
+* **Ranh giới hệ thống (System Boundary):** Là phần mềm điều khiển trung tâm chạy trên ESP32 (**FloodGuard Firmware Controller**).
+* **Tác nhân chính (Primary Actors - Đặt bên trái):**
+  * **Người vận hành (Human Actor):** Tương tác từ xa qua trình duyệt Web Dashboard để theo dõi trạng thái, chuyển đổi chế độ và can thiệp cưỡng chế thiết bị.
+  * **Bộ định thời Timer / Watchdog (Internal Timer):** Kích hoạt định kỳ chu kỳ đo cảm biến, chu kỳ FSM và giám sát timeout mất mạng để chuyển về AUTO (Failsafe).
+* **Tác nhân phụ / Thiết bị ngoại vi (Secondary Actors - Đặt bên phải):**
+  * **`«device»` Cảm biến siêu âm HC-SR04 & Cảm biến mưa FC-37:** Cung cấp tín hiệu xung Echo và ADC/DO.
+  * **`«device»` Module Relay 5V & Máy bơm mini:** Nhận lệnh đóng/ngắt nguồn cho bơm.
+  * **`«device»` Động cơ Servo SG90:** Nhận xung PWM xoay góc mở van xả lũ (0°, 90°, 180°).
+  * **`«device»` Cụm 3 Đèn LED & Còi Buzzer 5V:** Nhận tín hiệu điều khiển cảnh báo tại trạm.
+  * **Người dân quanh trạm (Human Actor):** Thụ hưởng và tiếp nhận âm thanh báo động còi hú và ánh sáng chỉ thị LED tại thực địa.
 
 ---
 
@@ -57,56 +58,49 @@ Tất cả các sensor, linh kiện, còi, đèn là **thành phần nội tại
 
 ```mermaid
 graph LR
-    subgraph Tác_Nhân_Môi_Trường["Tác nhân Môi Trường (Bên Ngoài)"]
-        WaterSurface["🌊 Mặt nước lũ hồ thu"]
-        RainWater["🌧️ Hiện tượng mưa rơi"]
-        DrainBasin["🏞️ Hồ chứa & Khối nước xả"]
+    subgraph Tác_Nhân_Chính["Tác nhân Chính (Primary Actors)"]
+        Timer["⏱️ Bộ Định Thời Timer / Watchdog"]
+        Operator["👤 Người Vận Hành (Web Client)"]
     end
 
-    subgraph FloodGuard_Subsystem["«subsystem» Hệ Thống Trạm FloodGuard (ESP32 & Ngoại Vi)"]
-        Sensors["📡 Khối Cảm Biến: HC-SR04 & Cảm biến mưa"]
-        
+    subgraph FloodGuard_Firmware["«subsystem» Hệ Thống Trạm FloodGuard (ESP32 Firmware)"]
         UC01(("UC01: Đọc & Tiền Xử Lý Cảm Biến"))
         UC02(("UC02: Đánh Giá FSM & Hysteresis"))
         UC03(("UC03: Tự Động Điều Khiển Bơm"))
-        UC04(("UC04: Tự Động Điều Khiển Van"))
-        UC05(("UC05: Tự Động Báo Động LED/Còi"))
-        UC06(("UC06: Tự Động Failsafe về AUTO"))
-        UC07(("UC07: Truyền Nhận Telemetry API"))
+        UC04(("UC04: Tự Động Điều Khiển Van Lũ"))
+        UC05(("UC05: Phát Cảnh Báo LED & Còi"))
+        UC06(("UC06: Tự Động Chuyển An Toàn (Failsafe)"))
+        UC07(("UC07: Truyền Nhận Dữ Liệu Web API"))
         UC08(("UC08: Giám Sát Web Dashboard"))
-        UC09(("UC09: Chuyển Chế Độ AUTO/MANUAL"))
+        UC09(("UC09: Chuyển Đổi AUTO/MANUAL"))
         UC10(("UC10: Can Thiệp Cưỡng Chế Web"))
-        
-        Actuators["⚡ Khối Chấp Hành: Relay/Bơm, Servo Van, LED, Còi"]
     end
 
-    subgraph Tác_Nhân_Con_Người["Tác nhân Con Người (Bên Ngoài)"]
-        Operator["👤 Giám sát viên / Kỹ thuật viên (Từ xa)"]
-        Residents["👥 Người dân quanh trạm (Tại chỗ)"]
+    subgraph Tác_Nhân_Phụ_Ngoại_Vi["Tác nhân Phụ / Thiết bị («device» & Human)"]
+        Sensors["📡 «device» Cảm biến HC-SR04 & Mưa"]
+        PumpDevice["⚡ «device» Relay 5V & Bơm mini"]
+        ServoDevice["🚪 «device» Động cơ Servo SG90"]
+        AlertDevice["🚨 «device» Cụm 3 LED & Còi Buzzer"]
+        Residents["👥 Người Dân Quanh Trạm"]
     end
 
-    WaterSurface -->|Phản xạ sóng siêu âm| Sensors
-    RainWater -->|Tiếp xúc dẫn điện bản cực| Sensors
-    Sensors -->|Xung Echo & ADC| UC01
+    Timer -->|Kích hoạt chu kỳ đọc| UC01
+    Timer -->|Kích hoạt chu kỳ FSM| UC02
+    Timer -->|Timeout mất kết nối| UC06
 
-    UC01 --> UC02
-    UC02 --> UC03
-    UC02 --> UC04
-    UC02 --> UC05
+    Operator <-->|Gửi / nhận HTTP request| UC07
+    Operator -->|Theo dõi thông số| UC08
+    Operator -->|Gạt nút đổi chế độ| UC09
+    Operator -->|Bấm nút cưỡng chế| UC10
 
-    UC03 --> Actuators
-    UC04 --> Actuators
-    UC05 --> Actuators
+    UC01 --- Sensors
+    UC03 --- PumpDevice
+    UC04 --- ServoDevice
+    UC05 --- AlertDevice
+    UC05 -->|Âm thanh còi & ánh sáng LED| Residents
 
-    Actuators -->|Bơm hút & xả lũ| DrainBasin
-    Actuators -->|Âm thanh còi & ánh sáng LED| Residents
-
-    Operator <-->|Theo dõi qua Web & API| UC07
-    Operator -->|Giám sát từ xa| UC08
-    Operator -->|Chuyển đổi AUTO/MANUAL| UC09
-    Operator -->|Can thiệp cưỡng chế| UC10
-    UC10 -.-> Actuators
-    Operator -.->|Mất kết nối timeout| UC06
+    UC10 -.-> PumpDevice
+    UC10 -.-> ServoDevice
 ```
 
 ---
@@ -116,16 +110,14 @@ graph LR
 #### 🔹 UC01: Đọc và tiền xử lý dữ liệu cảm biến
 * **Mã định danh:** `UC01`
 * **Tác nhân:** 
-  * *Tác nhân Môi trường:* Khối nước hồ thu / Mặt thoáng dập dềnh (tác động phản xạ sóng siêu âm), Hạt mưa rơi / Nước đọng (tác động cơ học và dẫn điện).
-  * *Tác nhân Ngoại vi:* Cảm biến siêu âm HC-SR04 (Trig/Echo), Cảm biến mưa FC-37 (DO/AO).
-  * *Tác nhân Vi điều khiển:* ESP32 (Module GPIO Timer, ADC 12-bit).
+  * *Tác nhân chính:* Bộ định thời Timer 100ms.
+  * *Tác nhân phụ:* `«device»` Cảm biến siêu âm HC-SR04, `«device»` Cảm biến mưa FC-37.
 * **Mục tiêu:** Thu thập dữ liệu cảm biến sạch, loại bỏ xung gai nhiễu điện từ (EMI) và tính toán quy đổi ra % mực nước cùng các cấp độ mưa.
 * **Tiền điều kiện:** Cảm biến được cấp nguồn ổn định; chân Trig/Echo và AO/DO nối đúng sơ đồ chân.
-* **Luồng sự kiện chính:**
-  1. ESP32 định kỳ kích xung phát 10µs chân Trig (GPIO 13), đọc xung phản hồi Echo (GPIO 12) qua hàm `pulseIn()` với timeout 25ms.
-  2. Áp dụng **Bộ lọc trung vị (Median Filter of 3 samples)**: Lấy 3 mẫu liên tiếp cách nhau 12ms, loại bỏ mẫu ngoài dải ($2\text{cm} - 300\text{cm}$), sắp xếp lấy mẫu ở giữa; nếu lỗi do sụt áp thoáng qua thì giữ giá trị hợp lệ gần nhất (`lastValidDistance`).
-  3. Quy đổi khoảng cách thô sang phần trăm mực nước: $0\%$ (cạn $50\text{cm}$) đến $100\%$ (đầy tràn $5\text{cm}$).
-  4. Đọc chân số `DO` (GPIO 34) và chân tương tự `AO` (GPIO 35, ADC 12-bit), phân loại 3 cấp độ: Mưa nhỏ ($< 2800$), Mưa to ($< 1800$), Ngập nước ($< 1100$).
+* **Quan hệ «include» (Chuẩn UML 2.5):** UC01 trực tiếp gọi đồng thời 3 Use Case con (không nối chuỗi):
+  1. *Đo khoảng cách siêu âm (HC-SR04):* Kích xung Trig 10µs, đọc độ rộng xung Echo qua `pulseIn()`.
+  2. *Lọc trung vị 3 mẫu & Tính % nước:* Thuật toán Median Filter 3 mẫu loại bỏ gai nhiễu, quy đổi 50cm-5cm về 0%-100%.
+  3. *Đọc tín hiệu mưa & Phân cấp ADC/DO:* Đọc giá trị ADC và phân loại 3 cấp độ (mưa nhỏ, mưa to, ngập nước).
 * **Hậu điều kiện:** Cung cấp thông số chuẩn hóa `waterPercent`, `currentDistance`, `rainRawADC`, `isRaining`, `isHeavyRain`, `isSubmerged` cho FSM và Web Server.
 
 ![Sơ đồ UC01](figures/uc01_sensor_processing.png)
@@ -134,20 +126,12 @@ graph LR
 
 #### 🔹 UC02: Tự động đánh giá ngưỡng trạng thái và xử lý chống rung (Hysteresis)
 * **Mã định danh:** `UC02`
-* **Tác nhân ngoài:** Môi trường mưa lũ (biến thiên liên tục của mặt nước và lượng mưa dập dềnh).
-* **Thành phần hệ thống tham gia:** Firmware máy trạng thái hữu hạn (FSM) trên ESP32.
+* **Tác nhân chính:** Bộ định thời chu kỳ FSM (kích hoạt định kỳ).
 * **Mục tiêu:** Xác định trạng thái vận hành của trạm và triệt tiêu hiện tượng rung giật đóng/ngắt thiết bị liên tục (chattering/jittering) khi mặt nước dập dềnh quanh biên ngưỡng.
 * **Tiền điều kiện:** Hệ thống đang ở chế độ `AUTO MODE` và dữ liệu cảm biến từ `UC01` đã sẵn sàng.
-* **Luồng sự kiện chính:**
-  1. ESP32 đối chiếu `waterPercent` và cấp độ mưa với bảng quy tắc 4 trạng thái:
-     * **NORMAL (An toàn):** Nước $\le 20\%$, tạnh mưa.
-     * **WARNING (Cảnh báo sớm):** Nước $21\% - 40\%$ hoặc phát hiện có mưa nhỏ.
-     * **DANGER (Nguy cơ ngập):** Nước $41\% - 70\%$ hoặc có mưa to.
-     * **CRITICAL (Nguy cấp):** Nước $\ge 71\%$ hoặc cảm biến mưa ngập hoàn toàn trong nước.
-  2. Áp dụng cơ chế **Dải trễ (Hysteresis)** khi nước rút:
-     * Từ CRITICAL giảm xuống DANGER khi nước $< 71\%$ và hết ngập cảm biến mưa.
-     * Từ DANGER giảm xuống WARNING khi nước rút sâu $< 40\%$ (chênh lệch $\Delta = 1\%$ chống rung giật) và không còn mưa to.
-     * Từ WARNING giảm về NORMAL chỉ khi nước rút sâu $< 20\%$ và tạnh mưa hoàn toàn.
+* **Quan hệ «include»:** UC02 trực tiếp gọi:
+  * *Đánh giá 4 cấp độ (NORMAL - CRITICAL):* Đối chiếu % nước và cấp mưa với bảng quy tắc ngưỡng.
+  * *Áp dụng dải trễ Hysteresis chống rung:* Giữ xả cho đến khi nước rút sâu < 40% mới hạ trạng thái.
 * **Hậu điều kiện:** Biến `sysState` được cập nhật chính xác, kích hoạt điều khiển đồng bộ cho UC03, UC04, UC05.
 
 ![Sơ đồ UC02](figures/uc02_fsm_hysteresis.png)
@@ -156,13 +140,14 @@ graph LR
 
 #### 🔹 UC03: Tự động điều khiển máy bơm thoát nước
 * **Mã định danh:** `UC03`
-* **Tác nhân ngoài:** Khối nước hồ thu cần tiêu thoát (chịu lực hút xả của máy bơm ra ngoài).
-* **Thành phần hệ thống tham gia:** Vi điều khiển ESP32 (GPIO 23), Module Relay 1 kênh 5V (Active LOW, optocoupler), Máy bơm chìm mini 5V.
+* **Tác nhân:** 
+  * *Tác nhân chính:* Trình điều phối FSM.
+  * *Tác nhân phụ:* `«device»` Module Relay 5V & Máy bơm mini 5V.
 * **Mục tiêu:** Tự động kích hoạt máy bơm khi đạt ngưỡng nguy cơ và ngừng bơm khi nước đã rút về mức an toàn.
 * **Tiền điều kiện:** Chế độ `isAutoMode == true`.
-* **Luồng sự kiện chính:**
-  1. Khi FSM chạm mức `DANGER` (nước $\ge 41\%$ hoặc mưa to) hoặc `CRITICAL`: ESP32 bật bơm bằng cách cấu hình `pinMode(PIN_RELAY, OUTPUT)` và kéo chân xuống mức `LOW`. Tiếp điểm Relay đóng, cấp nguồn cho máy bơm mini chạy.
-  2. Khi nước rút xuống dưới ngưỡng an toàn $< 40\%$ và tạnh mưa to: ESP32 tắt bơm bằng **kỹ thuật High-Z** `pinMode(PIN_RELAY, INPUT)`. Chân GPIO thả nổi trở kháng cao, triệt tiêu hoàn toàn dòng rò $1.5\text{mA}$ qua optocoupler 5V, đảm bảo bơm ngắt dứt điểm $100\%$.
+* **Quan hệ «include»:** UC03 trực tiếp gọi:
+  * *Kích Relay Active LOW:* Bật bơm khi FSM ở mức DANGER hoặc CRITICAL.
+  * *Thả nổi High-Z INPUT:* Triệt tiêu dòng rò optocoupler 5V, ngắt bơm dứt điểm 100% khi an toàn.
 * **Hậu điều kiện:** Bơm duy trì hoạt động hoặc ngắt nghỉ đúng quy trình an toàn.
 
 ![Sơ đồ UC03](figures/uc03_pump_control.png)
@@ -171,16 +156,14 @@ graph LR
 
 #### 🔹 UC04: Tự động điều khiển góc mở van thoát lũ
 * **Mã định danh:** `UC04`
-* **Tác nhân ngoài:** Dòng chảy xả lũ & Hồ chứa nước (nhận lưu lượng nước qua cửa cống).
-* **Thành phần hệ thống tham gia:** Vi điều khiển ESP32 (GPIO 27 - PWM Timer), Động cơ Servo SG90, Cửa van xả lũ hồ thu.
+* **Tác nhân:** 
+  * *Tác nhân chính:* Trình điều phối FSM.
+  * *Tác nhân phụ:* `«device»` Động cơ Servo SG90.
 * **Mục tiêu:** Điều tiết lưu lượng xả lũ tự động tương ứng theo mức độ ngập của trạm.
 * **Tiền điều kiện:** Chế độ `isAutoMode == true`.
-* **Luồng sự kiện chính:**
-  1. ESP32 ánh xạ trạng thái FSM sang góc mở van thông qua hàm `map()`:
-     * `NORMAL` hoặc `WARNING`: Góc mở $0^\circ$ (Độ mở $0\%$ - Đóng kín van giữ nước).
-     * `DANGER`: Góc mở $90^\circ$ (Độ mở $50\%$ - Mở xả dòng chảy mức trung bình).
-     * `CRITICAL`: Góc mở $180^\circ$ (Độ mở $100\%$ - Mở xả lũ tối đa khẩn cấp).
-  2. Xuất xung PWM độ rộng $500\mu\text{s} - 2400\mu\text{s}$ đến chân cam động cơ Servo SG90 để kéo trục van mở đúng góc.
+* **Quan hệ «include»:** UC04 trực tiếp gọi:
+  * *Xuất PWM mở van 50% góc 90°:* Khi FSM chạm mức DANGER.
+  * *Xuất PWM mở van 100% góc 180°:* Khi FSM chạm mức CRITICAL.
 * **Hậu điều kiện:** Cửa van đạt góc mở chính xác, duy trì ổn định dòng xả lũ.
 
 ![Sơ đồ UC04](figures/uc04_valve_control.png)
@@ -189,16 +172,14 @@ graph LR
 
 #### 🔹 UC05: Tự động phát tín hiệu cảnh báo tại trạm (LED & Buzzer)
 * **Mã định danh:** `UC05`
-* **Tác nhân ngoài:** Người dân quanh trạm & Cán bộ thực địa (tiếp nhận âm thanh/ánh sáng).
-* **Thành phần hệ thống tham gia:** Vi điều khiển ESP32 (GPIO 21, 19, 18, 4), Cụm 3 LED chỉ thị (Xanh D21, Vàng D19, Đỏ D18), Còi báo động Active Buzzer 5V (D4).
+* **Tác nhân:** 
+  * *Tác nhân chính:* Trình điều phối FSM.
+  * *Tác nhân phụ:* `«device»` Cụm 3 Đèn LED & Còi Buzzer 5V.
+  * *Tác nhân thụ hưởng:* Người dân quanh trạm (tiếp nhận âm thanh/ánh sáng).
 * **Mục tiêu:** Cảnh báo trực quan tại chỗ bằng đèn LED và âm thanh đa cấp độ mà không gây chặn luồng xử lý (*Non-blocking*).
-* **Tiền điều kiện:** Chân GPIO LED và Buzzer được khởi tạo OUTPUT.
-* **Luồng sự kiện chính:**
-  1. Quản lý nhịp bíp bằng hàm `millis()` không dùng `delay()`:
-     * **NORMAL:** LED Xanh bật sáng; LED Vàng và Đỏ tắt; Còi tắt hoàn toàn (`noTone`).
-     * **WARNING:** LED Vàng bật sáng; Còi phát xung $1000\text{Hz}$ nhịp thưa (bíp 120ms mỗi chu kỳ 1.5 giây).
-     * **DANGER:** LED Đỏ bật sáng; Còi phát xung $1800\text{Hz}$ nhịp dồn dập (kêu 150ms, ngắt 150ms theo chu kỳ 300ms).
-     * **CRITICAL:** LED Đỏ chớp nhấp nháy nhanh chu kỳ 100ms; Còi hú liên tục không ngắt ở tần số cao $2500\text{Hz}$.
+* **Quan hệ «include»:** UC05 trực tiếp gọi:
+  * *Chỉ thị LED trực quan:* Xanh (NORMAL), Vàng (WARNING), Đỏ (DANGER/CRITICAL).
+  * *Kích âm còi Non-blocking (millis):* Nhịp bíp dồn dập hoặc hú liên tục theo cấp nguy hiểm.
 * **Hậu điều kiện:** Trạm phát tín hiệu báo động chuẩn xác, âm thanh tương thích với cấp độ nguy hiểm.
 
 ![Sơ đồ UC05](figures/uc05_signaling_buzzer_led.png)
@@ -207,16 +188,14 @@ graph LR
 
 #### 🔹 UC06: Tự động chuyển đổi an toàn khi mất kết nối mạng (Failsafe to AUTO)
 * **Mã định danh:** `UC06`
-* **Tác nhân ngoài:** Người vận hành từ xa (bị ngắt kết nối mạng hoặc rớt sóng Wi-Fi).
-* **Thành phần hệ thống tham gia:** Bộ định thời giám sát Heartbeat Timeout trên firmware ESP32.
+* **Tác nhân:** 
+  * *Tác nhân kích hoạt chính:* Bộ giám sát Watchdog / Timeout (ESP32).
+  * *Tác nhân thụ hưởng / nhận thông báo:* Người vận hành (mất quyền can thiệp khi rớt mạng).
 * **Mục tiêu:** Bảo vệ trạm tự động chống ngập úng khi người vận hành mất quyền giám sát từ xa hoặc rớt mạng Wi-Fi.
 * **Tiền điều kiện:** Hệ thống đang bị người vận hành gạt sang `MANUAL MODE`.
-* **Luồng sự kiện chính:**
-  1. ESP32 liên tục theo dõi thời điểm nhận bản tin HTTP request cuối cùng từ Client.
-  2. Nếu phát hiện mất kết nối Wi-Fi hoặc mất heartbeat từ trình duyệt vượt quá thời gian quy định (Timeout):
-     * ESP32 lập tức phát tín hiệu cảnh báo mất kết nối.
-     * Cưỡng chế đảo cờ `isAutoMode = true` (chuyển ngay về `AUTO MODE`).
-     * Trao lại quyền điều khiển van xả và máy bơm cho thuật toán FSM và cảm biến.
+* **Quan hệ «include»:** UC06 trực tiếp gọi:
+  * *Kiểm tra timeout kết nối Wi-Fi / Web:* Đếm chu kỳ không nhận được request từ client.
+  * *Cưỡng chế đảo cờ isAutoMode = true:* Chuyển ngay về AUTO MODE, trao lại quyền cho FSM.
 * **Hậu điều kiện:** Trạm duy trì tính năng tự trị (*Autonomous Controller*), ngăn ngừa rủi ro ngập úng khi người dùng để quên ở chế độ thủ công.
 
 ![Sơ đồ UC06](figures/uc06_network_failsafe.png)
@@ -225,17 +204,13 @@ graph LR
 
 #### 🔹 UC07: Truyền nhận dữ liệu thời gian thực qua giao thức Web (Telemetry & API)
 * **Mã định danh:** `UC07`
-* **Tác nhân ngoài:** Người vận hành / Giám sát viên (gửi HTTP request và nhận dữ liệu telemetry).
-* **Thành phần hệ thống tham gia:** ESP32 Web Server (thư viện `WebServer.h`, cổng 80).
+* **Tác nhân:** 
+  * *Tác nhân chính:* Người vận hành (gửi HTTP request và nhận dữ liệu telemetry).
+  * *Tác nhân phụ:* ESP32 Web Server (thư viện `WebServer.h`, cổng 80).
 * **Mục tiêu:** Cung cấp các giao diện lập trình ứng dụng (REST API endpoints) đóng gói JSON để truyền tải thông số đo và nhận lệnh điều khiển.
-* **Tiền điều kiện:** Web Server khởi động thành công (`server.begin()`) trên cổng 80; Client kết nối chung dải mạng.
-* **Luồng sự kiện chính:**
-  1. `GET /`: Trả về toàn bộ mã nguồn giao diện Web Dashboard (HTML/CSS/JS) lưu trong bộ nhớ Flash `PROGMEM`.
-  2. `GET /api/status`: Đóng gói dữ liệu chuỗi JSON chuẩn:
-     ```json
-     {"water":45, "distance":29.8, "rain":true, "rain_adc":1450, "state":"DANGER", "mode":"AUTO", "pump":true, "valve":50, "buzzer":"FAST"}
-     ```
-  3. `GET /api/control?action=...`: Tiếp nhận các tham số lệnh (`mode_toggle`, `pump_toggle`, `valve_0`, `valve_50`, `valve_100`).
+* **Quan hệ «include»:** UC07 trực tiếp gọi:
+  * *Đóng gói chuỗi JSON (GET /api/status):* Xuất dữ liệu % nước, cấp mưa, trạng thái thiết bị.
+  * *Tiếp nhận gói lệnh (GET /api/control):* Giải mã lệnh chuyển mode, bơm, van.
 * **Hậu điều kiện:** Dữ liệu thời gian thực được đồng bộ hai chiều liên tục giữa ESP32 và Web Client.
 
 ![Sơ đồ UC07](figures/uc07_telemetry_api.png)
@@ -244,18 +219,12 @@ graph LR
 
 #### 🔹 UC08: Giám sát trạng thái trạm từ xa trên Giao diện Web
 * **Mã định danh:** `UC08`
-* **Tác nhân ngoài:** Người giám sát / Kỹ thuật viên vận hành trạm.
-* **Thành phần hệ thống tham gia:** Giao diện Web Dashboard SPA (Single Page Application) phục vụ từ ESP32.
+* **Tác nhân:** Người vận hành (quan sát trực quan thông số).
 * **Mục tiêu:** Hiển thị trực quan dữ liệu đo đạc và trạng thái phần cứng trên máy tính/điện thoại mà không cần màn hình LCD vật lý tại trạm.
 * **Tiền điều kiện:** Thiết bị người dùng đã kết nối vào mạng Wi-Fi của trạm (`FloodGuard_AP`) hoặc cùng Router Wi-Fi.
-* **Luồng sự kiện chính:**
-  1. Người dùng mở trình duyệt, truy cập địa chỉ IP của ESP32 (ví dụ: `http://192.168.4.1` hoặc `http://floodguard.local`).
-  2. Trình duyệt tải giao diện Dark Glassmorphism và kích hoạt JavaScript `fetch('/api/status')` định kỳ mỗi **1 giây** (Single Page Application - SPA).
-  3. Giao diện tự động cập nhật động:
-     * Đồng hồ/Thanh tiến trình đo mực nước (%) và khoảng cách (cm).
-     * Badge trạng thái hệ thống: NORMAL (Xanh), WARNING (Vàng), DANGER (Cam), CRITICAL (Đỏ nhấp nháy).
-     * Chỉ số cảm biến mưa: Khô ráo, Mưa nhỏ, Mưa to, Ngập nước.
-     * Trạng thái thiết bị: Bơm ON/OFF, Van $0\%/50\%/100\%$, Còi báo động.
+* **Quan hệ «include»:** UC08 trực tiếp gọi:
+  * *Hiển thị đồng hồ mực nước % & khoảng cách:* Vòng đo trực quan và thanh tiến trình.
+  * *Cập nhật trạng thái bơm, van xả & còi:* Thẻ badge động theo thời gian thực.
 * **Hậu điều kiện:** Người dùng nắm bắt toàn diện diễn biến thời gian thực của trạm từ xa.
 
 ![Sơ đồ UC08](figures/uc08_web_dashboard.png)
@@ -264,17 +233,11 @@ graph LR
 
 #### 🔹 UC09: Chuyển đổi chế độ vận hành từ xa (AUTO / MANUAL)
 * **Mã định danh:** `UC09`
-* **Tác nhân ngoài:** Kỹ thuật viên / Người vận hành.
-* **Thành phần hệ thống tham gia:** Web Dashboard và bộ điều phối trạng thái ESP32 Controller.
+* **Tác nhân:** Người vận hành (gạt nút chuyển chế độ).
 * **Mục tiêu:** Phân quyền điều khiển linh hoạt giữa thuật toán tự động thông minh và sự can thiệp thủ công của con người.
-* **Tiền điều kiện:** Giao diện Web Dashboard đang kết nối bình thường với ESP32.
-* **Luồng sự kiện chính:**
-  1. Người dùng nhấn nút **"Đổi Chế Độ (AUTO / MANUAL)"** trên Dashboard.
-  2. Trình duyệt gửi request ngầm: `GET /api/control?action=mode_toggle`.
-  3. ESP32 tiếp nhận lệnh, đảo cờ trạng thái `isAutoMode = !isAutoMode`.
-  4. Trình duyệt cập nhật badge hiển thị:
-     * `AUTO`: Khóa/vô hiệu hóa các nút điều khiển trực tiếp bơm/van để bảo vệ logic tự động.
-     * `MANUAL`: Mở khóa bảng điều khiển can thiệp thủ công (Manual Override).
+* **Quan hệ «extend» (Chuẩn UML 2.5):** Hai nhánh độc lập có mũi tên nét đứt trỏ ngược về Use Case cơ sở UC09:
+  * *Khóa phím Web, giao quyền tự động cho FSM* $\xrightarrow{\text{«extend» [khi chọn AUTO]}}$ UC09.
+  * *Mở khóa nút bấm, cho phép can thiệp thủ công* $\xrightarrow{\text{«extend» [khi chọn MANUAL]}}$ UC09.
 * **Hậu điều kiện:** Quyền điều khiển được chuyển giao an toàn giữa vi điều khiển và người dùng.
 
 ![Sơ đồ UC09](figures/uc09_mode_switch.png)
@@ -283,13 +246,17 @@ graph LR
 
 #### 🔹 UC10: Điều khiển cưỡng chế thiết bị chấp hành từ Giao diện Web
 * **Mã định danh:** `UC10`
-* **Tác nhân ngoài:**
-  * *Người vận hành (Giám sát viên):* Thao tác nhấp nút điều khiển trực tiếp.
-  * *Khối nước hồ thu & Cửa cống:* Tiếp nhận hành động bơm xả theo lệnh cưỡng chế.
-* **Thành phần hệ thống tham gia:** Web Dashboard, ESP32, Module Relay máy bơm, Động cơ Servo van xả.
+* **Tác nhân:** 
+  * *Tác nhân chính:* Người vận hành (nhấp phím lệnh can thiệp).
+  * *Tác nhân phụ:* `«device»` Module Relay 5V & Máy bơm mini, `«device»` Động cơ Servo SG90.
 * **Mục tiêu:** Bật/tắt bơm hoặc xoay góc van xả thủ công phục vụ kiểm tra thiết bị định kỳ, xả cặn đáy hồ, hoặc xử lý sự cố khẩn cấp.
 * **Tiền điều kiện:** Hệ thống đang ở chế độ `MANUAL MODE` (`isAutoMode == false`).
-* **Luồng sự kiện chính:**
+* **Quan hệ «extend» (Chuẩn UML 2.5):** Hai nhánh can thiệp mở rộng độc lập trỏ ngược về Use Case cơ sở UC10:
+  * *Bật / Tắt cưỡng chế máy bơm thoát nước* $\xrightarrow{\text{«extend» [khi lệnh Bơm]}}$ UC10.
+  * *Điều khiển cưỡng chế góc van xả (0° / 90° / 180°)* $\xrightarrow{\text{«extend» [khi lệnh Van]}}$ UC10.
+* **Hậu điều kiện:** Thiết bị chấp hành vận hành chính xác theo ý muốn của người điều khiển bất chấp giá trị cảm biến hiện tại.
+
+![Sơ đồ UC10](figures/uc10_manual_override.png)
   1. Người dùng nhấn các nút thao tác trên Dashboard Web:
      * Nhấn **"Bật/Tắt Bơm (Manual)"**: Gửi lệnh `pump_toggle`. ESP32 đảo trạng thái biến `pumpState` và kích hoạt Relay qua kỹ thuật High-Z.
      * Nhấn **"Van 0% (Đóng)"**, **"Van 50% (Mở Nửa)"**, hoặc **"Van 100% (Mở Hết)"**: Gửi lệnh `valve_0`, `valve_50`, hoặc `valve_100`. ESP32 điều khiển Servo quay tương ứng về $0^\circ, 90^\circ$, hoặc $180^\circ$.

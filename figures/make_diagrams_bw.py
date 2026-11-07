@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
+import numpy as np
 import os
 
 out_dirs = [
@@ -20,7 +21,22 @@ def save_fig(fig, filename):
     for d in out_dirs:
         fig.savefig(os.path.join(d, filename), dpi=300, bbox_inches='tight')
     plt.close(fig)
-    print(f"Generated Strict UML B&W (No Overlap): {filename}")
+    print(f"Generated Strict UML B&W (Touching Arrows, No Bbox): {filename}")
+
+def get_ellipse_border(xc, yc, w, h, target_x, target_y):
+    """
+    Computes exact mathematical point on the boundary of an ellipse
+    centered at (xc, yc) with width w and height h along the ray toward (target_x, target_y).
+    """
+    a = w / 2.0
+    b = h / 2.0
+    dx = target_x - xc
+    dy = target_y - yc
+    if dx == 0 and dy == 0:
+        return float(xc), float(yc)
+    theta = np.arctan2(dy, dx)
+    t = 1.0 / np.sqrt((np.cos(theta)/a)**2 + (np.sin(theta)/b)**2)
+    return float(xc + t * np.cos(theta)), float(yc + t * np.sin(theta))
 
 def draw_human_actor(ax, x, y, label, sublabel="«human actor»", scale=1.0):
     """Draws a standard UML human actor stick figure"""
@@ -66,51 +82,82 @@ def draw_ellipse(ax, x, y, w, h, text):
     ellipse = patches.Ellipse((x, y), w, h, facecolor='#ffffff', edgecolor='#000000', lw=1.3, zorder=3)
     ax.add_patch(ellipse)
     ax.text(x, y, text, fontsize=8.2, fontweight='bold', ha='center', va='center', color='#000000', zorder=4)
-    return (x, y)
+    return (x, y, w, h)
 
-def draw_assoc_line(ax, pt_from, pt_to, ew=0, side='left'):
-    """Draws a solid association line between an actor and a use case ellipse border"""
-    fx, fy = pt_from
-    tx, ty = pt_to
-    if ew > 0:
-        if side == 'left':
-            tx_target = tx - (ew / 2)
-        else:
-            tx_target = tx + (ew / 2)
+def draw_assoc_line(ax, pt_from, e_to):
+    """
+    Draws a solid association line from an actor point pt_from to the exact perimeter of ellipse e_to.
+    """
+    xc, yc, w, h = e_to
+    pt_target = get_ellipse_border(xc, yc, w, h, pt_from[0], pt_from[1])
+    ax.plot([pt_from[0], pt_target[0]], [pt_from[1], pt_target[1]], color='#000000', lw=1.1, zorder=2)
+
+def draw_include(ax, e_from, e_to, label="«include»"):
+    """
+    Draws a clean dashed arrow from the perimeter of Parent UC (e_from) 
+    to the perimeter of Child UC (e_to).
+    Tail and head touch the ellipses exactly.
+    Label is placed directly ABOVE the arrow without any enclosing frame.
+    """
+    p_from = get_ellipse_border(e_from[0], e_from[1], e_from[2], e_from[3], e_to[0], e_to[1])
+    p_to   = get_ellipse_border(e_to[0], e_to[1], e_to[2], e_to[3], e_from[0], e_from[1])
+
+    # Dash arrow with zero shrink so it touches exact boundary
+    ax.annotate("", xy=p_to, xytext=p_from,
+                arrowprops=dict(arrowstyle="->", lw=1.2, linestyle="--", color="#000000",
+                                shrinkA=0, shrinkB=0), zorder=4)
+
+    dx = p_to[0] - p_from[0]
+    dy = p_to[1] - p_from[1]
+    L = np.hypot(dx, dy)
+    angle = np.degrees(np.arctan2(dy, dx))
+
+    # Perpendicular normal vector pointing above the arrow
+    nx, ny = -dy / L, dx / L
+    offset = 0.18
+    tx = (p_from[0] + p_to[0]) / 2.0 + offset * nx
+    ty = (p_from[1] + p_to[1]) / 2.0 + offset * ny
+
+    ax.text(tx, ty, label, fontsize=8.2, style='italic', color='#000000',
+            rotation=angle, rotation_mode='anchor',
+            ha='center', va='bottom', zorder=6)
+
+def draw_extend(ax, e_from, e_to, label="«extend»"):
+    """
+    Draws a clean dashed arrow from the perimeter of Extension UC (e_from) 
+    to the perimeter of Base UC (e_to).
+    Tail and head touch the ellipses exactly.
+    Label is placed outside / above the arrow without any enclosing frame.
+    """
+    p_from = get_ellipse_border(e_from[0], e_from[1], e_from[2], e_from[3], e_to[0], e_to[1])
+    p_to   = get_ellipse_border(e_to[0], e_to[1], e_to[2], e_to[3], e_from[0], e_from[1])
+
+    ax.annotate("", xy=p_to, xytext=p_from,
+                arrowprops=dict(arrowstyle="->", lw=1.2, linestyle="--", color="#000000",
+                                shrinkA=0, shrinkB=0), zorder=4)
+
+    dx = p_to[0] - p_from[0]
+    dy = p_to[1] - p_from[1]
+    mx = (p_from[0] + p_to[0]) / 2.0
+    my = (p_from[1] + p_to[1]) / 2.0
+
+    if dx >= 0:
+        tx = mx - 0.22
+        ty = my + 0.08
+        ha = 'right'
     else:
-        tx_target = tx
-    ax.plot([fx, tx_target], [fy, ty], color='#000000', lw=1.1, zorder=2)
+        tx = mx + 0.22
+        ty = my + 0.08
+        ha = 'left'
 
-def draw_include(ax, pt_from, pt_to, label="«include»"):
-    """
-    Draws a clean dashed arrow from Parent UC to Child UC.
-    Label is enclosed in an opaque white pill to prevent any overlap.
-    """
-    ax.annotate("", xy=pt_to, xytext=pt_from,
-                arrowprops=dict(arrowstyle="->", lw=1.2, linestyle="--", color="#000000"), zorder=4)
-    mid_x = (pt_from[0] + pt_to[0]) / 2
-    mid_y = (pt_from[1] + pt_to[1]) / 2
-    ax.text(mid_x, mid_y, label, fontsize=7.5, style='italic', color='#000000', 
-            ha='center', va='center', zorder=6,
-            bbox=dict(boxstyle='round,pad=0.25', facecolor='#ffffff', edgecolor='#000000', lw=0.6))
-
-def draw_extend(ax, pt_from, pt_to, label="«extend»"):
-    """
-    Draws a clean dashed arrow from Extension UC back to Base UC.
-    Label is enclosed in an opaque white pill to prevent any overlap.
-    """
-    ax.annotate("", xy=pt_to, xytext=pt_from,
-                arrowprops=dict(arrowstyle="->", lw=1.2, linestyle="--", color="#000000"), zorder=4)
-    mid_x = (pt_from[0] + pt_to[0]) / 2
-    mid_y = (pt_from[1] + pt_to[1]) / 2
-    ax.text(mid_x, mid_y, label, fontsize=7.2, style='italic', color='#000000', 
-            ha='center', va='center', zorder=6,
-            bbox=dict(boxstyle='round,pad=0.25', facecolor='#ffffff', edgecolor='#000000', lw=0.6))
+    ax.text(tx, ty, label, fontsize=8.0, style='italic', color='#000000',
+            ha=ha, va='center', zorder=6)
 
 
 # =============================================================
 # 1. OVERALL SYSTEM USE CASE DIAGRAM (Strict UML 2.5)
 # Zero overlap, cleanly separated primary actors (left) and secondary actors (right)
+# All association lines touch exact ellipse borders!
 # =============================================================
 def make_overall_uml_bw():
     fig, ax = plt.subplots(figsize=(16.5, 14.8), dpi=300)
@@ -140,51 +187,51 @@ def make_overall_uml_bw():
         ("UC10: Can Thiệp Cưỡng Chế Thiết Bị Từ Web", 1.4)
     ]
 
-    uc_pos = {}
+    uc_tuples = {}
     ew = 6.2
     eh = 0.85
     for name, cy in uc_list:
-        pt = draw_ellipse(ax, uc_center_x, cy, ew, eh, name)
-        uc_pos[name[:4]] = pt
+        e = draw_ellipse(ax, uc_center_x, cy, ew, eh, name)
+        uc_tuples[name[:4]] = e
 
     # PRIMARY ACTORS (LEFT)
     # 1. Internal Timer
     draw_timer_actor(ax, 1.4, 11.4, "Bộ Định Thời\nTimer / Watchdog", "«internal timer»", w=2.4, h=1.1)
-    draw_assoc_line(ax, (2.6, 11.9), uc_pos['UC01'], ew, 'left')
-    draw_assoc_line(ax, (2.6, 11.4), uc_pos['UC02'], ew, 'left')
-    draw_assoc_line(ax, (2.6, 10.9), uc_pos['UC06'], ew, 'left')
+    draw_assoc_line(ax, (2.6, 11.9), uc_tuples['UC01'])
+    draw_assoc_line(ax, (2.6, 11.4), uc_tuples['UC02'])
+    draw_assoc_line(ax, (2.6, 10.9), uc_tuples['UC06'])
 
     # 2. Human Operator
     draw_human_actor(ax, 1.4, 3.8, "Người Vận Hành", "«human actor»", scale=0.95)
-    draw_assoc_line(ax, (2.3, 4.4), uc_pos['UC07'], ew, 'left')
-    draw_assoc_line(ax, (2.3, 3.8), uc_pos['UC08'], ew, 'left')
-    draw_assoc_line(ax, (2.3, 3.2), uc_pos['UC09'], ew, 'left')
-    draw_assoc_line(ax, (2.3, 2.6), uc_pos['UC10'], ew, 'left')
+    draw_assoc_line(ax, (2.3, 4.4), uc_tuples['UC07'])
+    draw_assoc_line(ax, (2.3, 3.8), uc_tuples['UC08'])
+    draw_assoc_line(ax, (2.3, 3.2), uc_tuples['UC09'])
+    draw_assoc_line(ax, (2.3, 2.6), uc_tuples['UC10'])
 
     # SECONDARY ACTORS (RIGHT)
     # 3. Sensors
     draw_device_actor(ax, 15.0, 12.2, "Cảm Biến Siêu Âm\n& Cảm Biến Mưa", "«device»", w=2.5, h=1.1)
-    draw_assoc_line(ax, (13.75, 12.2), uc_pos['UC01'], ew, 'right')
+    draw_assoc_line(ax, (13.75, 12.2), uc_tuples['UC01'])
 
     # 4. Pump & Relay
     draw_device_actor(ax, 15.0, 9.8, "Module Relay 5V\n& Máy Bơm Mini", "«device»", w=2.5, h=1.1)
-    draw_assoc_line(ax, (13.75, 9.8), uc_pos['UC03'], ew, 'right')
+    draw_assoc_line(ax, (13.75, 9.8), uc_tuples['UC03'])
 
     # 5. Servo Gate
     draw_device_actor(ax, 15.0, 8.6, "Động Cơ Servo\nSG90 (Cửa Van)", "«device»", w=2.5, h=1.1)
-    draw_assoc_line(ax, (13.75, 8.6), uc_pos['UC04'], ew, 'right')
+    draw_assoc_line(ax, (13.75, 8.6), uc_tuples['UC04'])
 
     # 6. Signaling LEDs & Buzzer
     draw_device_actor(ax, 15.0, 7.4, "Cụm 3 Đèn LED\n& Còi Buzzer 5V", "«device»", w=2.5, h=1.1)
-    draw_assoc_line(ax, (13.75, 7.4), uc_pos['UC05'], ew, 'right')
+    draw_assoc_line(ax, (13.75, 7.4), uc_tuples['UC05'])
 
     # 7. Local Residents
     draw_human_actor(ax, 15.0, 5.0, "Người Dân\nQuanh Trạm", "«human actor»", scale=0.9)
-    draw_assoc_line(ax, (14.1, 5.4), uc_pos['UC05'], ew, 'right')
+    draw_assoc_line(ax, (14.1, 5.4), uc_tuples['UC05'])
 
     # 8. Override Actuators target for UC10
     draw_device_actor(ax, 15.0, 1.4, "Thiết Bị Bơm\n& Van Cưỡng Chế", "«device»", w=2.5, h=1.1)
-    draw_assoc_line(ax, (13.75, 1.4), uc_pos['UC10'], ew, 'right')
+    draw_assoc_line(ax, (13.75, 1.4), uc_tuples['UC10'])
 
     save_fig(fig, "uc_overall_diagram.png")
 
@@ -203,24 +250,24 @@ def make_uc01_bw():
                        "Phân Hệ Đo Đạc Cảm Biến (ESP32 Firmware)")
 
     # Base UC centered on left
-    p_main = draw_ellipse(ax, 4.8, 3.6, 3.6, 1.05, "UC01: Đọc & Tiền Xử Lý\nDữ Liệu Cảm Biến")
+    e_main = draw_ellipse(ax, 4.8, 3.6, 3.6, 1.05, "UC01: Đọc & Tiền Xử Lý\nDữ Liệu Cảm Biến")
     
     # 3 Included Children vertically distributed on the right
-    p_sub1 = draw_ellipse(ax, 10.0, 5.5, 4.4, 0.9, "Đo Khoảng Cách Siêu Âm\n(HC-SR04 Trigger / Echo)")
-    p_sub2 = draw_ellipse(ax, 10.0, 3.6, 4.4, 0.9, "Lọc Trung Vị 3 Mẫu &\nQuy Đổi % Mực Nước")
-    p_sub3 = draw_ellipse(ax, 10.0, 1.7, 4.4, 0.9, "Đọc Cảm Biến Mưa &\nPhân Cấp Tương Tự ADC/DO")
+    e_sub1 = draw_ellipse(ax, 10.0, 5.5, 4.4, 0.9, "Đo Khoảng Cách Siêu Âm\n(HC-SR04 Trigger / Echo)")
+    e_sub2 = draw_ellipse(ax, 10.0, 3.6, 4.4, 0.9, "Lọc Trung Vị 3 Mẫu &\nQuy Đổi % Mực Nước")
+    e_sub3 = draw_ellipse(ax, 10.0, 1.7, 4.4, 0.9, "Đọc Cảm Biến Mưa &\nPhân Cấp Tương Tự ADC/DO")
 
     # Left Actors
     draw_timer_actor(ax, 1.3, 4.8, "Bộ Định Thời\nTimer 100ms", "«internal timer»", w=2.3, h=1.1)
-    draw_assoc_line(ax, (2.45, 4.8), (p_main[0] - 1.8, 4.0))
+    draw_assoc_line(ax, (2.45, 4.8), e_main)
 
     draw_device_actor(ax, 1.3, 2.4, "Cảm Biến HC-SR04\n& Cảm Biến Mưa", "«device»", w=2.3, h=1.1)
-    draw_assoc_line(ax, (2.45, 2.4), (p_main[0] - 1.8, 3.2))
+    draw_assoc_line(ax, (2.45, 2.4), e_main)
 
-    # Fanning included arrows from right edge of p_main
-    draw_include(ax, (p_main[0] + 1.8, 4.1), (p_sub1[0] - 2.2, 5.5), "«include»")
-    draw_include(ax, (p_main[0] + 1.8, 3.6), (p_sub2[0] - 2.2, 3.6), "«include»")
-    draw_include(ax, (p_main[0] + 1.8, 3.1), (p_sub3[0] - 2.2, 1.7), "«include»")
+    # Touching dashed arrows with labels directly above line
+    draw_include(ax, e_main, e_sub1)
+    draw_include(ax, e_main, e_sub2)
+    draw_include(ax, e_main, e_sub3)
 
     save_fig(fig, "uc01_sensor_processing.png")
 
@@ -239,18 +286,18 @@ def make_uc02_bw():
                        "Phân Hệ Logic FSM & Dải Trễ (ESP32 Firmware)")
 
     # Base UC on left
-    p_main = draw_ellipse(ax, 4.8, 3.6, 3.6, 1.05, "UC02: Tự Động Đánh Giá\nFSM & Dải Trễ")
+    e_main = draw_ellipse(ax, 4.8, 3.6, 3.6, 1.05, "UC02: Tự Động Đánh Giá\nFSM & Dải Trễ")
     
     # 2 Included Children fanning out on the right
-    p_sub1 = draw_ellipse(ax, 10.0, 5.0, 4.4, 0.95, "Đánh Giá 4 Cấp Độ Cảnh Báo\n(NORMAL - CRITICAL)")
-    p_sub2 = draw_ellipse(ax, 10.0, 2.2, 4.4, 0.95, "Áp Dụng Dải Trễ Hysteresis\nChống Rung Giật (Chattering)")
+    e_sub1 = draw_ellipse(ax, 10.0, 5.0, 4.4, 0.95, "Đánh Giá 4 Cấp Độ Cảnh Báo\n(NORMAL - CRITICAL)")
+    e_sub2 = draw_ellipse(ax, 10.0, 2.2, 4.4, 0.95, "Áp Dụng Dải Trễ Hysteresis\nChống Rung Giật (Chattering)")
 
     draw_timer_actor(ax, 1.3, 3.6, "Bộ Định Thời\nChu Kỳ FSM", "«internal timer»", w=2.3, h=1.1)
-    draw_assoc_line(ax, (2.45, 3.6), (p_main[0] - 1.8, 3.6))
+    draw_assoc_line(ax, (2.45, 3.6), e_main)
 
-    # Fanning arrows
-    draw_include(ax, (p_main[0] + 1.8, 4.1), (p_sub1[0] - 2.2, 5.0), "«include»")
-    draw_include(ax, (p_main[0] + 1.8, 3.1), (p_sub2[0] - 2.2, 2.2), "«include»")
+    # Touching dashed arrows with labels directly above line
+    draw_include(ax, e_main, e_sub1)
+    draw_include(ax, e_main, e_sub2)
 
     save_fig(fig, "uc02_fsm_hysteresis.png")
 
@@ -268,20 +315,20 @@ def make_uc03_bw():
     draw_subsystem_box(ax, 2.8, 0.5, 9.4, 6.5, 
                        "Phân Hệ Điều Khiển Bơm (ESP32 Firmware)")
 
-    p_main = draw_ellipse(ax, 4.7, 3.6, 3.4, 1.05, "UC03: Tự Động Điều Khiển\nMáy Bơm Thoát Nước")
+    e_main = draw_ellipse(ax, 4.7, 3.6, 3.4, 1.05, "UC03: Tự Động Điều Khiển\nMáy Bơm Thoát Nước")
     
-    p_on  = draw_ellipse(ax, 9.7, 5.0, 4.0, 0.95, "Kích Relay Active LOW\n(Bật Bơm Thoát Nước)")
-    p_off = draw_ellipse(ax, 9.7, 2.2, 4.0, 0.95, "Thả Nổi High-Z INPUT\n(Ngắt Bơm An Toàn)")
+    e_on  = draw_ellipse(ax, 9.7, 5.0, 4.0, 0.95, "Kích Relay Active LOW\n(Bật Bơm Thoát Nước)")
+    e_off = draw_ellipse(ax, 9.7, 2.2, 4.0, 0.95, "Thả Nổi High-Z INPUT\n(Ngắt Bơm An Toàn)")
 
     draw_timer_actor(ax, 1.3, 3.6, "Trình Điều Phối\nFSM ESP32", "«internal timer»", w=2.3, h=1.1)
-    draw_assoc_line(ax, (2.45, 3.6), (p_main[0] - 1.7, 3.6))
+    draw_assoc_line(ax, (2.45, 3.6), e_main)
 
     draw_device_actor(ax, 13.8, 3.6, "Module Relay 5V\n& Máy Bơm Mini", "«device»", w=2.5, h=1.1)
-    draw_assoc_line(ax, (p_on[0] + 2.0, 5.0), (12.55, 3.9))
-    draw_assoc_line(ax, (p_off[0] + 2.0, 2.2), (12.55, 3.3))
+    draw_assoc_line(ax, (12.55, 3.9), e_on)
+    draw_assoc_line(ax, (12.55, 3.3), e_off)
 
-    draw_include(ax, (p_main[0] + 1.7, 4.1), (p_on[0] - 2.0, 5.0), "«include»")
-    draw_include(ax, (p_main[0] + 1.7, 3.1), (p_off[0] - 2.0, 2.2), "«include»")
+    draw_include(ax, e_main, e_on)
+    draw_include(ax, e_main, e_off)
 
     save_fig(fig, "uc03_pump_control.png")
 
@@ -299,20 +346,20 @@ def make_uc04_bw():
     draw_subsystem_box(ax, 2.8, 0.5, 9.4, 6.5, 
                        "Phân Hệ Điều Khiển Van Lũ (ESP32 Firmware)")
 
-    p_main = draw_ellipse(ax, 4.7, 3.6, 3.4, 1.05, "UC04: Tự Động Điều Khiển\nVan Thoát Lũ")
+    e_main = draw_ellipse(ax, 4.7, 3.6, 3.4, 1.05, "UC04: Tự Động Điều Khiển\nVan Thoát Lũ")
     
-    p_mid  = draw_ellipse(ax, 9.7, 5.0, 4.0, 0.95, "Xuất PWM Mở Van 50%\n(Góc 90° Mức DANGER)")
-    p_full = draw_ellipse(ax, 9.7, 2.2, 4.0, 0.95, "Xuất PWM Mở Van 100%\n(Góc 180° CRITICAL)")
+    e_mid  = draw_ellipse(ax, 9.7, 5.0, 4.0, 0.95, "Xuất PWM Mở Van 50%\n(Góc 90° Mức DANGER)")
+    e_full = draw_ellipse(ax, 9.7, 2.2, 4.0, 0.95, "Xuất PWM Mở Van 100%\n(Góc 180° CRITICAL)")
 
     draw_timer_actor(ax, 1.3, 3.6, "Trình Điều Phối\nFSM ESP32", "«internal timer»", w=2.3, h=1.1)
-    draw_assoc_line(ax, (2.45, 3.6), (p_main[0] - 1.7, 3.6))
+    draw_assoc_line(ax, (2.45, 3.6), e_main)
 
     draw_device_actor(ax, 13.8, 3.6, "Động Cơ Servo\nSG90 (GPIO 27)", "«device»", w=2.5, h=1.1)
-    draw_assoc_line(ax, (p_mid[0] + 2.0, 5.0), (12.55, 3.9))
-    draw_assoc_line(ax, (p_full[0] + 2.0, 2.2), (12.55, 3.3))
+    draw_assoc_line(ax, (12.55, 3.9), e_mid)
+    draw_assoc_line(ax, (12.55, 3.3), e_full)
 
-    draw_include(ax, (p_main[0] + 1.7, 4.1), (p_mid[0] - 2.0, 5.0), "«include»")
-    draw_include(ax, (p_main[0] + 1.7, 3.1), (p_full[0] - 2.0, 2.2), "«include»")
+    draw_include(ax, e_main, e_mid)
+    draw_include(ax, e_main, e_full)
 
     save_fig(fig, "uc04_valve_control.png")
 
@@ -330,22 +377,22 @@ def make_uc05_bw():
     draw_subsystem_box(ax, 2.8, 0.5, 9.4, 6.5, 
                        "Phân Hệ Cảnh Báo Tại Chỗ (ESP32 Firmware)")
 
-    p_main = draw_ellipse(ax, 4.7, 3.6, 3.4, 1.05, "UC05: Phát Cảnh Báo\nLED & Còi Tại Chỗ")
+    e_main = draw_ellipse(ax, 4.7, 3.6, 3.4, 1.05, "UC05: Phát Cảnh Báo\nLED & Còi Tại Chỗ")
     
-    p_led = draw_ellipse(ax, 9.7, 5.0, 4.0, 0.95, "Chỉ Thị LED Trực Quan\n(Xanh / Vàng / Đỏ)")
-    p_buz = draw_ellipse(ax, 9.7, 2.2, 4.0, 0.95, "Kích Âm Còi Báo Động\nNon-blocking (millis)")
+    e_led = draw_ellipse(ax, 9.7, 5.0, 4.0, 0.95, "Chỉ Thị LED Trực Quan\n(Xanh / Vàng / Đỏ)")
+    e_buz = draw_ellipse(ax, 9.7, 2.2, 4.0, 0.95, "Kích Âm Còi Báo Động\nNon-blocking (millis)")
 
     draw_timer_actor(ax, 1.3, 3.6, "Trình Điều Phối\nFSM ESP32", "«internal timer»", w=2.3, h=1.1)
-    draw_assoc_line(ax, (2.45, 3.6), (p_main[0] - 1.7, 3.6))
+    draw_assoc_line(ax, (2.45, 3.6), e_main)
 
     draw_device_actor(ax, 13.8, 5.0, "Cụm 3 Đèn LED\n& Còi Buzzer 5V", "«device»", w=2.5, h=1.1)
-    draw_assoc_line(ax, (p_led[0] + 2.0, 5.0), (12.55, 5.0))
+    draw_assoc_line(ax, (12.55, 5.0), e_led)
 
     draw_human_actor(ax, 13.8, 2.2, "Người Dân\nQuanh Trạm", "«human actor»", scale=0.9)
-    draw_assoc_line(ax, (p_buz[0] + 2.0, 2.2), (12.8, 2.2))
+    draw_assoc_line(ax, (12.8, 2.2), e_buz)
 
-    draw_include(ax, (p_main[0] + 1.7, 4.1), (p_led[0] - 2.0, 5.0), "«include»")
-    draw_include(ax, (p_main[0] + 1.7, 3.1), (p_buz[0] - 2.0, 2.2), "«include»")
+    draw_include(ax, e_main, e_led)
+    draw_include(ax, e_main, e_buz)
 
     save_fig(fig, "uc05_signaling_buzzer_led.png")
 
@@ -363,20 +410,20 @@ def make_uc06_bw():
     draw_subsystem_box(ax, 2.8, 0.5, 9.4, 6.5, 
                        "Phân Hệ Tự Trị Failsafe (ESP32 Firmware)")
 
-    p_main = draw_ellipse(ax, 4.7, 3.6, 3.4, 1.05, "UC06: Tự Động Chuyển\nAn Toàn Về AUTO")
+    e_main = draw_ellipse(ax, 4.7, 3.6, 3.4, 1.05, "UC06: Tự Động Chuyển\nAn Toàn Về AUTO")
     
-    p_chk = draw_ellipse(ax, 9.7, 5.0, 4.0, 0.95, "Kiểm Tra Timeout\nKết Nối Wi-Fi / Web")
-    p_fsm = draw_ellipse(ax, 9.7, 2.2, 4.0, 0.95, "Cưỡng Chế Đảo Cờ\nisAutoMode = true")
+    e_chk = draw_ellipse(ax, 9.7, 5.0, 4.0, 0.95, "Kiểm Tra Timeout\nKết Nối Wi-Fi / Web")
+    e_fsm = draw_ellipse(ax, 9.7, 2.2, 4.0, 0.95, "Cưỡng Chế Đảo Cờ\nisAutoMode = true")
 
     draw_timer_actor(ax, 1.3, 3.6, "Bộ Giám Sát\nWatchdog / Timeout", "«internal timer»", w=2.4, h=1.1)
-    draw_assoc_line(ax, (2.5, 3.6), (p_main[0] - 1.7, 3.6))
+    draw_assoc_line(ax, (2.5, 3.6), e_main)
 
     draw_human_actor(ax, 13.8, 3.6, "Người Vận Hành\n(Mất Kết Nối)", "«human actor»", scale=0.9)
-    draw_assoc_line(ax, (p_chk[0] + 2.0, 5.0), (12.9, 4.0))
-    draw_assoc_line(ax, (p_fsm[0] + 2.0, 2.2), (12.9, 3.2))
+    draw_assoc_line(ax, (12.9, 4.0), e_chk)
+    draw_assoc_line(ax, (12.9, 3.2), e_fsm)
 
-    draw_include(ax, (p_main[0] + 1.7, 4.1), (p_chk[0] - 2.0, 5.0), "«include»")
-    draw_include(ax, (p_main[0] + 1.7, 3.1), (p_fsm[0] - 2.0, 2.2), "«include»")
+    draw_include(ax, e_main, e_chk)
+    draw_include(ax, e_main, e_fsm)
 
     save_fig(fig, "uc06_network_failsafe.png")
 
@@ -394,20 +441,20 @@ def make_uc07_bw():
     draw_subsystem_box(ax, 2.8, 0.5, 9.4, 6.5, 
                        "Phân Hệ Web Server & REST API (ESP32)")
 
-    p_main = draw_ellipse(ax, 4.7, 3.6, 3.4, 1.05, "UC07: Truyền Nhận\nDữ Liệu Web API")
+    e_main = draw_ellipse(ax, 4.7, 3.6, 3.4, 1.05, "UC07: Truyền Nhận\nDữ Liệu Web API")
     
-    p_stat = draw_ellipse(ax, 9.7, 5.0, 4.0, 0.95, "Đóng Gói Dữ Liệu JSON\n(GET /api/status)")
-    p_cmd  = draw_ellipse(ax, 9.7, 2.2, 4.0, 0.95, "Tiếp Nhận Gói Lệnh\n(GET /api/control)")
+    e_stat = draw_ellipse(ax, 9.7, 5.0, 4.0, 0.95, "Đóng Gói Dữ Liệu JSON\n(GET /api/status)")
+    e_cmd  = draw_ellipse(ax, 9.7, 2.2, 4.0, 0.95, "Tiếp Nhận Gói Lệnh\n(GET /api/control)")
 
     draw_human_actor(ax, 1.3, 3.6, "Người Vận Hành", "«human actor»", scale=0.9)
-    draw_assoc_line(ax, (2.2, 3.6), (p_main[0] - 1.7, 3.6))
+    draw_assoc_line(ax, (2.2, 3.6), e_main)
 
     draw_device_actor(ax, 13.8, 3.6, "ESP32 Web Server\n(Port 80 HTTP)", "«server»", w=2.4, h=1.1)
-    draw_assoc_line(ax, (p_stat[0] + 2.0, 5.0), (12.6, 3.9))
-    draw_assoc_line(ax, (p_cmd[0] + 2.0, 2.2), (12.6, 3.3))
+    draw_assoc_line(ax, (12.6, 3.9), e_stat)
+    draw_assoc_line(ax, (12.6, 3.3), e_cmd)
 
-    draw_include(ax, (p_main[0] + 1.7, 4.1), (p_stat[0] - 2.0, 5.0), "«include»")
-    draw_include(ax, (p_main[0] + 1.7, 3.1), (p_cmd[0] - 2.0, 2.2), "«include»")
+    draw_include(ax, e_main, e_stat)
+    draw_include(ax, e_main, e_cmd)
 
     save_fig(fig, "uc07_telemetry_api.png")
 
@@ -425,16 +472,16 @@ def make_uc08_bw():
     draw_subsystem_box(ax, 2.8, 0.5, 9.6, 6.5, 
                        "Phân Hệ Web Dashboard (ESP32 Web App)")
 
-    p_main = draw_ellipse(ax, 4.8, 3.6, 3.6, 1.05, "UC08: Giám Sát Trạng Thái\nTrạm Qua Web Dashboard")
+    e_main = draw_ellipse(ax, 4.8, 3.6, 3.6, 1.05, "UC08: Giám Sát Trạng Thái\nTrạm Qua Web Dashboard")
     
-    p_bar = draw_ellipse(ax, 10.0, 5.0, 4.4, 0.95, "Hiển Thị Đồng Hồ Mực Nước\n(% và Khoảng Cách cm)")
-    p_dev = draw_ellipse(ax, 10.0, 2.2, 4.4, 0.95, "Cập Nhật Trạng Thái Thiết Bị\n(Bơm, Van, LED, Còi)")
+    e_bar = draw_ellipse(ax, 10.0, 5.0, 4.4, 0.95, "Hiển Thị Đồng Hồ Mực Nước\n(% và Khoảng Cách cm)")
+    e_dev = draw_ellipse(ax, 10.0, 2.2, 4.4, 0.95, "Cập Nhật Trạng Thái Thiết Bị\n(Bơm, Van, LED, Còi)")
 
     draw_human_actor(ax, 1.3, 3.6, "Người Vận Hành", "«human actor»", scale=0.9)
-    draw_assoc_line(ax, (2.2, 3.6), (p_main[0] - 1.8, 3.6))
+    draw_assoc_line(ax, (2.2, 3.6), e_main)
 
-    draw_include(ax, (p_main[0] + 1.8, 4.1), (p_bar[0] - 2.2, 5.0), "«include»")
-    draw_include(ax, (p_main[0] + 1.8, 3.1), (p_dev[0] - 2.2, 2.2), "«include»")
+    draw_include(ax, e_main, e_bar)
+    draw_include(ax, e_main, e_dev)
 
     save_fig(fig, "uc08_web_dashboard.png")
 
@@ -442,6 +489,7 @@ def make_uc08_bw():
 # =============================================================
 # 10. UC09: Chuyển Đổi AUTO/MANUAL (Strict UML «extend» Fork Layout)
 # Base UC on Top Center, 2 Extensions on Bottom fanning inward and UPWARD to Base UC.
+# Touching dashed arrows, no frame around extend label.
 # =============================================================
 def make_uc09_bw():
     fig, ax = plt.subplots(figsize=(15.2, 7.8), dpi=300)
@@ -454,18 +502,18 @@ def make_uc09_bw():
                        "Phân Hệ Quản Lý Chế Độ (ESP32 Firmware)")
 
     # Base Use Case on Top Center
-    p_main = draw_ellipse(ax, 8.6, 5.6, 4.8, 1.05, "UC09: Chuyển Đổi Chế Độ Vận Hành")
+    e_main = draw_ellipse(ax, 8.6, 5.6, 4.8, 1.05, "UC09: Chuyển Đổi Chế Độ Vận Hành")
     
     # 2 Extension Use Cases spread horizontally below
-    p_auto = draw_ellipse(ax, 5.8, 2.2, 4.2, 0.95, "Khóa Phím Web, Giao Quyền\nTự Động Cho FSM")
-    p_manu = draw_ellipse(ax, 11.4, 2.2, 4.2, 0.95, "Mở Khóa Nút Bấm, Cho Phép\nCan Thiệp Thủ Công")
+    e_auto = draw_ellipse(ax, 5.8, 2.2, 4.2, 0.95, "Khóa Phím Web, Giao Quyền\nTự Động Cho FSM")
+    e_manu = draw_ellipse(ax, 11.4, 2.2, 4.2, 0.95, "Mở Khóa Nút Bấm, Cho Phép\nCan Thiệp Thủ Công")
 
     draw_human_actor(ax, 1.3, 5.6, "Người Vận Hành", "«human actor»", scale=0.9)
-    draw_assoc_line(ax, (2.2, 5.6), (p_main[0] - 2.4, 5.6))
+    draw_assoc_line(ax, (2.2, 5.6), e_main)
 
-    # Converging extend arrows from children UPWARD to Base UC
-    draw_extend(ax, (p_auto[0] + 0.8, 2.7), (p_main[0] - 1.0, 5.1), "«extend»\n[chọn AUTO]")
-    draw_extend(ax, (p_manu[0] - 0.8, 2.7), (p_main[0] + 1.0, 5.1), "«extend»\n[chọn MANUAL]")
+    # Converging extend arrows touching ellipses directly
+    draw_extend(ax, e_auto, e_main, "«extend»\n[chọn AUTO]")
+    draw_extend(ax, e_manu, e_main, "«extend»\n[chọn MANUAL]")
 
     save_fig(fig, "uc09_mode_switch.png")
 
@@ -474,6 +522,7 @@ def make_uc09_bw():
 # 11. UC10: Can Thiệp Cưỡng Chế Thiết Bị (Strict UML «extend» Layout)
 # Base UC on Top Center, 2 Extensions below fanning inward and UPWARD to Base UC.
 # Pump Module placed on Left, Servo Motor on Right -> ZERO line crossing!
+# Touching dashed arrows, no frame around extend label.
 # =============================================================
 def make_uc10_bw():
     fig, ax = plt.subplots(figsize=(15.8, 7.8), dpi=300)
@@ -486,34 +535,34 @@ def make_uc10_bw():
                        "Phân Hệ Can Thiệp Cưỡng Chế (ESP32 Firmware)")
 
     # Base Use Case on Top Center
-    p_main = draw_ellipse(ax, 7.7, 5.6, 4.8, 1.05, "UC10: Can Thiệp Cưỡng Chế Thiết Bị Từ Web")
+    e_main = draw_ellipse(ax, 7.7, 5.6, 4.8, 1.05, "UC10: Can Thiệp Cưỡng Chế Thiết Bị Từ Web")
     
     # 2 Extension Use Cases spread horizontally below
-    p_pump = draw_ellipse(ax, 5.4, 2.2, 3.8, 0.95, "Bật / Tắt Cưỡng Chế\nMáy Bơm Thoát Nước")
-    p_gate = draw_ellipse(ax, 10.0, 2.2, 3.8, 0.95, "Điều Khiển Cưỡng Chế\nGóc Van (0° / 90° / 180°)")
+    e_pump = draw_ellipse(ax, 5.4, 2.2, 3.8, 0.95, "Bật / Tắt Cưỡng Chế\nMáy Bơm Thoát Nước")
+    e_gate = draw_ellipse(ax, 10.0, 2.2, 3.8, 0.95, "Điều Khiển Cưỡng Chế\nGóc Van (0° / 90° / 180°)")
 
     # Human operator at top left
     draw_human_actor(ax, 1.3, 5.6, "Người Vận Hành", "«human actor»", scale=0.9)
-    draw_assoc_line(ax, (2.2, 5.6), (p_main[0] - 2.4, 5.6))
+    draw_assoc_line(ax, (2.2, 5.6), e_main)
 
-    # Converging extend arrows from children UPWARD to Base UC
-    draw_extend(ax, (p_pump[0] + 0.6, 2.7), (p_main[0] - 0.9, 5.1), "«extend»\n[lệnh Bơm]")
-    draw_extend(ax, (p_gate[0] - 0.6, 2.7), (p_main[0] + 0.9, 5.1), "«extend»\n[lệnh Van]")
+    # Converging extend arrows touching ellipses directly
+    draw_extend(ax, e_pump, e_main, "«extend»\n[lệnh Bơm]")
+    draw_extend(ax, e_gate, e_main, "«extend»\n[lệnh Van]")
 
     # Connected actuator devices:
-    # Pump Relay device on LEFT -> straight to p_pump (no crossing!)
+    # Pump Relay device on LEFT -> straight to e_pump (no crossing!)
     draw_device_actor(ax, 1.3, 2.2, "Module Relay 5V\n& Máy Bơm Mini", "«device»", w=2.4, h=1.05)
-    draw_assoc_line(ax, (2.5, 2.2), (p_pump[0] - 1.9, 2.2))
+    draw_assoc_line(ax, (2.5, 2.2), e_pump)
 
-    # Servo Motor device on RIGHT -> straight to p_gate (no crossing!)
+    # Servo Motor device on RIGHT -> straight to e_gate (no crossing!)
     draw_device_actor(ax, 14.2, 2.2, "Động Cơ Servo\nSG90 (Van Lũ)", "«device»", w=2.4, h=1.05)
-    draw_assoc_line(ax, (p_gate[0] + 1.9, 2.2), (13.0, 2.2))
+    draw_assoc_line(ax, (13.0, 2.2), e_gate)
 
     save_fig(fig, "uc10_manual_override.png")
 
 
 if __name__ == "__main__":
-    print("Generating pure black & white UML Use Case diagrams with zero overlap...")
+    print("Generating pure black & white UML Use Case diagrams with touching arrows and no-bbox text...")
     make_overall_uml_bw()
     make_uc01_bw()
     make_uc02_bw()

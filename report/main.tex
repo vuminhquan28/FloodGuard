@@ -57,8 +57,10 @@
     filecolor=magenta,      
     urlcolor=cyan!70!black,
     citecolor=green!50!black,
+    plainpages=false,
+    pdfpagelabels=true,
     pdftitle={Báo cáo dự án IoT: FloodGuard - Hệ thống chống ngập tự động},
-    pdfauthor={Nhóm tác giả},
+    pdfauthor={Vũ Minh Quân, Nguyễn Đức Huy, Phạm Đức Mạnh},
 }
 
 % --- Header và Footer ---
@@ -72,6 +74,8 @@
 
 % ==================== BẮT ĐẦU TÀI LIỆU ====================
 \begin{document}
+
+\pagenumbering{alph}
 
 % --- TRANG BÌA ---
 \begin{titlepage}
@@ -99,7 +103,7 @@
     \vspace{0.3cm}
     {\small\slshape Ứng dụng Vi điều khiển ESP32, Thuật toán FSM \& Web Dashboard Thời Gian Thực\par}
     
-    \vspace{1.6cm}
+    \vspace{1.4cm}
     
     \begin{minipage}{0.92\textwidth}
         \normalsize
@@ -107,7 +111,9 @@
         \begin{tabular}{@{}ll@{}}
             \textbf{Học phần:}            & Lập trình nhúng và thời gian thực \\
             \textbf{Mã học phần:}         & 2627I\_INT3108\_1 \\
-            \textbf{Sinh viên thực hiện:} & Nguyễn Văn B - MSSV: 202xxxxx \\
+            \textbf{Sinh viên thực hiện:} & Vũ Minh Quân (23020142) \\
+                                          & Nguyễn Đức Huy (24020161) \\
+                                          & Phạm Đức Mạnh (24020222) \\
             \textbf{Học kỳ / Năm học:}    & Học kỳ 1 -- 2026-2027 \\
         \end{tabular}
     \end{minipage}
@@ -117,8 +123,49 @@
     \vspace*{0.3cm}
 \end{titlepage}
 
-% --- MỤC LỤC ---
+% --- BẢNG PHÂN CHIA CÔNG VIỆC ---
+\newpage
 \pagenumbering{roman}
+\setcounter{page}{1}
+\addcontentsline{toc}{chapter}{Bảng Phân Chia Công Việc \& Tỷ Lệ Đóng Góp}
+
+\begin{center}
+    \vspace*{0.5cm}
+    {\fontsize{16pt}{20pt}\selectfont\bfseries BẢNG PHÂN CHIA CÔNG VIỆC VÀ TỶ LỆ ĐÓNG GÓP}\par
+    \vspace{0.8cm}
+\end{center}
+
+\noindent
+Dự án \textbf{FloodGuard: Hệ thống giám sát và chống ngập tự động thông minh} được nghiên cứu và phát triển bởi nhóm gồm 03 sinh viên. Khối lượng công việc bao gồm thiết kế kiến trúc phần cứng, sơ đồ nguyên lý mạch điện, lập trình firmware vi điều khiển ESP32, xây dựng thuật toán điều khiển FSM, thiết kế giao diện Web Dashboard và biên soạn báo cáo kỹ thuật được phân chia đồng đều và bình đẳng giữa các thành viên:
+
+\vspace{0.6cm}
+
+\begin{center}
+\renewcommand{\arraystretch}{1.5}
+\begin{tabular}{|c|l|c|}
+\hline
+\textbf{STT} & \textbf{Tên sinh viên} & \textbf{Phân chia công việc (\%)} \\ \hline
+1 & Vũ Minh Quân (23020142) & 33.33\% ($1/3$) \\ \hline
+2 & Nguyễn Đức Huy (24020161) & 33.33\% ($1/3$) \\ \hline
+3 & Phạm Đức Mạnh (24020222) & 33.33\% ($1/3$) \\ \hline
+\multicolumn{2}{|c|}{\textbf{Tổng cộng}} & \textbf{100\%} \\ \hline
+\end{tabular}
+\end{center}
+
+\vspace{0.6cm}
+\noindent
+\textbf{Cam kết trách nhiệm:} Tất cả 03 thành viên trong nhóm đều tham gia chủ động, đóng góp bình đẳng và phối hợp chặt chẽ trong tất cả các giai đoạn triển khai đề tài, đảm bảo hoàn thành $100\%$ khối lượng công việc được giao với chất lượng cao nhất.
+
+\vspace{1.8cm}
+\begin{flushright}
+    \textit{Hà Nội, ngày 25 tháng 10 năm 2026}\\[0.3cm]
+    \textbf{Đại diện nhóm sinh viên thực hiện}\\[2.5cm]
+    \textit{(Ký và ghi rõ họ tên)}\hspace{1.5cm}
+\end{flushright}
+
+\newpage
+
+% --- MỤC LỤC ---
 \tableofcontents
 \newpage
 \listoffigures

@@ -11,7 +11,7 @@ Hệ thống FloodGuard gồm 4 khối chức năng chính được tích hợp 
 
 \section{Giải Pháp Điều Khiển Qua Mạng Không Dây Cục Bộ Thay Cho Nút Nhấn Cơ Học}
 
-Trong thiết kế trạm FloodGuard, giao diện giám sát và điều khiển can thiệp được chuyển dịch hoàn toàn sang **giao diện Web Dashboard thông qua mạng không dây cục bộ (Local Wi-Fi / SoftAP)** thay cho các nút bấm vật lý tại chỗ. Giải pháp này xuất phát từ các lập luận kỹ thuật và thực tiễn vận hành:
+Trong thiết kế trạm FloodGuard, giao diện giám sát và điều khiển can thiệp được chuyển dịch hoàn toàn sang \textbf{giao diện Web Dashboard thông qua mạng không dây cục bộ (Local Wi-Fi / SoftAP)} thay cho các nút bấm vật lý tại chỗ. Giải pháp này xuất phát từ các lập luận kỹ thuật và thực tiễn vận hành:
 \begin{itemize}
     \item \textbf{Đảm bảo an toàn tính mạng cho người vận hành:} Mục tiêu cốt lõi của trạm bơm chống ngập là vận hành tự trị $24/7$. Khi xảy ra thiên tai mưa bão ngập lụt, khu vực hồ thu và trạm bơm tiềm ẩn nguy cơ giông sét đánh, sụt lở mép bờ và rò rỉ điện từ các đường dây động lực ngâm trong nước. Việc điều khiển không dây cho phép kỹ thuật viên đứng từ vị trí khô ráo an toàn (trong xe chỉ huy hoặc trên tầng cao tòa nhà cách trạm $15 - 30\,\text{m}$) để theo dõi và ra lệnh.
     \item \textbf{Cung cấp đầy đủ ngữ cảnh dữ liệu trước khi can thiệp:} Khác với nút bấm vật lý vốn chỉ cho phép thao tác "mù" mà không biết chính xác mực nước hay trạng thái van xả, Web Dashboard hiển thị toàn bộ đồ họa số hóa (phần trăm nước, khoảng cách cm, cấp độ mưa, trạng thái FSM). Người vận hành có đầy đủ cơ sở thông tin kỹ thuật trước khi quyết định kích hoạt máy bơm hoặc xoay van xả lũ.
@@ -19,7 +19,7 @@ Trong thiết kế trạm FloodGuard, giao diện giám sát và điều khiển
     Việc không trang bị nút bấm cơ học đồng nghĩa với việc nếu thiết bị di động hết pin hoặc mạng Wi-Fi bị nhiễu sóng nặng, người tại chỗ không thể can thiệp tức thời. Để giảm thiểu rủi ro này:
     \begin{itemize}
         \item Trong mô hình thực nghiệm, hệ thống áp dụng cơ chế bảo vệ Failsafe tự động chuyển về \texttt{AUTO} sau $30\,\text{s}$ mất kết nối và tự động kích hoạt bơm toàn tải nếu nước chạm mức nguy cấp CRITICAL.
-        \item Tuy nhiên, theo các tiêu chuẩn an toàn máy móc công nghiệp (ISO 13850 và IEC 60204-1), ở phiên bản sản xuất thương mại thực tế ngoài hiện trường, hệ thống khuyến nghị bắt buộc bố trí thêm **01 nút Dừng khẩn cấp cơ học (E-Stop Button)** dạng nấm màu đỏ có chốt khóa, đấu ngắt trực tiếp nguồn điện cấp cho cuộn hút Relay của máy bơm nhằm xử lý sự cố kẹt rác cơ học hoặc cháy nổ động cơ tại chỗ.
+        \item Tuy nhiên, theo các tiêu chuẩn an toàn máy móc công nghiệp (ISO 13850 và IEC 60204-1), ở phiên bản sản xuất thương mại thực tế ngoài hiện trường, hệ thống khuyến nghị bắt buộc bố trí thêm \textbf{01 nút Dừng khẩn cấp cơ học (E-Stop Button)} dạng nấm màu đỏ có chốt khóa, đấu ngắt trực tiếp nguồn điện cấp cho cuộn hút Relay của máy bơm nhằm xử lý sự cố kẹt rác cơ học hoặc cháy nổ động cơ tại chỗ.
     \end{itemize}
 \end{itemize}
 

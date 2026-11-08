@@ -1,305 +1,283 @@
 \chapter{Giới Thiệu Đề Tài \& Phân Tích Yêu Cầu}
 
-\section{Đặt Vấn Đề}
-Hiện tượng ngập lụt đô thị và sạt lở, tràn đê vào mùa mưa bão đang là một trong những thách thức nghiêm trọng nhất tại các đô thị lớn ở Việt Nam cũng như trên thế giới. Tình trạng này gây thiệt hại nặng nề về kinh tế, tài sản, cản trở giao thông và tiềm ẩn nhiều rủi ro về sức khỏe, tính mạng con người.
+\section{Đặt Vấn Đề \& Khảo Sát Hiện Trạng}
 
-Các giải pháp truyền thống như điều tiết thủ công, đo đạc bằng mắt thường hoặc vận hành trạm bơm tại chỗ bộc lộ nhiều nhược điểm:
+\subsection{Bối Cảnh Thực Tiễn Về Ngập Úng Đô Thị}
+Hiện tượng ngập úng đô thị cục bộ vào mùa mưa bão đang là một trong những thách thức dân sinh và hạ tầng nghiêm trọng nhất tại các đô thị lớn ở Việt Nam, điển hình như Hà Nội và TP. Hồ Chí Minh. Các điểm trũng thấp như hầm chui dân sinh (hầm chui Đại lộ Thăng Long, Nguyễn Trãi), tầng hầm các tòa nhà chung cư, trung tâm thương mại và các tuyến phố trũng thấp thường xuyên bị ngập sâu từ $0.5\,\text{m}$ đến hơn $1.2\,\text{m}$ chỉ sau những trận mưa rào kéo dài $30 - 45\,\text{phút}$. Tình trạng này gây thiệt hại nặng nề về phương tiện giao thông, làm tê liệt hạ tầng đô thị, gây chập cháy thiết bị điện tử ngầm và tiềm ẩn nguy cơ đe dọa trực tiếp tính mạng con người.
+
+\subsection{Khảo Sát \& Đánh Giá Các Giải Pháp Hiện Nay}
+Để ứng phó với ngập úng đô thị, các giải pháp giám sát và tiêu thoát nước hiện nay chủ yếu bao gồm:
 \begin{itemize}
-    \item \textbf{Độ trễ phản ứng cao:} Khi nước dâng nhanh đột ngột vào ban đêm, con người không kịp có mặt để vận hành máy bơm hay mở cống xả.
-    \item \textbf{Thiếu thông tin cảnh báo sớm:} Người dân trong khu vực không được cập nhật kịp thời về tốc độ và mức độ nước dâng.
-    \item \textbf{Nguy cơ hỏng hóc thiết bị:} Việc bật/tắt thiết bị công suất lớn liên tục do mực nước dập dềnh gây giảm tuổi thọ của bơm và van xả.
+    \item \textbf{Cơ chế phao cơ truyền thống:} Sử dụng phao quả nổi đóng ngắt tiếp điểm điện cơ khí. Giải pháp này có ưu điểm chi phí thấp, tuy nhiên chỉ cung cấp thông tin nhị phân (ngập / cạn), không đo lường được tốc độ dâng nước, rất dễ kẹt rác cơ học và hoàn toàn không có khả năng giám sát hay cảnh báo sớm từ xa.
+    \item \textbf{Hệ thống SCADA / PLC công nghiệp:} Sử dụng các bộ điều khiển logic khả trình (PLC) kết hợp cảm biến radar công nghiệp và mạng truyền thông cáp quang. Mặc dù có độ tin cậy và độ bền công nghiệp rất cao, giải pháp này có chi phí đầu tư phần cứng và bản quyền phần mềm cực kỳ đắt đỏ (lên tới hàng trăm triệu đồng cho một điểm đo), kích thước cồng kềnh, tiêu thụ nhiều năng lượng và khó có thể phủ kín diện rộng tại hàng trăm điểm ngập nhỏ lẻ trong đô thị.
+    \item \textbf{Hệ thống IoT nhúng dựa trên vi điều khiển:} Đây là hướng tiếp cận hiện đại và tối ưu về mặt kinh tế kỹ thuật. Bằng việc ứng dụng các vi điều khiển thế hệ mới như ESP32 tích hợp sẵn kết nối không dây, hệ thống có thể thu nhỏ kích thước, tiết kiệm năng lượng, đo đạc thông số liên tục theo thời gian thực và cung cấp giao diện giám sát tiện lợi với chi phí phần cứng rất thấp.
 \end{itemize}
 
-\section{Mục Tiêu Dự Án FloodGuard}
-Dự án \textbf{FloodGuard} hướng tới việc xây dựng một hệ thống IoT giám sát và chống ngập tự động, nhỏ gọn, hoạt động bền bỉ và phản ứng tức thời. Hệ thống tập trung vào các mục tiêu then chốt:
+\subsection{Phạm Vi \& Quy Mô Nghiên Cứu Của Đề Tài}
+Trong khuôn khổ học phần \textit{Lập trình nhúng và thời gian thực}, đề tài tập trung nghiên cứu, thiết kế và chế tạo một \textbf{mô hình thực nghiệm quy mô trạm quan trắc (Proof of Concept / Scale Model)} mang tên \textbf{FloodGuard}. Mô hình mô phỏng khép kín toàn bộ chu trình vận hành của một trạm bơm tiêu thoát lũ thông minh: từ khâu đo đạc mực nước và lượng mưa, tiền xử lý tín hiệu số, thuật toán điều khiển máy trạng thái hữu hạn (FSM) kết hợp dải trễ, điều khiển cơ cấu chấp hành (bơm, van), cảnh báo đa giác quan tại trạm (LED, còi), đến giao diện giám sát và can thiệp điều khiển qua mạng không dây cục bộ.
+
+\section{Mục Tiêu Kỹ Thuật Định Lượng Của Dự Án}
+Hệ thống \textbf{FloodGuard} hướng tới các chỉ tiêu kỹ thuật định lượng cụ thể:
 \begin{enumerate}
-    \item Tự động đo lường mực nước và lượng mưa liên tục theo thời gian thực với độ chính xác cao.
-    \item Tự động ra quyết định kích hoạt máy bơm nước và góc mở van thoát lũ theo thuật toán máy trạng thái hữu hạn (\textit{Finite State Machine - FSM}) kết hợp dải trễ (\textit{Hysteresis}).
-    \item Phát tín hiệu cảnh báo đa tầng thông qua hệ thống đèn LED trạng thái và còi hú báo động âm lượng lớn.
-    \item Cung cấp giao diện Web Dashboard trực quan, cho phép người quản lý theo dõi và can thiệp điều khiển thủ công (\textit{Manual Override}) từ xa qua mạng Wi-Fi.
+    \item \textbf{Độ chính xác đo lường mực nước:} Sai số đo khoảng cách qua cảm biến siêu âm $\le \pm 1\,\text{cm}$ trong dải đo làm việc $5 - 50\,\text{cm}$; phân giải mức nước từ $0\%$ đến $100\%$.
+    \item \textbf{Độ phân giải giám sát lượng mưa:} Thu nhận tín hiệu tương tự (ADC) 12-bit phân giải $\approx 0.8\,\text{mV}$ trên dải $0 - 3.3\,\text{V}$, phân loại 3 mức mưa (mưa nhỏ, mưa to, ngập cảm biến).
+    \item \textbf{Tính thời gian thực của thuật toán điều khiển (Worst-Case Reaction Time - WCRT):} Thời gian phản ứng từ thời điểm mực nước vượt ngưỡng nguy hiểm đến khi chân GPIO xuất tín hiệu kích hoạt Relay máy bơm không vượt quá $250\,\text{ms}$.
+    \item \textbf{Chống rung giật cơ cấu chấp hành (Hysteresis Guard):} Áp dụng dải trễ $5\%$ mực nước và dải trễ trạng thái, đảm bảo không xảy ra hiện tượng đóng/ngắt Relay liên tục (chattering) khi sóng nước dập dềnh quanh biên ngưỡng.
+    \item \textbf{Cảnh báo trực quan \& âm thanh đa cấp độ:} Cụm 3 đèn LED phản ánh trực tiếp 4 trạng thái vận hành; còi báo động phát xung âm thanh theo cơ chế bất đồng bộ (\textit{Non-blocking}) với chu kỳ nhịp thay đổi từ $1000\,\text{ms}$ (cảnh báo chậm) đến $200\,\text{ms}$ (báo động dồn dập).
+    \item \textbf{Hiệu năng giao tiếp mạng Web Dashboard:} Chu kỳ cập nhật dữ liệu telemetry thời gian thực $1000\,\text{ms}$ ($1\,\text{s}$), tỷ lệ phục vụ thành công các yêu cầu API đạt $\ge 99.5\%$ trên mạng Wi-Fi cục bộ.
+    \item \textbf{Cơ chế bảo vệ an toàn tự trị (Failsafe Timeout):} Khi ở chế độ thủ công (\texttt{MANUAL}), nếu mất kết nối điều khiển mạng quá $30\,\text{s}$, trạm tự động thu hồi quyền thủ công và chuyển về chế độ tự động (\texttt{AUTO}) để bảo vệ công trình chống tràn bể.
 \end{enumerate}
 
-\section{Phân Tích Yêu Cầu Chức Năng \& Mô Hình Hóa Use Case}
+\section{Mô Hình Hóa Use Case Hệ Thống Theo UML}
 
-\subsection{Phân Định Ranh Giới Hệ Thống \& Tác Nhân Theo Chuẩn UML 2.5}
-Trong mô hình hóa Use Case cho hệ thống nhúng và IoT theo chuẩn quốc tế UML 2.5:
+\subsection{Phân Định Ranh Giới Hệ Thống \& Danh Sách Tác Nhân}
+Mô hình hóa Use Case cho hệ thống FloodGuard được phân định rõ ràng giữa ranh giới phần mềm/phần cứng hệ thống và các tác nhân tương tác từ môi trường bên ngoài:
 \begin{itemize}
-    \item \textbf{Ranh giới hệ thống (\textit{System Boundary}):} Là khối điều khiển phần mềm chạy trên vi điều khiển ESP32 (\textit{FloodGuard Firmware Controller}). Hệ thống chịu trách nhiệm thu nhận dữ liệu, tính toán thuật toán FSM/Hysteresis, kích hoạt thiết bị ngoại vi và phục vụ giao tiếp Web API.
-    \item \textbf{Tác nhân (\textit{Actors}):} Là các thực thể bên ngoài tương tác trực tiếp với ranh giới hệ thống, bao gồm con người, bộ định thời và các thiết bị ngoại vi:
+    \item \textbf{Ranh giới hệ thống (\textit{System Boundary}):} Mang tên \textbf{Hệ Thống Trạm FloodGuard} (\textit{FloodGuard System}). Ranh giới bao trọn toàn bộ khối phần mềm nhúng thực thi trên vi điều khiển ESP32 bao gồm: tác vụ thu thập cảm biến, thuật toán FSM, tác vụ tạo xung cảnh báo, máy chủ HTTP Web Server và cơ chế giám sát an toàn Failsafe. Các thành phần logic nội bộ (như bộ điều phối FSM hay Web Server) nằm hoàn toàn trong ranh giới và không đóng vai trò là tác nhân.
+    \item \textbf{Tác nhân chính (\textit{Primary Actors}):}
     \begin{enumerate}
-        \item \textbf{Tác nhân chính (\textit{Primary Actors}):}
-        \begin{itemize}
-            \item \textbf{Người vận hành (\textit{Human Actor}):} Giám sát viên tương tác từ xa qua trình duyệt Web Dashboard để theo dõi telemetry, chuyển đổi chế độ vận hành (AUTO/MANUAL) và ra lệnh can thiệp cưỡng chế thiết bị.
-            \item \textbf{Bộ định thời Timer / Watchdog (\textit{Internal Timer}):} Kích hoạt định kỳ chu kỳ đo cảm biến, chu kỳ tính toán FSM và đếm thời gian giám sát mất kết nối mạng để tự động kích hoạt chế độ an toàn Failsafe.
-        \end{itemize}
-        \item \textbf{Tác nhân phụ / Thiết bị ngoại vi (\textit{Secondary Actors / Devices}):}
-        \begin{itemize}
-            \item \textbf{\texttt{«device»} Cảm biến siêu âm HC-SR04 \& Cảm biến mưa FC-37:} Cung cấp tín hiệu xung Echo đo khoảng cách và điện áp tương tự AO/mức logic DO phản ánh lượng mưa.
-            \item \textbf{\texttt{«device»} Module Relay 5V \& Máy bơm mini:} Cơ cấu chấp hành nhận tín hiệu kích tiếp điểm đóng/ngắt nguồn cho máy bơm thoát nước.
-            \item \textbf{\texttt{«device»} Động cơ Servo SG90:} Cơ cấu chấp hành nhận xung PWM điều khiển góc mở cửa van thoát lũ ($0^\circ, 90^\circ, 180^\circ$).
-            \item \textbf{\texttt{«device»} Cụm 3 Đèn LED \& Còi Buzzer 5V:} Cơ cấu chỉ thị nhận tín hiệu điều khiển mức logic và xung âm thanh báo động tại trạm.
-            \item \textbf{Người dân quanh trạm (\textit{Human Actor}):} Thụ hưởng và tiếp nhận trực tiếp tín hiệu cảnh báo bằng âm thanh còi hú và ánh sáng đèn LED tại thực địa.
-        \end{itemize}
+        \item \textbf{Bộ Định Thời Timer / Watchdog (\textit{Internal Timer}):} Đóng vai trò là nguồn kích hoạt sự kiện thời gian thực định kỳ từ bên ngoài luồng logic chính, bao gồm bộ định thời chu kỳ đọc cảm biến $200\,\text{ms}$, bộ định thời chu kỳ thực thi FSM, và bộ đếm thời gian giám sát mất kết nối Failsafe ($30\,\text{s}$).
+        \item \textbf{Người Vận Hành (\textit{Human Operator}):} Nhân sự giám sát và vận hành tương tác trực tiếp với trạm từ thiết bị đầu cuối (điện thoại, máy tính) thông qua trình duyệt Web.
+    \end{enumerate}
+    \item \textbf{Tác nhân phụ / Thiết bị ngoại vi (\textit{Secondary Actors / Devices}):}
+    \begin{enumerate}
+        \item \textbf{\texttt{«device»} Cảm biến siêu âm HC-SR04 \& Cảm biến mưa FC-37:} Thiết bị đầu vào cung cấp tín hiệu xung thời gian phản hồi (Echo) và điện áp tương tự (AO) / mức logic (DO).
+        \item \textbf{\texttt{«device»} Module Relay 5V \& Máy bơm mini:} Cơ cấu chấp hành động lực tiếp nhận tín hiệu kích mức logic để đóng/ngắt nguồn động cơ bơm.
+        \item \textbf{\texttt{«device»} Động cơ Servo SG90:} Cơ cấu chấp hành cơ khí tiếp nhận tín hiệu điều chế độ rộng xung (PWM) để định vị góc mở cửa van xả lũ ($0^\circ, 90^\circ, 180^\circ$).
+        \item \textbf{\texttt{«device»} Cụm 3 Đèn LED \& Còi Buzzer 5V:} Thiết bị chỉ thị tại chỗ tiếp nhận tín hiệu logic và xung nhịp cảnh báo.
+        \item \textbf{Người Dân Quanh Trạm (\textit{Human Actor}):} Tác nhân thụ hưởng tiếp nhận tín hiệu âm thanh còi hú và ánh sáng đèn LED cảnh báo nguy hiểm tại thực địa trạm.
     \end{enumerate}
 \end{itemize}
 
 \subsection{Sơ Đồ Use Case Tổng Thể Hệ Thống}
-Sơ đồ Use Case tổng thể chuẩn UML 2.5 phân định rõ ranh giới hệ thống \textit{FloodGuard System}, các tác nhân chính bên trái, các tác nhân phụ/thiết bị bên phải, và hoàn toàn độc lập, không sử dụng quan hệ \texttt{«include»} sai mục đích giữa các ca sử dụng độc lập:
+Sơ đồ Use Case tổng thể được tổ chức với các tác nhân kích hoạt chính ở bên trái, ranh giới hệ thống ở trung tâm và các tác nhân phụ/thiết bị chấp hành ở bên phải. Toàn bộ 10 ca sử dụng hoạt động độc lập, không sử dụng quan hệ phụ thuộc chéo:
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.95\textwidth]{figures/uc_overall_diagram.png}
-    \caption{Sơ đồ Use Case tổng thể hệ thống FloodGuard chuẩn UML 2.5}
+    \includegraphics[width=0.98\textwidth]{figures/uc_overall_diagram.png}
+    \caption{Sơ đồ Use Case tổng thể hệ thống FloodGuard}
     \label{fig:uc_overall}
 \end{figure}
 
-\subsection{Đặc Tả Chi Tiết 10 Trường Hợp Sử Dụng (Use Cases)}
+\subsection{Bảng Đặc Tả Chi Tiết 10 Use Case Hệ Thống}
+Để đảm bảo tính nhất quán, bao quát đầy đủ các luồng sự kiện chính, luồng rẽ nhánh và luồng ngoại lệ cho toàn bộ 10 ca sử dụng, thông tin chi tiết được chuẩn hóa trong Bảng~\ref{tab:uc_specification}.
 
-% --- UC01 ---
+\small
+\renewcommand{\arraystretch}{1.3}
+\begin{longtable}{|c|p{3.0cm}|p{3.2cm}|p{6.8cm}|}
+\caption{Bảng đặc tả chuẩn hóa 10 trường hợp sử dụng (Use Cases) của hệ thống FloodGuard} \label{tab:uc_specification} \\
+\hline
+\textbf{ID} & \textbf{Tên Use Case} & \textbf{Tác nhân \& Kích hoạt} & \textbf{Mô tả luồng chính \& Ngoại lệ (Exceptions)} \\ \hline
+\endfirsthead
+
+\multicolumn{4}{c}%
+{{\bfseries Bảng \thetable{} -- Tiếp theo từ trang trước}} \\
+\hline
+\textbf{ID} & \textbf{Tên Use Case} & \textbf{Tác nhân \& Kích hoạt} & \textbf{Mô tả luồng chính \& Ngoại lệ (Exceptions)} \\ \hline
+\endhead
+
+\hline \multicolumn{4}{|r|}{{Còn tiếp ở trang sau}} \\ \hline
+\endfoot
+
+\hline
+\endlastfoot
+
+\texttt{UC01} & Đọc \& tiền xử lý dữ liệu cảm biến & Timer 200ms; Cảm biến HC-SR04, FC-37 & \textbf{Chính:} Kích Trig $10\,\mu\text{s}$, đo xung Echo, lọc trung vị 3 mẫu tính \% nước; đọc ADC mưa.\\
+ & & & \textbf{Ngoại lệ:} Echo timeout ($>30\,\text{ms}$) hoặc ngoài dải $5-50\,\text{cm}$: giữ mẫu cũ tối đa 3 lần. Quá 3 lần kích hoạt cờ lỗi cảm biến (\texttt{SENSOR\_FAULT}). \\ \hline
+\texttt{UC02} & Đánh giá trạng thái FSM \& Dải trễ & Timer chu kỳ FSM & \textbf{Chính:} Đối chiếu \% nước với các ngưỡng $40\%, 70\%, 80\%$ để phân 4 cấp (NORMAL, WARNING, DANGER, CRITICAL); áp dụng dải trễ $5\%$ chống rung giật cơ cấu.\\
+ & & & \textbf{Ghi chú:} Cảm biến mưa cung cấp dữ liệu hiển thị bổ trợ, không can thiệp sai lệch FSM. \\ \hline
+\texttt{UC03} & Tự động điều khiển máy bơm & Timer chu kỳ FSM; Relay 5V \& Bơm mini & \textbf{Chính (Generalization):} Phân nhánh chuyên biệt:\\
+ & & & -- Mức DANGER/CRITICAL: Kích Relay Active LOW ($0\,\text{V}$) bật bơm.\\
+ & & & -- Mức NORMAL/WARNING: Thả nổi chân GPIO sang High-Z ngắt bơm an toàn. \\ \hline
+\texttt{UC04} & Tự động điều khiển van thoát lũ & Timer chu kỳ FSM; Động cơ Servo SG90 & \textbf{Chính (Generalization):} Phân nhánh theo trạng thái:\\
+ & & & -- NORMAL / WARNING: Xuất PWM đóng van $0^\circ$.\\
+ & & & -- DANGER: Xuất PWM mở van $50\%$ ($90^\circ$).\\
+ & & & -- CRITICAL: Xuất PWM mở van $100\%$ ($180^\circ$). \\ \hline
+\texttt{UC05} & Phát tín hiệu cảnh báo tại trạm & Timer chu kỳ FSM; LED, Còi; Người dân & \textbf{Chính:} Bật LED chỉ thị tương ứng; kích còi hú Non-blocking theo nhịp thời gian.\\
+ & & & \textbf{Đặc tính an toàn:} Cảnh báo tại trạm duy trì liên tục ở cả hai chế độ AUTO và MANUAL. \\ \hline
+\texttt{UC06} & Tự động chuyển an toàn (Failsafe) & Watchdog Timer; Người vận hành (nhận tin) & \textbf{Chính:} Đếm thời gian không nhận request từ Web ($>30\,\text{s}$). Tự động đảo cờ \texttt{isAutoMode = true}, gửi thông báo cảnh báo về Dashboard khi kết nối lại.\\
+ & & & \textbf{Phục hồi:} Người dùng phải chủ động bấm xác nhận trên Web để chuyển lại MANUAL. \\ \hline
+\texttt{UC07} & Truyền nhận dữ liệu Web API & Người vận hành (qua trình duyệt Web) & \textbf{Chính (Generalization):} Tiếp nhận và xử lý request HTTP:\\
+ & & & -- \texttt{GET /api/status}: Đóng gói JSON trả telemetry mực nước, trạng thái bơm, van, còi.\\
+ & & & -- \texttt{GET /api/control}: Giải mã tham số điều khiển chế độ và cưỡng chế thiết bị. \\ \hline
+\texttt{UC08} & Giám sát trạng thái qua Web Dashboard & Người vận hành (qua trình duyệt Web) & \textbf{Chính:} Render trực quan vòng đo mực nước \%, khoảng cách cm, cấp độ mưa và thẻ màu trạng thái thời gian thực của toàn bộ thiết bị ngoại vi. \\ \hline
+\texttt{UC09} & Chuyển đổi chế độ (AUTO / MANUAL) & Người vận hành (nhấp nút gạt Web) & \textbf{Chính (Generalization):} Chuyên biệt hóa hai trạng thái:\\
+ & & & -- Sang AUTO: Khóa các nút can thiệp trên Web, giao toàn quyền điều khiển cho FSM.\\
+ & & & -- Sang MANUAL: Mở khóa các nút can thiệp cưỡng chế thiết bị trên Web Dashboard. \\ \hline
+\texttt{UC10} & Can thiệp điều khiển thiết bị từ Web & Người vận hành; Relay, Bơm, Servo & \textbf{Chính («extend»):} Tiền điều kiện \texttt{isAutoMode == false}. Bật/tắt bơm cưỡng chế hoặc xoay van xả theo ý muốn.\\
+ & & & \textbf{Ngoại lệ an toàn:} Nếu nước vượt ngưỡng CRITICAL quá $10\,\text{s}$ mà người không can thiệp, hệ thống tự động ngắt MANUAL để cứu hộ trạm. \\ \hline
+\end{longtable}
+\normalsize
+
+\subsection{Sơ Đồ Phân Rã Chi Tiết Các Use Case}
+
 \subsubsection{UC01: Đọc và Tiền Xử Lý Dữ Liệu Cảm Biến}
-\begin{itemize}
-    \item \textbf{Mã định danh:} \texttt{UC01}
-    \item \textbf{Tác nhân:}
-    \begin{itemize}
-        \item \textit{Tác nhân chính:} Bộ định thời Timer 100ms (kích hoạt chu kỳ đọc).
-        \item \textit{Tác nhân phụ:} \texttt{«device»} Cảm biến siêu âm HC-SR04, \texttt{«device»} Cảm biến mưa FC-37.
-    \end{itemize}
-    \item \textbf{Mục tiêu:} Thu thập dữ liệu cảm biến sạch, triệt tiêu xung gai nhiễu điện từ (EMI) và quy đổi ra \% mực nước cùng các cấp độ mưa.
-    \item \textbf{Tiền điều kiện:} Cảm biến được cấp nguồn ổn định; chân Trig/Echo và AO/DO nối đúng sơ đồ chân GPIO.
-    \item \textbf{Quan hệ \texttt{«include»} (chuẩn UML 2.5):} UC01 trực tiếp gọi đồng thời 3 ca sử dụng con (không tạo chuỗi tuần tự):
-    \begin{enumerate}
-        \item \textit{Đo khoảng cách siêu âm (HC-SR04):} Kích xung Trig 10$\mu$s, đo độ rộng xung Echo.
-        \item \textit{Lọc trung vị 3 mẫu \& Tính \% nước:} Loại trừ mẫu ngoại lai, quy đổi khoảng cách sang dải 0\% -- 100\%.
-        \item \textit{Đọc tín hiệu mưa \& Phân cấp ADC/DO:} Đọc mức ADC và phân loại 3 mức độ (mưa nhỏ, mưa to, ngập nước).
-    \end{enumerate}
-    \item \textbf{Hậu điều kiện:} Cung cấp các thông số chuẩn hóa \texttt{waterPercent}, \texttt{currentDistance}, \texttt{rainRawADC}, \texttt{isRaining}, \texttt{isHeavyRain}, \texttt{isSubmerged} cho thuật toán FSM và Web Server.
-\end{itemize}
+Ca sử dụng \texttt{UC01} được kích hoạt định kỳ mỗi $200\,\text{ms}$ bởi bộ định thời Timer. Trong mỗi chu kỳ lấy mẫu, ca sử dụng luôn thực thi đồng thời ba nhánh xử lý con thông qua quan hệ \texttt{«include»}:
+\begin{enumerate}
+    \item \textit{Đo khoảng cách siêu âm (HC-SR04):} Vi điều khiển xuất xung kích Trig $10\,\mu\text{s}$ và đo độ rộng xung phản hồi Echo bằng hàm \texttt{pulseIn()}.
+    \item \textit{Lọc trung vị 3 mẫu \& Quy đổi \% nước:} Thu thập 3 giá trị liên tiếp, sắp xếp và lấy giá trị ở giữa để loại bỏ các mẫu ngoại lai (outliers) do bọt nước hoặc sóng dập dềnh; sau đó ánh xạ khoảng cách vật lý ($5 - 50\,\text{cm}$) sang dải $0\% - 100\%$.
+    \item \textit{Đọc cảm biến mưa \& Phân cấp ADC/DO:} Đọc giá trị điện áp từ chân analog và mức logic chân digital để phân loại mức độ mưa.
+\end{enumerate}
+\textbf{Xử lý ngoại lệ:} Trong trường hợp cảm biến siêu âm bị mất tín hiệu phản hồi (Echo timeout quá $30\,\text{ms}$) hoặc giá trị đo bất thường nằm ngoài dải vật lý ($< 5\,\text{cm}$ hoặc $> 50\,\text{cm}$), hệ thống áp dụng cơ chế giữ mẫu hợp lệ gần nhất (Sample-and-Hold). Nếu lỗi kéo dài quá 3 chu kỳ liên tiếp ($> 600\,\text{ms}$), hệ thống thiết lập trạng thái ngoại lệ \texttt{SENSOR\_FAULT}, phát cảnh báo âm thanh và bật van xả phòng ngừa sự cố ngập úng.
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.88\textwidth]{figures/uc01_sensor_processing.png}
-    \caption{Sơ đồ phân rã Use Case UC01 theo chuẩn UML (Mũi tên «include» cùng xuất phát từ UC cha)}
+    \includegraphics[width=0.92\textwidth]{figures/uc01_sensor_processing.png}
+    \caption{Sơ đồ phân rã Use Case UC01: Đọc và tiền xử lý dữ liệu cảm biến}
     \label{fig:uc01}
 \end{figure}
 
-% --- UC02 ---
-\subsubsection{UC02: Tự Động Đánh Giá Ngưỡng Trạng Thái \& Xử Lý Chống Rung (Hysteresis)}
+\subsubsection{UC02: Tự Động Đánh Giá Trạng Thái FSM \& Xử Lý Dải Trễ (Hysteresis)}
+Ca sử dụng \texttt{UC02} được kích hoạt bởi Timer chu kỳ logic. Dữ liệu đầu vào chính để đánh giá chuyển dịch trạng thái là phần trăm mực nước (\texttt{waterPercent}):
 \begin{itemize}
-    \item \textbf{Mã định danh:} \texttt{UC02}
-    \item \textbf{Tác nhân chính:} Bộ định thời chu kỳ FSM (kích hoạt định kỳ đánh giá logic).
-    \item \textbf{Mục tiêu:} Xác định trạng thái vận hành của trạm và triệt tiêu hiện tượng rung giật đóng/ngắt thiết bị liên tục (chattering/jittering) khi mặt nước dao động quanh biên ngưỡng.
-    \item \textbf{Tiền điều kiện:} Hệ thống ở chế độ \texttt{AUTO MODE} và dữ liệu từ \texttt{UC01} đã sẵn sàng.
-    \item \textbf{Quan hệ \texttt{«include»}:} UC02 trực tiếp gọi:
-    \begin{itemize}
-        \item \textit{Đánh giá 4 cấp độ (NORMAL -- CRITICAL):} Đối chiếu \% nước và cấp mưa với bảng quy tắc ngưỡng.
-        \item \textit{Áp dụng dải trễ Hysteresis chống rung:} Duy trì xả cho tới khi nước rút sâu $< 40\%$ mới hạ trạng thái.
-    \end{itemize}
-    \item \textbf{Hậu điều kiện:} Biến trạng thái \texttt{sysState} được cập nhật chính xác, kích hoạt điều khiển đồng bộ cho UC03, UC04 và UC05.
+    \item \textit{Đánh giá 4 cấp độ trạng thái FSM:} Mực nước được so sánh với các ngưỡng $40\%$ (WARNING), $70\%$ (DANGER), và $80\%$ (CRITICAL). Dữ liệu cảm biến mưa được hiển thị hỗ trợ cảnh báo sớm trên Web Dashboard mà không làm sai lệch logic chuyển trạng thái cơ cấu chấp hành.
+    \item \textit{Áp dụng dải trễ Hysteresis chống rung:} Khi mực nước đang ở mức cao (ví dụ DANGER), nếu nước rút nhẹ quanh ngưỡng $70\%$, trạng thái xả vẫn được duy trì. Chỉ khi mực nước rút sâu xuống dưới $40\%$ kết hợp dải trễ $5\%$, hệ thống mới hạ trạng thái về NORMAL, triệt tiêu hoàn toàn hiện tượng rung giật đóng ngắt Relay liên tục.
 \end{itemize}
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.88\textwidth]{figures/uc02_fsm_hysteresis.png}
-    \caption{Sơ đồ phân rã Use Case UC02: Tự động đánh giá FSM \& Hysteresis}
+    \includegraphics[width=0.92\textwidth]{figures/uc02_fsm_hysteresis.png}
+    \caption{Sơ đồ phân rã Use Case UC02: Tự động đánh giá FSM \& Dải trễ}
     \label{fig:uc02}
 \end{figure}
 
-% --- UC03 ---
 \subsubsection{UC03: Tự Động Điều Khiển Máy Bơm Thoát Nước}
+Hành vi điều khiển máy bơm bao gồm hai hành động loại trừ nhau (bật bơm hoặc ngắt bơm), do đó được mô hình hóa dưới dạng quan hệ chuyên biệt hóa (Generalization) kế thừa từ \texttt{UC03}:
 \begin{itemize}
-    \item \textbf{Mã định danh:} \texttt{UC03}
-    \item \textbf{Tác nhân:}
-    \begin{itemize}
-        \item \textit{Tác nhân chính:} Trình điều phối FSM.
-        \item \textit{Tác nhân phụ:} \texttt{«device»} Module Relay 5V \& Máy bơm mini.
-    \end{itemize}
-    \item \textbf{Mục tiêu:} Tự động kích hoạt máy bơm khi đạt ngưỡng nguy cơ và ngừng bơm dứt điểm khi nước đã rút về mức an toàn.
-    \item \textbf{Tiền điều kiện:} Hệ thống ở chế độ tự động (\texttt{isAutoMode == true}).
-    \item \textbf{Quan hệ \texttt{«include»}:} UC03 trực tiếp gọi:
-    \begin{itemize}
-        \item \textit{Kích Relay Active LOW:} Bật máy bơm khi FSM đạt mức DANGER hoặc CRITICAL.
-        \item \textit{Thả nổi High-Z INPUT:} Triệt tiêu dòng rò optocoupler 5V, ngắt bơm hoàn toàn khi an toàn.
-    \end{itemize}
-    \item \textbf{Hậu điều kiện:} Máy bơm hoạt động hoặc ngắt nghỉ đúng quy trình an toàn.
+    \item \textit{Kích Relay Active LOW (Bật bơm):} Thực thi khi FSM ở mức DANGER hoặc CRITICAL. Vi điều khiển cấu hình chân GPIO 23 sang chế độ \texttt{OUTPUT} và xuất mức logic \texttt{LOW} ($0\,\text{V}$) để kích thông optocoupler, đóng tiếp điểm Relay cấp điện $5\,\text{V}$ cho máy bơm.
+    \item \textit{Thả nổi Relay High-Z (Ngắt bơm):} Thực thi khi FSM ở mức NORMAL hoặc WARNING. Vi điều khiển chuyển chân GPIO 23 sang chế độ \texttt{INPUT} (trạng thái thả nổi High-Impedance) để triệt tiêu hoàn toàn dòng rò quang học qua optocoupler, đảm bảo Relay nhả dứt điểm.
 \end{itemize}
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.88\textwidth]{figures/uc03_pump_control.png}
+    \includegraphics[width=0.92\textwidth]{figures/uc03_pump_control.png}
     \caption{Sơ đồ phân rã Use Case UC03: Tự động điều khiển máy bơm thoát nước}
     \label{fig:uc03}
 \end{figure}
 
-% --- UC04 ---
 \subsubsection{UC04: Tự Động Điều Khiển Van Thoát Lũ}
+Cửa van thoát lũ được kéo bởi động cơ Servo SG90. Tùy thuộc vào cấp độ ngập, ba nhánh mở van loại trừ nhau được chuyên biệt hóa kế thừa từ \texttt{UC04}:
 \begin{itemize}
-    \item \textbf{Mã định danh:} \texttt{UC04}
-    \item \textbf{Tác nhân:}
-    \begin{itemize}
-        \item \textit{Tác nhân chính:} Trình điều phối FSM.
-        \item \textit{Tác nhân phụ:} \texttt{«device»} Động cơ Servo SG90.
-    \end{itemize}
-    \item \textbf{Mục tiêu:} Tự động điều tiết lưu lượng xả lũ tương ứng theo mức độ ngập của trạm.
-    \item \textbf{Tiền điều kiện:} Hệ thống ở chế độ tự động (\texttt{isAutoMode == true}).
-    \item \textbf{Quan hệ \texttt{«include»}:} UC04 trực tiếp gọi:
-    \begin{itemize}
-        \item \textit{Xuất PWM mở van 50\% góc 90°:} Khi FSM ở mức DANGER.
-        \item \textit{Xuất PWM mở van 100\% góc 180°:} Khi FSM ở mức CRITICAL.
-    \end{itemize}
-    \item \textbf{Hậu điều kiện:} Cửa van mở đúng góc thiết kế, điều tiết dòng xả lũ an toàn.
+    \item \textit{Đóng van $0^\circ$:} Áp dụng khi hệ thống ở trạng thái NORMAL hoặc WARNING (mực nước an toàn, hồ thu giữ nước).
+    \item \textit{Mở van $50\%$ (Góc $90^\circ$):} Áp dụng khi FSM ở mức DANGER để bắt đầu điều tiết thoát lũ lưu lượng vừa.
+    \item \textit{Mở van $100\%$ (Góc $180^\circ$):} Áp dụng khi FSM ở mức CRITICAL để xả lũ tối đa lưu lượng qua cống.
 \end{itemize}
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.88\textwidth]{figures/uc04_valve_control.png}
+    \includegraphics[width=0.92\textwidth]{figures/uc04_valve_control.png}
     \caption{Sơ đồ phân rã Use Case UC04: Tự động điều khiển van thoát lũ}
     \label{fig:uc04}
 \end{figure}
 
-% --- UC05 ---
-\subsubsection{UC05: Tự Động Phát Tín Hiệu Cảnh Báo Tại Trạm (LED \& Buzzer)}
+\subsubsection{UC05: Phát Tín Hiệu Cảnh Báo Tại Trạm (LED \& Còi Buzzer)}
+Ca sử dụng \texttt{UC05} kích hoạt đồng bộ hai cơ cấu cảnh báo đa giác quan tại thực địa nhằm thông tin kịp thời cho người dân và kỹ thuật viên quanh trạm:
 \begin{itemize}
-    \item \textbf{Mã định danh:} \texttt{UC05}
-    \item \textbf{Tác nhân:}
-    \begin{itemize}
-        \item \textit{Tác nhân chính:} Trình điều phối FSM.
-        \item \textit{Tác nhân phụ:} \texttt{«device»} Cụm 3 Đèn LED \& Còi Buzzer 5V.
-        \item \textit{Tác nhân thụ hưởng:} Người dân quanh trạm (tiếp nhận âm thanh hú và ánh sáng chỉ thị).
-    \end{itemize}
-    \item \textbf{Mục tiêu:} Cảnh báo trực quan tại chỗ bằng đèn LED và âm thanh đa cấp độ mà không gây chặn luồng xử lý (\textit{Non-blocking}).
-    \item \textbf{Quan hệ \texttt{«include»}:} UC05 trực tiếp gọi:
-    \begin{itemize}
-        \item \textit{Chỉ thị LED trực quan:} Bật đèn tương ứng (Xanh: NORMAL, Vàng: WARNING, Đỏ: DANGER/CRITICAL).
-        \item \textit{Kích âm còi Non-blocking (millis):} Phát nhịp bíp dồn dập hoặc hú liên tục theo cấp nguy hiểm.
-    \end{itemize}
-    \item \textbf{Hậu điều kiện:} Người dân quanh trạm nhận biết tức thời cấp độ rủi ro qua thị giác và thính giác.
+    \item \textit{Chỉ thị LED trực quan:} Đèn Xanh (GPIO 21) sáng ở mức NORMAL; Đèn Vàng (GPIO 19) sáng ở mức WARNING; Đèn Đỏ (GPIO 18) sáng ở mức DANGER và CRITICAL.
+    \item \textit{Kích âm còi báo động Non-blocking:} Sử dụng cơ chế đo thời gian \texttt{millis()} để băm xung còi Active Buzzer $5\,\text{V}$ (GPIO 4) mà không chặn luồng xử lý CPU: tắt còi khi an toàn, bíp thưa nhịp $1000\,\text{ms}$ khi WARNING, bíp nhanh dồn dập $200\,\text{ms}$ khi DANGER, và hú liên tục khi CRITICAL.
 \end{itemize}
+\textbf{Ràng buộc an toàn:} Khối cảnh báo thực địa (LED và còi) luôn hoạt động liên tục ở cả hai chế độ AUTO và MANUAL dựa theo mực nước thực tế, đảm bảo người dân quanh trạm luôn nhận được cảnh báo nguy hiểm độc lập với trạng thái can thiệp của người vận hành.
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.88\textwidth]{figures/uc05_signaling_buzzer_led.png}
-    \caption{Sơ đồ phân rã Use Case UC05: Tự động phát tín hiệu cảnh báo tại trạm}
+    \includegraphics[width=0.92\textwidth]{figures/uc05_signaling_buzzer_led.png}
+    \caption{Sơ đồ phân rã Use Case UC05: Phát tín hiệu cảnh báo tại trạm}
     \label{fig:uc05}
 \end{figure}
 
-% --- UC06 ---
-\subsubsection{UC06: Tự Động Chuyển Đổi An Toàn Khi Mất Kết Nối Mạng (Failsafe to AUTO)}
+\subsubsection{UC06: Tự Động Chuyển Đổi An Toàn Khi Mất Kết Nối Mạng (Failsafe)}
+Ca sử dụng \texttt{UC06} giải quyết bài toán an toàn quan trọng khi trạm đang ở chế độ thủ công \texttt{MANUAL} nhưng xảy ra sự cố rớt mạng Wi-Fi hoặc người vận hành quên không giám sát:
 \begin{itemize}
-    \item \textbf{Mã định danh:} \texttt{UC06}
-    \item \textbf{Tác nhân:}
-    \begin{itemize}
-        \item \textit{Tác nhân kích hoạt chính:} Bộ giám sát Watchdog / Timeout (ESP32).
-        \item \textit{Tác nhân thụ hưởng / nhận thông báo:} Người vận hành (bị mất kết nối mạng và mất quyền can thiệp).
-    \end{itemize}
-    \item \textbf{Mục tiêu:} Bảo vệ trạm tự động chống tràn bể khi người vận hành mất quyền giám sát từ xa hoặc rớt mạng Wi-Fi.
-    \item \textbf{Tiền điều kiện:} Hệ thống đang ở chế độ thủ công \texttt{MANUAL MODE}.
-    \item \textbf{Quan hệ \texttt{«include»}:} UC06 trực tiếp gọi:
-    \begin{itemize}
-        \item \textit{Kiểm tra timeout kết nối Wi-Fi / Web:} Đếm chu kỳ không nhận được request từ trình duyệt.
-        \item \textit{Cưỡng chế đảo cờ isAutoMode = true:} Tự động thu hồi quyền thủ công, trao lại cho thuật toán FSM.
-    \end{itemize}
-    \item \textbf{Hậu điều kiện:} Trạm duy trì tính năng điều khiển tự trị (\textit{Autonomous Controller}), ngăn ngừa nguy cơ ngập úng khi người dùng bỏ quên chế độ thủ công.
+    \item \textit{Kiểm tra timeout kết nối ($> 30\,\text{s}$):} Bộ đếm thời gian kiểm tra khoảng cách thời gian giữa các gói tin HTTP request từ phía Dashboard. Nếu sau $30\,\text{s}$ không nhận được bất kỳ tương tác nào, sự kiện timeout được kích hoạt.
+    \item \textit{Cưỡng chế phục hồi chế độ tự động (\texttt{isAutoMode = true}):} Hệ thống ngay lập tức thu hồi quyền can thiệp thủ công và trao trả quyền điều hành hoàn toàn cho thuật toán FSM.
 \end{itemize}
+Khi mạng Wi-Fi kết nối lại hoặc trình duyệt của người vận hành gửi request tiếp theo, hệ thống trả về thông số trạng thái kèm thông điệp cảnh báo sự kiện Failsafe. Để quay lại chế độ thủ công, người vận hành phải chủ động nhấp nút chuyển chế độ trên Web Dashboard để xác nhận tiếp quản.
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.88\textwidth]{figures/uc06_network_failsafe.png}
-    \caption{Sơ đồ phân rã Use Case UC06: Tự động chuyển đổi an toàn khi mất mạng (Failsafe)}
+    \includegraphics[width=0.92\textwidth]{figures/uc06_network_failsafe.png}
+    \caption{Sơ đồ phân rã Use Case UC06: Tự động chuyển an toàn khi mất mạng (Failsafe)}
     \label{fig:uc06}
 \end{figure}
 
-% --- UC07 ---
-\subsubsection{UC07: Truyền Nhận Dữ Liệu Thời Gian Thực Qua Giao Thức Web (Telemetry \& API)}
+\subsubsection{UC07: Truyền Nhận Dữ Liệu Qua Giao Thức Web API}
+Tác nhân chính tương tác với \texttt{UC07} là Người vận hành thông qua trình duyệt Web. Ca sử dụng bao gồm hai dịch vụ API độc lập kế thừa từ \texttt{UC07}:
 \begin{itemize}
-    \item \textbf{Mã định danh:} \texttt{UC07}
-    \item \textbf{Tác nhân:}
-    \begin{itemize}
-        \item \textit{Tác nhân chính:} Người vận hành (gửi HTTP request và nhận dữ liệu telemetry).
-        \item \textit{Tác nhân phụ:} ESP32 Web Server (thư viện \texttt{WebServer.h}, cổng 80).
-    \end{itemize}
-    \item \textbf{Mục tiêu:} Cung cấp các giao diện lập trình ứng dụng (REST API endpoints) đóng gói JSON để truyền tải thông số đo và nhận lệnh điều khiển.
-    \item \textbf{Quan hệ \texttt{«include»}:} UC07 trực tiếp gọi:
-    \begin{itemize}
-        \item \textit{Đóng gói chuỗi JSON (GET /api/status):} Định dạng trạng thái \% nước, cấp mưa, bơm, van, còi.
-        \item \textit{Tiếp nhận gói lệnh (GET /api/control):} Giải mã tham số hành động từ người dùng.
-    \end{itemize}
-    \item \textbf{Hậu điều kiện:} Dữ liệu thời gian thực được đồng bộ hai chiều liên tục giữa ESP32 và người vận hành.
+    \item \textit{Yêu cầu dữ liệu trạng thái (\texttt{GET /api/status}):} Trình duyệt gửi yêu cầu định kỳ $1000\,\text{ms}$; vi điều khiển thu thập thông số đo hiện thời, đóng gói chuỗi JSON (chứa \% nước, khoảng cách cm, cấp độ mưa, trạng thái bơm, van, còi, chế độ AUTO/MANUAL) và phản hồi mã HTTP 200.
+    \item \textit{Tiếp nhận lệnh can thiệp (\texttt{GET /api/control}):} Trình duyệt gửi lệnh chứa các tham số hành động (\texttt{mode=auto}, \texttt{mode=manual}, \texttt{pump=on}, \texttt{valve=90}...); vi điều khiển bóc tách cú pháp và thực thi cập nhật trạng thái hệ thống.
 \end{itemize}
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.88\textwidth]{figures/uc07_telemetry_api.png}
-    \caption{Sơ đồ phân rã Use Case UC07: Truyền nhận dữ liệu thời gian thực qua Web API}
+    \includegraphics[width=0.92\textwidth]{figures/uc07_telemetry_api.png}
+    \caption{Sơ đồ phân rã Use Case UC07: Truyền nhận dữ liệu qua Web API}
     \label{fig:uc07}
 \end{figure}
 
-% --- UC08 ---
-\subsubsection{UC08: Giám Sát Trạng Thái Trạm Từ Xa Trên Giao Diện Web}
+\subsubsection{UC08: Giám Sát Trạng Thái Trạm Qua Web Dashboard}
+Ca sử dụng \texttt{UC08} cung cấp giao diện hiển thị đồ họa hoàn chỉnh trên trình duyệt của người vận hành:
 \begin{itemize}
-    \item \textbf{Mã định danh:} \texttt{UC08}
-    \item \textbf{Tác nhân chính:} Người vận hành (quan sát trực quan thông số).
-    \item \textbf{Mục tiêu:} Hiển thị trực quan dữ liệu đo đạc và trạng thái phần cứng trên máy tính/điện thoại mà không cần màn hình LCD vật lý tại trạm.
-    \item \textbf{Tiền điều kiện:} Thiết bị người dùng đã kết nối vào mạng Wi-Fi của trạm (\texttt{FloodGuard\_AP}) hoặc cùng Router Wi-Fi.
-    \item \textbf{Quan hệ \texttt{«include»}:} UC08 trực tiếp gọi:
-    \begin{itemize}
-        \item \textit{Hiển thị đồng hồ mực nước \% \& khoảng cách:} Biểu diễn trực quan dạng vòng đo và thanh tiến trình.
-        \item \textit{Cập nhật trạng thái bơm, van xả \& còi:} Đồng bộ thẻ badge màu sắc theo trạng thái phần cứng.
-    \end{itemize}
-    \item \textbf{Hậu điều kiện:} Người dùng nắm bắt toàn diện diễn biến thời gian thực của trạm từ xa.
+    \item \textit{Hiển thị đồng hồ mực nước \& chỉ số mưa:} Render thanh tiến trình mực nước dải $0 - 100\%$, khoảng cách thực tế $\text{cm}$ và cấp độ mưa kèm biểu tượng trực quan.
+    \item \textit{Cập nhật trạng thái phần cứng:} Hiển thị các thẻ chỉ báo trạng thái động (bơm đang bật/tắt, góc mở van $0^\circ / 90^\circ / 180^\circ$, còi hú và cảnh báo Failsafe).
 \end{itemize}
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.88\textwidth]{figures/uc08_web_dashboard.png}
-    \caption{Sơ đồ phân rã Use Case UC08: Giám sát trạng thái trạm từ xa trên Web Dashboard}
+    \includegraphics[width=0.92\textwidth]{figures/uc08_web_dashboard.png}
+    \caption{Sơ đồ phân rã Use Case UC08: Giám sát trạng thái trạm qua Web Dashboard}
     \label{fig:uc08}
 \end{figure}
 
-% --- UC09 ---
-\subsubsection{UC09: Chuyển Đổi Chế Độ Vận Hành Từ Xa (AUTO / MANUAL)}
+\subsubsection{UC09: Chuyển Đổi Chế Độ Vận Hành (AUTO / MANUAL)}
+Hai trạng thái vận hành của trạm là hai nhánh chuyên biệt hóa (Generalization) của ca sử dụng chuyển đổi chế độ:
 \begin{itemize}
-    \item \textbf{Mã định danh:} \texttt{UC09}
-    \item \textbf{Tác nhân chính:} Người vận hành (nhấp nút gạt chuyển chế độ).
-    \item \textbf{Mục tiêu:} Phân quyền điều khiển linh hoạt giữa thuật toán tự động thông minh và sự can thiệp thủ công của con người.
-    \item \textbf{Quan hệ \texttt{«extend»} (chuẩn UML 2.5):} 
-    Hai nhánh nghiệp vụ mở rộng hoạt động độc lập và có **mũi tên nét đứt trỏ ngược về ca sử dụng cơ sở UC09**:
-    \begin{itemize}
-        \item \textit{Khóa phím Web, giao quyền tự động cho FSM} $\xrightarrow{\text{«extend» [khi chọn AUTO]}}$ UC09.
-        \item \textit{Mở khóa nút bấm, cho phép can thiệp thủ công} $\xrightarrow{\text{«extend» [khi chọn MANUAL]}}$ UC09.
-    \end{itemize}
-    \item \textbf{Hậu điều kiện:} Quyền điều khiển được chuyển giao an toàn giữa vi điều khiển và người dùng.
+    \item \textit{Chuyển sang chế độ AUTO:} Khóa vô hiệu hóa toàn bộ các nút bấm điều khiển bơm và van trên giao diện Web Dashboard, chuyển giao toàn bộ quyền ra quyết định cho thuật toán FSM.
+    \item \textit{Chuyển sang chế độ MANUAL:} Mở khóa các nút bấm trên Web Dashboard, cho phép người vận hành gửi các lệnh cưỡng chế phần cứng trực tiếp.
 \end{itemize}
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.88\textwidth]{figures/uc09_mode_switch.png}
-    \caption{Sơ đồ phân rã Use Case UC09: Chuyển đổi chế độ (Mũi tên «extend» trỏ ngược về UC cơ sở)}
+    \includegraphics[width=0.92\textwidth]{figures/uc09_mode_switch.png}
+    \caption{Sơ đồ phân rã Use Case UC09: Chuyển đổi chế độ vận hành}
     \label{fig:uc09}
 \end{figure}
 
-% --- UC10 ---
-\subsubsection{UC10: Điều Khiển Cưỡng Chế Thiết Bị Chấp Hành Từ Giao Diện Web}
+\subsubsection{UC10: Can Thiệp Điều Khiển Thiết Bị Chấp Hành Từ Web}
+Ca sử dụng \texttt{UC10} chỉ được phép kích hoạt khi hệ thống đang ở chế độ thủ công (\texttt{MANUAL MODE}). Hai hành vi can thiệp mở rộng (\texttt{«extend»}) độc lập tác động trực tiếp tới cơ cấu chấp hành:
 \begin{itemize}
-    \item \textbf{Mã định danh:} \texttt{UC10}
-    \item \textbf{Tác nhân:}
-    \begin{itemize}
-        \item \textit{Tác nhân chính:} Người vận hành (nhấp phím lệnh can thiệp).
-        \item \textit{Tác nhân phụ:} \texttt{«device»} Module Relay 5V \& Máy bơm mini, \texttt{«device»} Động cơ Servo SG90.
-    \end{itemize}
-    \item \textbf{Mục tiêu:} Bật/tắt bơm hoặc xoay góc van xả thủ công phục vụ kiểm tra thiết bị định kỳ, xả cặn đáy hồ, hoặc xử lý sự cố khẩn cấp.
-    \item \textbf{Tiền điều kiện:} Hệ thống đang ở chế độ thủ công \texttt{MANUAL MODE} (\texttt{isAutoMode == false}).
-    \item \textbf{Quan hệ \texttt{«extend»} (chuẩn UML 2.5):}
-    Hai nhánh can thiệp mở rộng độc lập có **mũi tên nét đứt trỏ ngược về ca sử dụng cơ sở UC10**:
-    \begin{itemize}
-        \item \textit{Bật / Tắt cưỡng chế máy bơm thoát nước} $\xrightarrow{\text{«extend» [khi lệnh Bơm]}}$ UC10.
-        \item \textit{Điều khiển cưỡng chế góc van xả (0° / 90° / 180°)} $\xrightarrow{\text{«extend» [khi lệnh Van]}}$ UC10.
-    \end{itemize}
-    \item \textbf{Hậu điều kiện:} Thiết bị chấp hành vận hành chính xác theo ý muốn của người điều khiển bất chấp giá trị cảm biến hiện tại.
+    \item \textit{Bật / Tắt cưỡng chế máy bơm:} Người vận hành nhấp nút Bật/Tắt trên Web Dashboard để kích hoạt Relay đóng/ngắt máy bơm bất kể mực nước hiện tại.
+    \item \textit{Điều khiển cưỡng chế góc van xả ($0^\circ / 90^\circ / 180^\circ$):} Người vận hành nhấp chọn góc mở để định vị góc Servo kéo cửa xả.
 \end{itemize}
+\textbf{Ràng buộc an toàn khẩn cấp:} Nếu trạm đang ở chế độ MANUAL và mực nước thực tế dâng tới mức nguy cấp CRITICAL ($\ge 80\%$), nếu sau $10\,\text{s}$ người vận hành không thực hiện bật bơm hoặc mở van, hệ thống sẽ tự động kích hoạt cơ chế bảo vệ khẩn cấp (\textit{Emergency Safety Override}): thu hồi quyền thủ công, chuyển về AUTO và kích hoạt toàn bộ bơm và van xả tối đa công suất để chống tràn bể.
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.88\textwidth]{figures/uc10_manual_override.png}
-    \caption{Sơ đồ phân rã Use Case UC10: Can thiệp cưỡng chế thiết bị từ Web (Mũi tên «extend» chuẩn UML)}
+    \includegraphics[width=0.92\textwidth]{figures/uc10_manual_override.png}
+    \caption{Sơ đồ phân rã Use Case UC10: Can thiệp điều khiển thiết bị từ Web}
     \label{fig:uc10}
 \end{figure}
+
+\section{Yêu Cầu Phi Chức Năng \& Ràng Buộc Thời Gian Thực}
+
+\subsection{Đặc Tính \& Ràng Buộc Thời Gian Thực (Real-Time Constraints)}
+Trong kỹ thuật lập trình hệ thống nhúng, FloodGuard được thiết kế theo mô hình hệ thống thời gian thực mềm (\textit{Soft Real-Time}) kết hợp với một số ràng buộc an toàn cứng (\textit{Firm Safety Constraints}):
+\begin{itemize}
+    \item \textbf{Chu kỳ trích mẫu cảm biến ($T_{\text{sample}} = 200\,\text{ms}$):} Cảm biến siêu âm HC-SR04 cần khoảng nghỉ tối thiểu $60\,\text{ms}$ giữa hai lần phát xung Trig để các sóng âm phản xạ trước đó triệt tiêu hoàn toàn, tránh gây hiện tượng dội âm giao thoa. Với chu kỳ lấy mẫu $200\,\text{ms}$, hệ thống đảm bảo giãn cách vật lý an toàn và cập nhật kịp thời tốc độ dâng nước.
+    \item \textbf{Bộ lọc cửa sổ trượt trung vị 3 mẫu (Median Filter):} Ba mẫu đo liên tiếp được lưu trong bộ đệm trượt để lọc bỏ các giá trị dị biệt (outliers) sinh ra do bọt khí, rung chấn cơ học hoặc bề mặt nước dập dềnh.
+    \item \textbf{Thời gian phản ứng tối đa từ cảm biến đến chấp hành (WCRT $\le 250\,\text{ms}$):} Kể từ thời điểm cảm biến thu nhận xung Echo phản ánh mực nước vượt ngưỡng nguy hiểm, tổng thời gian tính toán của thuật toán FSM, chuyển mạch GPIO và kích đóng tiếp điểm Relay máy bơm không vượt quá $250\,\text{ms}$.
+    \item \textbf{Chu kỳ làm mới giao diện Web ($T_{\text{refresh}} = 1000\,\text{ms}$):} Chu kỳ polling $1\,\text{s}$ từ Dashboard đảm bảo cân bằng tối ưu giữa độ tươi mới của dữ liệu hiển thị và tải bộ nhớ RAM/băng thông mạng của chip vi điều khiển ESP32.
+\end{itemize}
+
+\subsection{Độ Tin Cậy, Watchdog \& An Toàn Vận Hành (Safety \& Reliability)}
+\begin{itemize}
+    \item \textbf{Phần cứng Watchdog Timer (WDT):} Hệ thống tích hợp bộ định thời giám sát WDT với chu kỳ timeout $3000\,\text{ms}$. Nếu vòng lặp chính của chương trình bị treo (deadlock hoặc vòng lặp vô tận), bộ WDT phần cứng sẽ tự động Reset vi điều khiển để khôi phục hoạt động bình thường.
+    \item \textbf{Cơ chế Failsafe mất mạng ($30\,\text{s}$):} Ngăn chặn hoàn toàn rủi ro người vận hành bỏ quên trạm ở chế độ thủ công hoặc bị mất kết nối thiết bị điều khiển.
+\end{itemize}
+
+\subsection{Phân Tích An Ninh \& Giới Hạn Bảo Mật (Security Analysis)}
+Trong phạm vi mô hình thực nghiệm:
+\begin{itemize}
+    \item \textbf{Kiến trúc mạng:} Trạm phát sóng ở chế độ SoftAP (mạng \texttt{FloodGuard\_AP}) sử dụng chuẩn mã hóa WPA2-PSK yêu cầu mật khẩu để gia nhập mạng cục bộ.
+    \item \textbf{Giới hạn hiện tại:} Máy chủ Web Server nhúng chạy trên giao thức HTTP cổng 80 không mã hóa (chưa hỗ trợ HTTPS/TLS) do chip ESP32 bị giới hạn về dung lượng RAM và mã hóa TLS tiêu tốn đáng kể chu kỳ xử lý CPU, gây ảnh hưởng đến tính thời gian thực của tác vụ điều khiển. Đồng thời, các endpoint API chưa áp dụng cơ chế xác thực Token hoặc OAuth2; các lệnh điều khiển hiện tại sử dụng phương thức \texttt{GET /api/control}.
+    \item \textbf{Định hướng nâng cấp công nghiệp:} Đối với phiên bản triển khai thương mại diện rộng, hệ thống cần được nâng cấp: chuyển các lệnh thay đổi trạng thái sang phương thức chuẩn \texttt{POST /api/control} có kèm mã xác thực JSON Web Token (JWT), tích hợp vi mạch mã hóa bảo mật chuyên dụng (AtegCC608A) để xử lý HTTPS, và cấu hình danh sách trắng địa chỉ vật lý (MAC Address Whitelisting) chỉ cho phép các thiết bị chuyên trách được kết nối điều khiển trạm.
+\end{itemize}

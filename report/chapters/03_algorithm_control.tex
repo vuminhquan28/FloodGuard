@@ -5,13 +5,15 @@
 \subsection{Sơ Đồ Phân Khối Chức Năng Firmware}
 Phần mềm điều khiển trạm FloodGuard được xây dựng trên nền tảng vi điều khiển ESP32 với cấu trúc module hóa phân tầng rõ ràng, đảm bảo tính độc lập giữa khối thu thập dữ liệu, khối xử lý logic thuật toán và khối điều khiển phần cứng. Kiến trúc phần mềm bao gồm 7 phân hệ chính:
 \begin{enumerate}
-    \item \textbf{Khối thu thập cảm biến (\textit{Sensor Processing Module}):} Định kỳ phát xung kích Trig và đo độ rộng xung phản hồi Echo của cảm biến HC-SR04; đọc điện áp analog và mức logic digital của cảm biến mưa FC-37.
-    \item \textbf{Khối lọc số (\textit{Digital Median Filter}):} Xử lý chuỗi mẫu đo khoảng cách, sắp xếp và trích xuất giá trị trung vị nhằm loại trừ nhiễu đột biến, bọt khí và sóng dập dềnh.
-    \item \textbf{Khối máy trạng thái hữu hạn (\textit{FSM Core Engine}):} Tiếp nhận dữ liệu mực nước và lượng mưa đã làm sạch, đối chiếu với ma trận ngưỡng kết hợp dải trễ để xác định trạng thái vận hành tối ưu.
-    \item \textbf{Trình điều khiển cơ cấu chấp hành (\textit{Actuator Driver}):} Điều khiển đóng ngắt tiếp điểm Relay 5V kích máy bơm (với kỹ thuật High-Z chống rò dòng) và phát xung PWM điều chỉnh góc mở Servo van xả ($0^\circ, 90^\circ, 180^\circ$).
-    \item \textbf{Khối cảnh báo thực địa phi chặn (\textit{Signaling Driver}):} Quản lý cụm 3 đèn LED phân cấp và băm xung âm thanh còi Active Buzzer theo các nhịp cảnh báo thời gian thực mà không chặn luồng CPU.
-    \item \textbf{Máy chủ Web Server nhúng (\textit{HTTP REST API Handler}):} Lắng nghe trên cổng 80, phục vụ trang giao diện Web Dashboard lưu trong bộ nhớ Flash và cung cấp các endpoint API trao đổi JSON thời gian thực.
-    \item \textbf{Khối giám sát an toàn (\textit{Failsafe \& Watchdog Guard}):} Đếm thời gian nhận heartbeat từ trình duyệt, tự động thu hồi quyền thủ công khi mất kết nối mạng và thiết lập trạng thái an toàn khi phát hiện lỗi cảm biến.
+    \setlength{\itemsep}{1pt}
+    \setlength{\parskip}{0pt}
+    \item \textbf{Khối thu thập cảm biến (\textit{Sensor Processing Module}):} Định kỳ kích Trig và đo xung phản hồi Echo của HC-SR04; đọc điện áp analog và digital của cảm biến mưa FC-37.
+    \item \textbf{Khối lọc số (\textit{Digital Median Filter}):} Xử lý chuỗi mẫu đo khoảng cách, sắp xếp trích xuất giá trị trung vị nhằm loại trừ nhiễu đột biến, bọt khí và dao động sóng.
+    \item \textbf{Khối máy trạng thái hữu hạn (\textit{FSM Core Engine}):} Tiếp nhận dữ liệu mực nước và lượng mưa, đối chiếu ma trận ngưỡng kết hợp dải trễ để xác định trạng thái tối ưu.
+    \item \textbf{Trình điều khiển cơ cấu chấp hành (\textit{Actuator Driver}):} Điều khiển tiếp điểm Relay 5V kích máy bơm (chế độ High-Z) và phát xung PWM chỉnh góc mở Servo van xả ($0^\circ, 90^\circ, 180^\circ$).
+    \item \textbf{Khối cảnh báo thực địa phi chặn (\textit{Signaling Driver}):} Quản lý 3 đèn LED phân cấp và băm xung âm thanh còi Active Buzzer theo các nhịp cảnh báo thời gian thực phi chặn CPU.
+    \item \textbf{Máy chủ Web Server nhúng (\textit{HTTP REST API Handler}):} Phục vụ giao diện Web Dashboard lưu trong Flash và cung cấp các endpoint API trao đổi JSON thời gian thực.
+    \item \textbf{Khối giám sát an toàn (\textit{Failsafe \& Watchdog Guard}):} Đếm thời gian nhận heartbeat, tự động thu hồi quyền thủ công khi mất mạng và kích hoạt trạng thái an toàn.
 \end{enumerate}
 
 \subsection{Bảng Lập Lịch Tác Vụ Thời Gian Thực (Task Scheduling Matrix)}
@@ -22,18 +24,18 @@ Hệ thống sử dụng mô hình điều độ bất đồng bộ dựa trên 
 \caption{Bảng lập lịch tác vụ thời gian thực của hệ thống FloodGuard}
 \label{tab:task_scheduling}
 \small
-\renewcommand{\arraystretch}{1.3}
-\begin{tabularx}{\textwidth}{|l|c|c|X|}
+\renewcommand{\arraystretch}{1.2}
+\begin{tabularx}{\textwidth}{|p{3.5cm}|>{\centering\arraybackslash}p{2.2cm}|>{\centering\arraybackslash}p{1.8cm}|X|}
 \hline
-\textbf{Tên tác vụ} & \textbf{Chu kỳ ($T_{\text{period}}$)} & \textbf{Thời gian chạy ($T_{\text{exec}}$)} & \textbf{Mô tả chức năng \& Cơ chế kích hoạt} \\ \hline
-Đọc cảm biến siêu âm & $150 - 200\,\text{ms}$ & $\approx 36\,\text{ms}$ & Lấy 3 mẫu siêu âm liên tiếp, lọc trung vị, quy đổi \% nước. Kích hoạt bởi Timer định kỳ. \\ \hline
-Đọc cảm biến mưa & $150 - 200\,\text{ms}$ & $< 1\,\text{ms}$ & Đọc ADC 12-bit chân GPIO 35 và đọc digital chân GPIO 34. \\ \hline
-Đánh giá trạng thái FSM & $150 - 200\,\text{ms}$ & $< 2\,\text{ms}$ & Tính toán chuyển dịch trạng thái, áp dụng dải trễ Hysteresis và quy tắc bảo vệ an toàn. \\ \hline
-Cập nhật chấp hành (Bơm/Van) & Mỗi khi đổi trạng thái & $< 1\,\text{ms}$ & Chuyển chế độ GPIO 23 (OUTPUT/INPUT High-Z) và xuất góc PWM cho Servo van xả. \\ \hline
-Băm xung còi \& LED & Mỗi vòng lặp ($5-10\,\text{ms}$) & $< 0.5\,\text{ms}$ & So sánh \texttt{now \% period} để bật/tắt còi và chớp nháy LED Đỏ phi chặn (\textit{Non-blocking}). \\ \hline
-Phục vụ Web HTTP Request & Mỗi vòng lặp ($5-10\,\text{ms}$) & $2 - 8\,\text{ms}$ & Gọi \texttt{server.handleClient()}; xử lý đóng gói JSON khi nhận request từ trình duyệt. \\ \hline
-Giám sát Heartbeat Failsafe & $1000\,\text{ms}$ & $< 0.1\,\text{ms}$ & Kiểm tra chênh lệch thời gian request cuối cùng; kích hoạt Failsafe nếu quá $30\,\text{s}$. \\ \hline
-Watchdog Reset (TWDT) & Mỗi vòng lặp & $< 0.05\,\text{ms}$ & Xóa cờ Task Watchdog Timer phần cứng, chống treo vi điều khiển. \\ \hline
+\textbf{Tên tác vụ} & \textbf{Chu kỳ} ($T_{\text{period}}$) & \textbf{Thực thi} ($T_{\text{exec}}$) & \textbf{Mô tả chức năng \& Cơ chế kích hoạt} \\ \hline
+Đọc cảm biến siêu âm & $150 - 200\,\text{ms}$ & $\approx 36\,\text{ms}$ & Thu thập 3 mẫu liên tiếp, lọc trung vị, quy đổi phần trăm mực nước. Kích hoạt bởi bộ đếm thời gian. \\ \hline
+Đọc cảm biến mưa & $150 - 200\,\text{ms}$ & $< 1\,\text{ms}$ & Đọc điện áp ADC 12-bit (GPIO 35) và tín hiệu digital mưa (GPIO 34). \\ \hline
+Đánh giá trạng thái FSM & $150 - 200\,\text{ms}$ & $< 2\,\text{ms}$ & Tính toán chuyển dịch trạng thái, áp dụng dải trễ Hysteresis và quy tắc an toàn. \\ \hline
+Cập nhật cơ cấu chấp hành & Khi đổi trạng thái & $< 1\,\text{ms}$ & Chuyển mức GPIO 23 (bơm relay) và cập nhật xung PWM điều khiển góc van. \\ \hline
+Băm xung còi \& LED & $5 - 10\,\text{ms}$ (vòng lặp) & $< 0.5\,\text{ms}$ & So sánh \texttt{now \% period} băm xung còi và chớp nháy LED Đỏ phi chặn (\textit{Non-blocking}). \\ \hline
+Phục vụ HTTP Web Server & $5 - 10\,\text{ms}$ (vòng lặp) & $2 - 8\,\text{ms}$ & Gọi \texttt{server.handleClient()}; đóng gói JSON gửi telemetry cho Web Dashboard. \\ \hline
+Giám sát Heartbeat Failsafe & $1000\,\text{ms}$ & $< 0.1\,\text{ms}$ & Kiểm tra chu kỳ heartbeat; tự động kích hoạt Failsafe nếu mất kết nối quá $30\,\text{s}$. \\ \hline
+Watchdog Reset (TWDT) & Mỗi vòng lặp & $< 0.05\,\text{ms}$ & Reset bộ đếm Task Watchdog phần cứng ESP32, chống treo vi điều khiển. \\ \hline
 \end{tabularx}
 \end{table}
 

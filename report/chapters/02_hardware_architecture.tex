@@ -40,3 +40,52 @@ Trong phiên bản thiết kế cải tiến, hệ thống \textbf{loại bỏ h
 \end{tabularx}
 \end{table}
 
+\section{Sơ Đồ Nguyên Lý Mạch Điện \& Kết Nối Ngoại Vi}
+
+Để trực quan hóa toàn diện kiến trúc kết nối giữa vi điều khiển ESP32 với toàn bộ cảm biến, cơ cấu chấp hành và thiết bị cảnh báo tại trạm, sơ đồ mạch điện nguyên lý chi tiết được thiết kế đồng bộ như trong Hình~\ref{fig:circuit_diagram}.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{figures/circuit_diagram.png}
+    \caption{Sơ đồ nguyên lý nối dây phần cứng và mạch điện GPIO trạm FloodGuard}
+    \label{fig:circuit_diagram}
+\end{figure}
+
+Dựa trên sơ đồ nguyên lý nối dây, các nguyên lý phối ghép phần cứng và giải pháp kỹ thuật mạch điện được phân tích chi tiết như sau:
+
+\subsection{Khối Chấp Hành Công Suất: Relay 5V \& Máy Bơm Mini}
+Máy bơm mini $5\,\text{V}$ là thiết bị tiêu thụ dòng điện lớn và đóng vai trò cưỡng chế tiêu thoát nước khẩn cấp khi xảy ra ngập lụt. Để điều khiển máy bơm một cách an toàn và tin cậy:
+\begin{itemize}
+    \item \textbf{Cách ly tải qua Relay 1 kênh:} Tiếp điểm thường mở (\texttt{NO}) và chân chung (\texttt{COM}) của Relay được mắc nối tiếp với cực dương $(+)$ của máy bơm và nguồn cấp $5\,\text{V}$ (chân \texttt{VIN} hoặc bộ nguồn độc lập). Khi tiếp điểm đóng lại, mạch kín và máy bơm được cấp điện hoạt động.
+    \item \textbf{Cơ chế kích hoạt Active LOW:} Module Relay được thiết kế đóng tiếp điểm khi chân tín hiệu \texttt{IN} nhận mức logic \texttt{LOW} ($0\,\text{V}$).
+    \item \textbf{Giải quyết triệt để lỗi xung đột điện áp $3.3\,\text{V}$ -- $5\,\text{V}$ bằng kỹ thuật High-Z:}
+    Khi cuộn hút Relay sử dụng nguồn $5\,\text{V}$, điện áp mức \texttt{HIGH} xuất từ chân GPIO của vi điều khiển ESP32 chỉ đạt tối đa $3.3\,\text{V}$. Chênh lệch điện áp $5\,\text{V} - 3.3\,\text{V} = 1.7\,\text{V}$ này lớn hơn điện áp phân cực thuận của diode phát quang bên trong optocoupler cách ly của Relay, dẫn tới hiện tượng rò dòng làm đèn báo Relay luôn sáng mờ và máy bơm không ngắt được hoàn toàn. Hệ thống xử lý triệt để vấn đề này bằng kỹ thuật điều khiển trở kháng cao (\textit{High-Z state}):
+    \begin{itemize}
+        \item \textbf{Kích bật bơm:} Cấu hình chân \texttt{GPIO 23} làm ngõ ra và kéo xuống mức thấp:
+        \begin{lstlisting}[language=C++]
+pinMode(PIN_RELAY, OUTPUT);
+digitalWrite(PIN_RELAY, LOW); // Dong tiep diem Relay, bat bom
+        \end{lstlisting}
+        \item \textbf{Ngắt tắt bơm an toàn:} Chuyển chân \texttt{GPIO 23} sang chế độ ngõ vào trở kháng cao (Input High-Z), thả nổi chân tín hiệu:
+        \begin{lstlisting}[language=C++]
+pinMode(PIN_RELAY, INPUT);    // Tha noi High-Z, triet tieu hoan toan dong ro
+        \end{lstlisting}
+    \end{itemize}
+\end{itemize}
+
+\subsection{Khối Cảm Biến: Đo Mực Nước \& Phát Hiện Mưa}
+\begin{itemize}
+    \item \textbf{Cảm biến siêu âm HC-SR04 (Đo mực nước lũ):}
+    Cảm biến sử dụng chân \texttt{Trig} kết nối với \texttt{GPIO 13} để nhận xung kích $10\,\mu\text{s}$ từ ESP32 phát chùm sóng siêu âm $40\,\text{kHz}$. Chân \texttt{Echo} phản hồi thời gian sóng dội lại được kết nối vào \texttt{GPIO 12}. Chân \texttt{Echo} được mắc qua điện trở bảo vệ để đảm bảo an toàn cho chân GPIO $3.3\,\text{V}$ của ESP32 trước tín hiệu xung $5\,\text{V}$ từ cảm biến.
+    \item \textbf{Cảm biến mưa (Tấm điện cực \& Module LM393):}
+    Module sử dụng nguồn $3.3\,\text{V}$ từ chân \texttt{3V3} của ESP32. Chân điện áp tương tự \texttt{AO} được kết nối vào \texttt{GPIO 35 (ADC1\_CH7)} để đo cường độ mưa chi tiết qua bộ chuyển đổi ADC 12-bit ($0 - 4095$). Chân ngõ ra số \texttt{DO} được kết nối vào \texttt{GPIO 34} để bắt ngắt hoặc phát hiện ngưỡng khô/mưa. Cả hai chân \texttt{GPIO 34} và \texttt{GPIO 35} đều thuộc nhóm chân chỉ đọc (\textit{Input-only}) của ESP32, không có điện trở pull-up/pull-down nội, rất thích hợp cho việc tiếp nhận tín hiệu từ các cảm biến đo lường.
+\end{itemize}
+
+\subsection{Khối Điều Khiển Cửa Van Xả Lũ: Động Cơ Servo SG90}
+Động cơ Servo SG90 chịu trách nhiệm kéo mở van xả lũ tương ứng với từng cấp độ ngập. Chân tín hiệu điều khiển nhận xung PWM từ \texttt{GPIO 27} với chu kỳ $20\,\text{ms}$ ($50\,\text{Hz}$) và độ rộng xung thay đổi từ $1\,\text{ms}$ đến $2\,\text{ms}$, tương ứng với 3 góc mở chính: $0^\circ$ (Đóng kín khi an toàn/NORMAL), $90^\circ$ (Mở xả vừa khi ở mức DANGER) và $180^\circ$ (Mở xả khẩn cấp khi ở mức CRITICAL).
+
+\subsection{Khối Thiết Bị Cảnh Báo Tại Chỗ: LED Phân Cấp \& Còi Buzzer}
+\begin{itemize}
+    \item \textbf{Cụm 3 đèn LED trực quan:} Gồm LED Xanh (\texttt{GPIO 21}), LED Vàng (\texttt{GPIO 19}) và LED Đỏ (\texttt{GPIO 18}). Mỗi LED được mắc nối tiếp với điện trở hạn dòng $R = 220\,\Omega$ nhằm duy trì dòng điện qua diode khoảng $8 - 12\,\text{mA}$, bảo vệ an toàn cho cổng GPIO vi điều khiển và tăng độ sáng rõ nét trong điều kiện thực địa mưa gió.
+    \item \textbf{Còi báo động Active Buzzer 5V:} Cực dương $(+)$ được kích trực tiếp từ chân \texttt{GPIO 4}. Còi được điều khiển bằng thuật toán xung nhịp không chặn (\textit{Non-blocking}) dựa trên hàm \texttt{millis()}, tạo các hồi còi ngắt quãng theo từng cấp độ nguy hiểm mà không làm dừng luồng xử lý của hệ thống.
+\end{itemize}

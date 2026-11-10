@@ -1,184 +1,245 @@
-# 🌐 ESP32 Wi-Fi & Web Dashboard Setup Guide
+# 🌐 Hướng Dẫn Sử Dụng & Kiểm Thử Web Dashboard FloodGuard
 
-Tài liệu này cung cấp hướng dẫn toàn diện về kiến trúc, cấu hình Wi-Fi và phương thức thiết lập **Web Dashboard thời gian thực** trên vi điều khiển **ESP32** cho dự án **FloodGuard**.
-
----
-
-## 🏗️ 1. Tổng Quan Kiến Trúc Hệ Thống (System Architecture)
-
-Hệ thống hoạt động theo mô hình **Client - Server (HTTP REST API)** hoàn toàn độc lập, không phụ thuộc vào máy chủ ngoài:
-
-```
-+-------------------------------------------------------------+
-|                      ESP32 Vi Điều Khiển                     |
-|  [Cảm biến: HC-SR04, Mưa]  -->  [Thuật toán FSM & Hysteresis] |
-|                                              |              |
-|                                     [Thiết bị: Bơm, Van]    |
-|                                                             |
-|  +-------------------------------------------------------+  |
-|  |           HTTP Web Server (Cổng 80 - WebServer.h)     |  |
-|  |  * GET /            -> Trả về giao diện Dashboard     |  |
-|  |  * GET /api/status  -> Trả về JSON dữ liệu đo đạc     |  |
-|  |  * GET /api/control -> Tiếp nhận lệnh điều khiển      |  |
-|  +-------------------------------------------------------+  |
-+------------------------------▲------------------------------+
-                               │ (Wi-Fi 802.11 b/g/n)
-                               │
-               +---------------+---------------+
-               │                               │
-       [Máy tính / Laptop]             [Điện thoại thông minh]
-    (Trình duyệt: Chrome/Safari)    (Trình duyệt: Chrome/Safari)
-```
-
-* **Frontend:** Giao diện Dark Glassmorphism tối ưu hiển thị, lưu trực tiếp trong bộ nhớ Flash của ESP32 (`PROGMEM`), không cần thẻ nhớ SD.
-* **Cơ chế cập nhật:** Trình duyệt sử dụng JavaScript (`fetch()` API) gửi request ngầm định kỳ mỗi **1 giây** để cập nhật dữ liệu mà không cần tải lại toàn bộ trang web (Single Page Application - SPA).
+Tài liệu này cung cấp hướng dẫn thực hành chi tiết từ A-Z về:
+1. **Kiểm thử giao diện Web Dashboard Offline ngay trên máy tính** (không cần phần cứng).
+2. **Cách kết nối bo mạch ESP32 và nạp Firmware**.
+3. **Cách kết nối mạng Wi-Fi và truy cập Web Dashboard** từ điện thoại hoặc máy tính.
+4. **Quy trình kiểm thử từng tính năng giám sát và điều khiển trên Web**.
+5. **Khắc phục sự cố thường gặp (Troubleshooting)**.
 
 ---
 
-## 📶 2. Hai Chế Độ Hoạt Động Wi-Fi Trên ESP32
-
-Tùy vào điều kiện triển khai thực tế, bạn có thể lựa chọn 1 trong 2 chế độ sau:
-
-### Chế độ 1: Station Mode (STA) – Kết nối vào Router Wi-Fi *(Khuyên dùng)*
-ESP32 kết nối vào mạng Wi-Fi sẵn có của gia đình hoặc phòng thí nghiệm.
-
-* **Cấu hình trong code:**
-  ```cpp
-  #include <WiFi.h>
-
-  const char* ssid     = "Ten_WiFi_Nha_Ban";
-  const char* password = "Mat_Khau_WiFi";
-
-  void setupWiFi() {
-    Serial.print("Dang ket noi toi Wi-Fi: ");
-    Serial.println(ssid);
-    WiFi.begin(ssid, password);
-
-    while (WiFi.status() != WL_CONNECTED) {
-      delay(500);
-      Serial.print(".");
-    }
-
-    Serial.println("\nWiFi da ket noi!");
-    Serial.print("Dia chi IP truy cap Dashboard: http://");
-    Serial.println(WiFi.localIP());
-  }
-  ```
-* **Cách truy cập:**
-  1. Đảm bảo điện thoại hoặc máy tính **kết nối cùng mạng Wi-Fi** với ESP32.
-  2. Mở trình duyệt web (Chrome, Edge, Safari) và gõ địa chỉ IP hiển thị trên Serial Monitor (ví dụ: `http://192.168.1.150`).
+## 📑 Mục Lục
+- [1. Tổng Quan Kiến Trúc Web Dashboard](#1-tổng-quan-kiến-trúc-web-dashboard)
+- [2. Cách 1: Test Nhanh Giao Diện Web Offline (Không cần phần cứng)](#2-cách-1-test-nhanh-giao-diện-web-offline-không-cần-phần-cứng)
+- [3. Cách 2: Kết Nối Phần Cứng & Nạp Code Lên ESP32](#3-cách-2-kết-nối-phần-cứng--nạp-code-lên-esp32)
+- [4. Kết Nối Wi-Fi & Truy Cập Web Dashboard Thực Tế](#4-kết-nối-wi-fi--truy-cập-web-dashboard-thực-tế)
+- [5. Quy Trình Kiểm Thử Chi Tiết Từng Chức Năng Của Web](#5-quy-trình-kiểm-thử-chi-tiết-từng-chức-năng-của-web)
+- [6. Bảng Đặc Tả Lệnh REST API Cho Web](#6-bảng-đặc-tả-lệnh-rest-api-cho-web)
+- [7. Xử Lý Các Sự Cố Thường Gặp (Troubleshooting)](#7-xử-lý-các-sự-cố-thường-gặp-troubleshooting)
 
 ---
 
-### Chế độ 2: Soft Access Point Mode (SoftAP) – ESP32 tự phát Wi-Fi
-Phù hợp khi triển khai ngoài hiện trường không có sóng Wi-Fi hoặc trạm phát mạng.
+## 🏗️ 1. Tổng Quan Kiến Trúc Web Dashboard
 
-* **Cấu hình trong code:**
-  ```cpp
-  void setupSoftAP() {
-    const char* ap_ssid = "FloodGuard_AP";
-    const char* ap_pass = "12345678"; // Tối thiểu 8 ký tự
+Hệ thống hoạt động theo mô hình **Client - Server (HTTP REST API)** hoàn toàn độc lập, sử dụng chế độ phát Wi-Fi nội bộ (**SoftAP Mode**), không phụ thuộc vào Internet hay Router gia đình:
 
-    WiFi.softAP(ap_ssid, ap_pass);
-    Serial.println("ESP32 da phat mang Wi-Fi rieng!");
-    Serial.print("Dia chi IP mac dinh: http://");
-    Serial.println(WiFi.softAPIP()); // Thuong la http://192.168.4.1
-  }
-  ```
-* **Cách truy cập:**
-  1. Trên điện thoại/máy tính, tìm và kết nối vào mạng Wi-Fi tên **FloodGuard_AP** với mật khẩu `12345678`.
-  2. Mở trình duyệt và truy cập vào địa chỉ: `http://192.168.4.1`.
+```
++-----------------------------------------------------------------+
+|                      ESP32 Vi Điều Khiển                        |
+|  [HC-SR04, Cảm biến Mưa]  ──►  [Thuật toán FSM & Hysteresis]    |
+|                                            │                    |
+|                                   [Relay Bơm, Servo Van]        |
+|                                                                 |
+|  +-----------------------------------------------------------+  |
+|  |           HTTP Web Server (Cổng 80 - WebServer.h)         |  |
+|  |  * GET /            -> Phục vụ trang HTML/CSS/JS          |  |
+|  |  * GET /api/status  -> Trả về JSON telemetry thời gian thực|  |
+|  |  * GET /api/control -> Tiếp nhận lệnh điều khiển cưỡng chế |  |
+|  +-----------------------------------------------------------+  |
++--------------------------------▲--------------------------------+
+                                 │ (Sóng Wi-Fi: FloodGuard_AP)
+                                 │
+                 +---------------+---------------+
+                 │                               │
+         [Điện thoại thông minh]         [Máy tính / Laptop]
+          (Chrome, Safari, Edge)        (Chrome, Edge, Firefox)
+```
+
+* **Frontend:** Giao diện **Dark Glassmorphism** hiện đại, responsive co giãn tự động trên mọi kích cỡ màn hình.
+* **Bộ nhớ:** Toàn bộ trang web được nén lưu trong bộ nhớ Flash `PROGMEM` của ESP32 (tiêu thụ $0\,\text{bytes}$ RAM khi ở trạng thái nghỉ).
+* **Cơ chế truyền thông:** Trình duyệt JavaScript tự động gửi lệnh ngầm `fetch('/api/status')` mỗi **$1000\,\text{ms}$** để cập nhật thông số theo thời gian thực (Single Page Application - SPA).
 
 ---
 
-## 💻 3. Cấu Trúc Mã Nguồn Web Server (Cổng 80)
+## 🖥️ 2. Cách 1: Test Nhanh Giao Diện Web Offline (Không Cần Phần Cứng)
 
-Mã nguồn trong [src/main_hardware.cpp](src/main_hardware.cpp) và [src/main_wokwi.cpp](src/main_wokwi.cpp) đã được lập trình sẵn gồm 4 phần:
+Nếu bạn chưa có sẵn mạch ESP32 bên cạnh hoặc muốn kiểm tra ngay giao diện hiển thị, các hiệu ứng đổi màu, trạng thái nút bấm:
 
-### 1. Khai báo thư viện và khởi tạo
-```cpp
-#include <WiFi.h>
-#include <WebServer.h>
+### Bước 1: Mở tệp giao diện xem trước
+1. Điều hướng đến thư mục dự án: `d:\1. project\FloodGuard\`.
+2. Tìm tệp **`preview_dashboard.html`**.
+3. Nhấp đúp chuột để mở trực tiếp trên trình duyệt web bất kỳ (**Google Chrome**, **Microsoft Edge**, hoặc **Firefox**).
 
-WebServer server(80);
+### Bước 2: Thao tác với thanh công cụ mô phỏng (Preview Toolbar)
+Ở góc dưới cùng màn hình có thanh công cụ màu đen viền xanh dương giúp bạn giả lập mọi tình huống cảm biến:
+
+| Công cụ mô phỏng | Cách thao tác | Kết quả hiển thị kiểm tra |
+| :--- | :--- | :--- |
+| **Thanh kéo Mực Nước** | Kéo thanh trượt từ $0\%$ đến $100\%$ | • $0 - 20\%$: Thanh đo màu xanh lá, nhãn **NORMAL**.<br>• $21 - 40\%$: Thanh đo màu vàng, nhãn **WARNING**.<br>• $41 - 70\%$: Thanh đo màu đỏ, nhãn **DANGER**, Bơm tự BẬT, Van mở $50\%$.<br>• $71 - 100\%$: Thanh đo đỏ rực, nhãn **CRITICAL** (chớp nháy), Van mở toang $100\%$, Còi hú liên tục. |
+| **Hộp chọn Cấp Độ Mưa** | Chọn: Khô ráo, Mưa nhỏ, Mưa to, Ngập nước | Thẻ thời tiết cập nhật giá trị ADC và cảnh báo cấp độ mưa tức thời. |
+| **Nút đổi chế độ** | Bấm `Đổi Chế Độ (AUTO / MANUAL)` | Chuyển đổi qua lại giữa chế độ tự trị FSM và can thiệp thủ công. |
+| **Cụm nút điều khiển** | Bấm `Bật/Tắt Bơm`, `Van 0%`, `Van 50%`, `Van 100%` | Kiểm tra phản hồi góc quay van và trạng thái máy bơm trên thẻ thiết bị. |
+
+---
+
+## 🔌 3. Cách 2: Kết Nối Phần Cứng & Nạp Code Lên ESP32
+
+### Bước 1: Kết nối dây phần cứng
+1. Cắm bo **ESP32 Dev Module** vào cổng USB máy tính qua cáp truyền dữ liệu (chú ý dùng cáp có dây Data, không dùng cáp chỉ có sạc).
+2. Kiểm tra sơ đồ chân kết nối:
+   * **HC-SR04:** Trig $\rightarrow$ `GPIO 13`, Echo $\rightarrow$ `GPIO 12`.
+   * **Cảm biến Mưa FC-37:** DO $\rightarrow$ `GPIO 34`, AO $\rightarrow$ `GPIO 35`.
+   * **Relay Máy Bơm 5V:** IN $\rightarrow$ `GPIO 23` (Kỹ thuật High-Z, Active LOW).
+   * **Servo SG90 Van Xả:** PWM $\rightarrow$ `GPIO 27`.
+   * **Còi Active Buzzer:** Tín hiệu $\rightarrow$ `GPIO 4`.
+   * **3 Đèn LED:** Xanh $\rightarrow$ `GPIO 21`, Vàng $\rightarrow$ `GPIO 19`, Đỏ $\rightarrow$ `GPIO 18`.
+
+### Bước 2: Nạp Firmware lên ESP32
+
+Bạn có thể lựa chọn 1 trong 2 cách nạp sau:
+
+#### Cách 2.1: Sử dụng PlatformIO (Khuyên dùng)
+Mở cửa sổ PowerShell hoặc Terminal tại thư mục `d:\1. project\FloodGuard\` và chạy lệnh:
+```powershell
+# Biên dịch và nạp trực tiếp qua cổng COM tự động nhận diện:
+pio run -e hardware -t upload
+
+# Mở màn hình theo dõi Serial Monitor (tốc độ 115200):
+pio device monitor -b 115200
 ```
 
-### 2. Định tuyến API (Routing Endpoints)
-Trong hàm `setup()`:
-```cpp
-// 1. Phục vụ giao diện HTML
-server.on("/", handleRoot);
+#### Cách 2.2: Sử dụng Arduino IDE
+1. Khởi động phần mềm **Arduino IDE**.
+2. Mở file: `d:\1. project\FloodGuard\main\main\main.ino`.
+3. Vào menu **Tools** $\rightarrow$ **Board** $\rightarrow$ Chọn **ESP32 Dev Module**.
+4. Vào menu **Tools** $\rightarrow$ **Port** $\rightarrow$ Chọn đúng cổng COM của bo ESP32 (ví dụ `COM3`, `COM4`...).
+5. Nhấn nút **Upload** (Mũi tên chỉ sang phải `➔`) và chờ quá trình nạp đạt $100\%$.
+6. Mở **Serial Monitor** (Ctrl + Shift + M), chỉnh baudrate góc dưới sang **115200 baud**.
 
-// 2. API trả về trạng thái JSON thời gian thực
-server.on("/api/status", handleStatusApi);
-
-// 3. API nhận lệnh điều khiển từ nút bấm trên Web
-server.on("/api/control", handleControlApi);
-
-server.begin();
+### Bước 3: Xác nhận thông báo khởi động trên Serial Monitor
+Khi ESP32 khởi động thành công, Serial Monitor sẽ in ra nội dung như sau:
+```
+==========================================
+FLOODGUARD - CHE DO ACCESS POINT (HARDWARE)
+==========================================
+[Wi-Fi] ESP32 da phat mang Wi-Fi thanh cong!
+[Wi-Fi] Ten mang (SSID): FloodGuard_AP
+[Wi-Fi] Mat khau (PASS) : 12345678
+[Wi-Fi] Dia chi IP Web : http://192.168.4.1
+[mDNS] Truy cap bang ten mien: http://floodguard.local
+[HTTP] Web Server da san sang tren cong 80.
+==========================================
 ```
 
-### 3. Logic xử lý API
-* **Endpoint `/api/status`:** Trả về chuỗi JSON chứa toàn bộ tham số (dải đo $50\text{cm} - 5\text{cm}$):
-  ```json
-  {
-    "water": 45,
-    "distance": 29.8,
-    "rain": false,
-    "rain_adc": 820,
-    "state": "DANGER",
-    "mode": "AUTO",
-    "pump": true,
-    "valve": 50,
-    "buzzer": false
-  }
-  ```
-* **Endpoint `/api/control?action={lenh}`:**
-  * `mode_toggle`: Chuyển đổi giữa `AUTO` và `MANUAL`.
-  * `pump_toggle`: Bật / Tắt máy bơm khi ở chế độ `MANUAL`.
-  * `valve_0`, `valve_50`, `valve_100`: Thay đổi khẩu độ van xả (0°, 90°, 180°).
+---
 
-### 4. Lắng nghe liên tục trong `loop()`
-```cpp
-void loop() {
-  server.handleClient(); // Bắt buộc: Xử lý request từ trình duyệt
-  
-  // Các tác vụ non-blocking khác...
+## 📱 4. Kết Nối Wi-Fi & Truy Cập Web Dashboard Thực Tế
+
+Sau khi bo mạch đã nạp firmware và cấp nguồn thành công:
+
+### Bước 1: Kết nối vào mạng Wi-Fi của ESP32
+1. Lấy **Điện thoại thông minh** (iPhone, Android) hoặc **Laptop**.
+2. Mở phần **Cài đặt Wi-Fi** trên máy.
+3. Tìm và chọn mạng Wi-Fi có tên:
+   * **Tên mạng (SSID):** `FloodGuard_AP`
+   * **Mật khẩu (Password):** `12345678`
+4. ⚠️ **LƯU Ý QUAN TRỌNG:** 
+   * Do đây là mạng Wi-Fi nội bộ không có Internet, điện thoại có thể hiện thông báo: *"Mạng Wi-Fi này không có kết nối Internet. Bạn có muốn giữ kết nối không?"*.
+   * Hãy bấm chọn **"GIỮ KẾT NỐI" (Keep Connection / Stay Connected)**.
+   * Nếu dùng điện thoại, nên **tạm tắt dữ liệu di động (4G/5G)** trong lúc test để trình duyệt không tự ý chuyển hướng ra ngoài Internet.
+
+### Bước 2: Mở Web Dashboard trên trình duyệt
+1. Mở trình duyệt web ưa thích (**Chrome**, **Safari**, hoặc **Edge**).
+2. Nhập trực tiếp địa chỉ IP vào thanh URL:
+   ```
+   http://192.168.4.1
+   ```
+   *(Hoặc gõ: `http://floodguard.local` nếu thiết bị có hỗ trợ mDNS)*.
+3. Nhấn **Enter / Đi tới**. Giao diện giám sát **FloodGuard Dashboard Dark Glassmorphism** sẽ xuất hiện ngay lập tức!
+
+---
+
+## 🧪 5. Quy Trình Kiểm Thử Chi Tiết Từng Chức Năng Của Web
+
+Hãy thực hiện kiểm tra tuần tự 4 bài test dưới đây để xác nhận sự đồng bộ giữa Web và phần cứng:
+
+### Bài Test 1: Giám sát đo đạc thời gian thực (Telemetry Loop)
+1. Để cảm biến siêu âm tự do trong không khí.
+2. Quan sát thẻ **"Mực Nước Hồ Thu"** trên Web Dashboard:
+   * Cầm một tấm bìa hoặc lòng bàn tay di chuyển lại gần mặt cảm biến (từ $50\,\text{cm}$ lại gần $10\,\text{cm}$).
+   * **Xác nhận:** Thông số khoảng cách $\text{cm}$ và thanh tiến trình phần trăm $\%$ trên màn hình web phải thay đổi nhảy số liên tục đều đặn mỗi **1 giây** mà không cần nhấn F5 tải lại trang.
+
+### Bài Test 2: Thử nghiệm cảm biến mưa
+1. Nhỏ 1–2 giọt nước lên tấm cảm biến mưa FC-37.
+2. **Xác nhận trên Web:**
+   * Thẻ thời tiết lập tức đổi từ `"KHONG MUA"` sang `"MUA NHO"` (màu xanh dương) hoặc `"MUA TO"` (màu cam).
+   * Giá trị `rain_adc` tụt từ $\approx 3500$ xuống dưới $2800$.
+   * Huy hiệu trạng thái đổi sang màu vàng **`WARNING`**.
+   * Đèn LED Vàng trên mạch bật sáng.
+
+### Bài Test 3: Can thiệp điều khiển thủ công (Manual Override)
+1. Nhấp nút **`Đổi Chế Độ (AUTO / MANUAL)`**:
+   * Huy hiệu chế độ trên web chuyển từ **`AUTO`** sang màu cam **`MANUAL`**.
+2. **Thử điều khiển máy bơm:**
+   * Nhấp nút **`Bật/Tắt Bơm (Manual)`**.
+   * **Xác nhận:** Rơ-le trên mạch nhảy tiếng *"tách"*, đèn đỏ rơ-le sáng, máy bơm mini 5V bắt đầu chạy, dòng chữ trên web đổi sang **`ĐANG BẬT (ON)`** màu xanh lá.
+   * Nhấp lại nút một lần nữa $\rightarrow$ Máy bơm tắt, dòng chữ đổi sang **`ĐÃ TẮT (OFF)`**.
+3. **Thử điều khiển van xả nước (Servo SG90):**
+   * Nhấp **`Van 50% (Mở Nửa)`** $\rightarrow$ Cánh van Servo quay sang góc $90^\circ$, web báo `50%`.
+   * Nhấp **`Van 100% (Mở Hết)`** $\rightarrow$ Cánh van Servo quay sang góc $180^\circ$, web báo `100%`.
+   * Nhấp **`Van 0% (Đóng)`** $\rightarrow$ Cánh van Servo quay gập về góc $0^\circ$, web báo `0%`.
+
+### Bài Test 4: Chuyển lại chế độ Tự Động (AUTO)
+1. Nhấp lại nút **`Đổi Chế Độ (AUTO / MANUAL)`**.
+2. Huy hiệu chuyển lại thành màu xanh **`AUTO`**.
+3. Bây giờ thử nhấp các nút Bơm hoặc Van $\rightarrow$ Hệ thống sẽ bảo vệ và không thực thi lệnh can thiệp nữa, toàn quyền điều khiển được giao lại cho thuật toán máy trạng thái FSM.
+
+---
+
+## 📡 6. Bảng Đặc Tả Lệnh REST API Cho Web
+
+Các lập trình viên có thể dùng Postman, cURL hoặc ứng dụng di động bên ngoài để giao tiếp với ESP32 thông qua các endpoint sau:
+
+| Endpoint | Method | Tham số (Query Param) | Mô tả chức năng | Kết quả phản hồi |
+| :--- | :---: | :--- | :--- | :--- |
+| **`/`** | `GET` | Không có | Tải toàn bộ giao diện Web Dashboard (HTML/CSS/JS) | Mã 200, chuỗi HTML |
+| **`/api/status`** | `GET` | Không có | Lấy gói tin JSON đo đạc thời gian thực | Mã 200, chuỗi JSON |
+| **`/api/control`** | `GET` | `action=mode_toggle` | Đảo trạng thái giữa AUTO và MANUAL | Mã 200, chuỗi `"OK"` |
+| **`/api/control`** | `GET` | `action=pump_toggle` | Bật hoặc tắt máy bơm 5V (chỉ ở MANUAL) | Mã 200, chuỗi `"OK"` |
+| **`/api/control`** | `GET` | `action=valve_0` | Xoay van Servo về $0^\circ$ (chỉ ở MANUAL) | Mã 200, chuỗi `"OK"` |
+| **`/api/control`** | `GET` | `action=valve_50` | Xoay van Servo mở $90^\circ$ ($50\%$) | Mã 200, chuỗi `"OK"` |
+| **`/api/control`** | `GET` | `action=valve_100` | Xoay van Servo mở tối đa $180^\circ$ ($100\%$) | Mã 200, chuỗi `"OK"` |
+
+#### Cấu trúc chuỗi JSON trả về tại `/api/status`:
+```json
+{
+  "water": 45,
+  "distance": 29.8,
+  "rain": true,
+  "rain_adc": 1420,
+  "state": "DANGER",
+  "mode": "MANUAL",
+  "pump": true,
+  "valve": 50,
+  "buzzer": "FAST"
 }
 ```
 
 ---
 
-## 🧪 4. Thiết Lập & Truy Cập Dashboard Trong Giả Lập Wokwi
+## 🛠️ 7. Xử Lý Các Sự Cố Thường Gặp (Troubleshooting)
 
-Trong môi trường mô phỏng ảo Wokwi:
+### Sự cố 1: Điện thoại kết nối Wi-Fi nhưng không mở được `192.168.4.1`
+* **Nguyên nhân:** Điện thoại phát hiện Wi-Fi `FloodGuard_AP` không có mạng Internet nên tự động dùng mạng dữ liệu di động (4G/5G) để gửi request, dẫn tới không tìm thấy IP cục bộ của ESP32.
+* **Cách khắc phục:** 
+  1. Tắt hoàn toàn **Dữ liệu di động (4G/LTE/5G)** trên điện thoại.
+  2. Ngắt kết nối Wi-Fi và kết nối lại vào `FloodGuard_AP`.
+  3. Chọn xác nhận **"Giữ kết nối" / "Stay connected"** khi được hỏi.
 
-1. **Kết nối mạng ảo:** Wokwi cung cấp mạng Wi-Fi ảo với SSID:
-   ```cpp
-   WiFi.begin("Wokwi-GUEST", "");
-   ```
-2. **Cầu nối mạng Wokwi IoT Gateway (Dành cho VS Code):**
-   * Do ESP32 chạy mô phỏng bên trong sandbox của VS Code, để trình duyệt trên máy tính thật (Chrome) giao tiếp được với IP ảo của ESP32, Wokwi sử dụng công cụ **Wokwi IoT Gateway**.
-   * Chi tiết hướng dẫn tải và chạy Gateway: xem tại [docs.wokwi.com/guides/esp32-wifi](https://docs.wokwi.com/guides/esp32-wifi).
-3. **Chạy trực tiếp trên Web Wokwi.com:**
-   * Nếu nạp project lên trang web [wokwi.com](https://wokwi.com), Wokwi hỗ trợ đường link chuyển tiếp trực tiếp vào Web Server của ESP32 chỉ bằng 1 cú nhấp chuột.
+### Sự cố 2: Không tìm thấy mạng Wi-Fi tên `FloodGuard_AP`
+* **Nguyên nhân:** Bo mạch ESP32 chưa được cấp đủ nguồn hoặc đang bị kẹt trong vòng lặp boot.
+* **Cách khắc phục:**
+  1. Nhấn nút **EN / RESET** trên bo ESP32 để khởi động lại.
+  2. Mở Serial Monitor xem có dòng chữ: `[Wi-Fi] ESP32 da phat mang Wi-Fi thanh cong!` hay không.
+  3. Nếu mạch chớp đèn đỏ liên tục: Rút bớt tải nguồn ngoài (nguồn máy bơm 5V nên cắm riêng qua củ sạc USB để không làm sụt áp cổng USB máy tính).
 
----
+### Sự cố 3: Bấm nút trên Web nhưng máy bơm và van không phản hồi
+* **Nguyên nhân:** Hệ thống đang ở chế độ `AUTO` (Tự động) nên logic FSM từ chối lệnh can thiệp thủ công để đảm bảo an toàn.
+* **Cách khắc phục:** Nhấp nút **`Đổi Chế Độ (AUTO / MANUAL)`** trước, đợi thẻ chế độ chuyển sang màu cam **`MANUAL`** rồi mới bấm nút Bơm và Van.
 
-## 🌍 5. Mở Rộng: Điều Khiển Từ Xa Qua Internet (Ngoài Mạng LAN)
-
-Mạng Wi-Fi nội bộ (LAN) chỉ cho phép truy cập khi ở trong cùng tầm phát sóng của Router. Nếu muốn giám sát khi ra ngoài đường bằng mạng 4G/5G, có 2 giải pháp tiêu chuẩn:
-
-### Giải pháp 1: Sử dụng giao thức MQTT & Cloud IoT Platform *(Khuyên dùng cho đồ án lớn)*
-* ESP32 đóng vai trò là MQTT Client, gửi dữ liệu lên Cloud Broker miễn phí (HiveMQ Cloud, EMQX, Adafruit IO hoặc Blynk IoT).
-* Người dùng mở ứng dụng di động hoặc Web Dashboard kết nối vào Broker để theo dõi và điều khiển từ bất kỳ đâu trên thế giới.
-
-### Giải pháp 2: Sử dụng đường hầm an toàn (Cloudflare Tunnel / Ngrok)
-* Dùng một máy tính hoặc Raspberry Pi trong nhà chạy Ngrok / Cloudflare Tunnel để trỏ một tên miền công khai (ví dụ: `https://floodguard.myproject.dev`) về địa chỉ IP cục bộ của ESP32.
-
----
-
-## ⚡ 6. Lưu Ý Kỹ Thuật Quan Trọng
-1. **Không dùng `delay()` trong `loop()`:** Các hàm `delay()` dài sẽ làm nghẽn tiến trình của Web Server, dẫn đến việc trình duyệt web bị xoay tròn hoặc mất kết nối (`Connection Timed Out`). Luôn sử dụng kỹ thuật non-blocking với `millis()`.
-2. **Tên miền cục bộ (mDNS):** Bạn có thể tích hợp thư viện `ESPmDNS.h` để truy cập dashboard bằng đường dẫn thân thiện `http://floodguard.local` thay vì phải nhớ dãy số IP.
-
+### Sự cố 4: Số đo mực nước hoặc góc van trên Web bị đứng hình, không nhảy số
+* **Nguyên nhân:** Trình duyệt web bị mất kết nối ngầm với ESP32 hoặc CPU của ESP32 bị treo.
+* **Cách khắc phục:**
+  1. F5 tải lại trang web.
+  2. Đảm bảo trong mã nguồn hàm `loop()` không chứa bất kỳ hàm `delay()` lớn nào chặn luồng `server.handleClient()`.

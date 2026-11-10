@@ -139,14 +139,16 @@ Dựa trên thực nghiệm kiểm chuẩn với các điều kiện thời ti�
 \centering
 \caption{Bảng phân cấp ngưỡng cảm biến lượng mưa FC-37 trên ESP32 ADC 12-bit}
 \label{tab:rain_thresholds}
-\begin{tabular}{|l|c|c|c|l|}
+\small
+\renewcommand{\arraystretch}{1.25}
+\begin{tabularx}{\textwidth}{|p{3.2cm}|>{\centering\arraybackslash}p{2.2cm}|>{\centering\arraybackslash}p{2.1cm}|>{\centering\arraybackslash}p{1.5cm}|X|}
 \hline
-\textbf{Cấp độ mưa} & \textbf{Giá trị ADC thô} & \textbf{Điện áp ngõ ra} & \textbf{Chân DO} & \textbf{Mô tả thực nghiệm} \\ \hline
-\textbf{Khô ráo (Khong mua)} & $3200 - 4095$ & $2.58 - 3.30\,\text{V}$ & \texttt{HIGH} & Bề mặt tấm cực khô ráo hoàn toàn. \\ \hline
-\textbf{Mưa nhỏ (Light Rain)} & $1800 - 3199$ & $1.45 - 2.57\,\text{V}$ & \texttt{LOW} & Đọng vài giọt mưa lấm tấm trên bề mặt. \\ \hline
-\textbf{Mưa to (Heavy Rain)} & $1100 - 1799$ & $0.88 - 1.44\,\text{V}$ & \texttt{LOW} & Nước chảy tràn phủ đều $50\%$ tấm cực. \\ \hline
-\textbf{Ngập nước (Submerged)} & $0 - 1099$ & $0.00 - 0.87\,\text{V}$ & \texttt{LOW} & Tấm cảm biến bị nhấn chìm hoàn toàn. \\ \hline
-\end{tabular}
+\textbf{Cấp độ mưa} & \textbf{Giá trị ADC} & \textbf{Điện áp ngõ ra} & \textbf{Chân DO} & \textbf{Mô tả thực nghiệm} \\ \hline
+\textbf{Khô ráo} (Không mưa) & $3200 - 4095$ & $2.58 - 3.30\,\text{V}$ & \texttt{HIGH} & Bề mặt tấm cực khô ráo hoàn toàn. \\ \hline
+\textbf{Mưa nhỏ} (Light Rain) & $1800 - 3199$ & $1.45 - 2.57\,\text{V}$ & \texttt{LOW} & Đọng vài giọt mưa lấm tấm trên bề mặt. \\ \hline
+\textbf{Mưa to} (Heavy Rain) & $1100 - 1799$ & $0.88 - 1.44\,\text{V}$ & \texttt{LOW} & Nước chảy tràn phủ đều $50\%$ tấm cực. \\ \hline
+\textbf{Ngập nước} (Submerged) & $0 - 1099$ & $0.00 - 0.87\,\text{V}$ & \texttt{LOW} & Tấm cảm biến bị nhấn chìm hoàn toàn trong nước. \\ \hline
+\end{tabularx}
 \end{table}
 
 \subsection{Kết Quả Hiệu Chuẩn Thực Tế So Với Thước Đo Chuẩn}
@@ -156,16 +158,18 @@ Dựa trên thực nghiệm kiểm chuẩn với các điều kiện thời ti�
 \centering
 \caption{Bảng kết quả hiệu chuẩn cảm biến siêu âm HC-SR04 so với thước đo chuẩn}
 \label{tab:calibration_results}
-\begin{tabular}{|c|c|c|c|c|}
+\small
+\renewcommand{\arraystretch}{1.2}
+\begin{tabularx}{\textwidth}{|>{\centering\arraybackslash}p{2.8cm}|>{\centering\arraybackslash}p{2.8cm}|>{\centering\arraybackslash}p{2.6cm}|>{\centering\arraybackslash}p{2.6cm}|>{\centering\arraybackslash}X|}
 \hline
-\textbf{Thước đo chuẩn ($d_{\text{ref}}$)} & \textbf{Giá trị đo TB ($d_{\text{meas}}$)} & \textbf{Sai số tuyệt đối ($|e|$)} & \textbf{Sai số tương đối ($\delta$)} & \textbf{\% Mực nước tương ứng} \\ \hline
+\textbf{Thước chuẩn} ($d_{\text{ref}}$) & \textbf{Đo thực tế} ($d_{\text{meas}}$) & \textbf{Sai số tuyệt đối} ($|e|$) & \textbf{Sai số tương đối} ($\delta$) & \textbf{Mực nước quy đổi} \\ \hline
 $5.0\,\text{cm}$ & $5.2\,\text{cm}$ & $0.2\,\text{cm}$ & $4.00\%$ & $99.6\%$ ($\approx 100\%$) \\ \hline
 $10.0\,\text{cm}$ & $10.3\,\text{cm}$ & $0.3\,\text{cm}$ & $3.00\%$ & $88.2\%$ \\ \hline
 $20.0\,\text{cm}$ & $19.8\,\text{cm}$ & $0.2\,\text{cm}$ & $1.00\%$ & $67.1\%$ \\ \hline
 $30.0\,\text{cm}$ & $30.4\,\text{cm}$ & $0.4\,\text{cm}$ & $1.33\%$ & $43.6\%$ \\ \hline
 $40.0\,\text{cm}$ & $39.5\,\text{cm}$ & $0.5\,\text{cm}$ & $1.25\%$ & $23.3\%$ \\ \hline
 $50.0\,\text{cm}$ & $50.3\,\text{cm}$ & $0.3\,\text{cm}$ & $0.60\%$ & $0.0\%$ \\ \hline
-\end{tabular}
+\end{tabularx}
 \end{table}
 Kết quả cho thấy sai số tuyệt đối cực đại của hệ thống luôn nhỏ hơn $0.5\,\text{cm}$ trên toàn bộ dải đo làm việc, hoàn toàn thỏa mãn chỉ tiêu kỹ thuật $\le \pm 1.0\,\text{cm}$ đã đặt ra.
 
@@ -213,7 +217,9 @@ Tương ứng với mỗi trạng thái FSM, hệ thống thiết lập đồng 
 \centering
 \caption{Bảng tín hiệu điều khiển đầu ra theo từng trạng thái FSM}
 \label{tab:fsm_outputs}
-\begin{tabular}{|l|c|c|c|l|c|c|}
+\small
+\renewcommand{\arraystretch}{1.2}
+\begin{tabularx}{\textwidth}{|p{2.9cm}|>{\centering\arraybackslash}p{1.1cm}|>{\centering\arraybackslash}p{1.1cm}|>{\centering\arraybackslash}p{1.1cm}|X|>{\centering\arraybackslash}p{2.0cm}|>{\centering\arraybackslash}p{2.0cm}|}
 \hline
 \textbf{Trạng thái FSM} & \textbf{LED Xanh} & \textbf{LED Vàng} & \textbf{LED Đỏ} & \textbf{Còi Buzzer 5V} & \textbf{Relay Bơm} & \textbf{Van Servo} \\ \hline
 \texttt{STATE\_NORMAL} & BẬT & TẮT & TẮT & Tắt hoàn toàn (0Hz) & OFF (High-Z) & Đóng $0^\circ$ ($0\%$) \\ \hline
@@ -221,7 +227,7 @@ Tương ứng với mỗi trạng thái FSM, hệ thống thiết lập đồng 
 \texttt{STATE\_DANGER} & TẮT & TẮT & BẬT & Dồn dập ($150\,\text{ms}$ on / $150\,\text{ms}$ off) & ON (Active LOW) & Mở $90^\circ$ ($50\%$) \\ \hline
 \texttt{STATE\_CRITICAL} & TẮT & TẮT & Chớp $100\,\text{ms}$ & Hú liên tục ($2500\,\text{Hz}$) & ON (Active LOW) & Mở $180^\circ$ ($100\%$) \\ \hline
 \texttt{SENSOR\_FAULT} & Chớp & Chớp & Chớp & Bíp ngắt quãng báo sự cố & Giữ nguyên & Mở an toàn $90^\circ$ \\ \hline
-\end{tabular}
+\end{tabularx}
 \end{table}
 
 \subsection{Mã C++ Hiện Thực FSM Bằng Cấu Trúc Switch-Case}

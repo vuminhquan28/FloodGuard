@@ -267,107 +267,17 @@ def make_sequence_diagram():
     ax.plot([2.2, 1.7, 1.7, 2.2], [1.4, 1.4, 1.0, 1.0], color="#000000", lw=1.1)
     ax.text(1.6, 1.2, "9: Cập nhật DOM\nĐổi nút sang ĐANG BẬT", fontsize=8.0, ha='right', va='center')
 
-    save_fig(fig, "sequence_diagram.png")
-
-
-# =============================================================
-# 4. DASHBOARD UI MOCKUP / WIREFRAME
+    save_fig(fig, "sequence_diagram.png")# =============================================================
+# 4. DASHBOARD UI SCREENSHOT (Actual Chrome-rendered dashboard)
 # =============================================================
 def make_dashboard_mockup():
-    fig, ax = plt.subplots(figsize=(13.0, 8.2), dpi=300)
-    ax.set_xlim(0, 13.0)
-    ax.set_ylim(0, 8.2)
-    ax.axis('off')
-    fig.patch.set_facecolor('#ffffff')
-
-    # Outer browser window frame
-    browser_frame = patches.Rectangle((0.5, 0.4), 12.0, 7.4, facecolor="#0b132b", edgecolor="#000000", lw=1.8, zorder=1)
-    ax.add_patch(browser_frame)
-
-    # Top browser bar
-    browser_bar = patches.Rectangle((0.5, 7.3), 12.0, 0.5, facecolor="#1c2541", edgecolor="#000000", lw=1.0, zorder=2)
-    ax.add_patch(browser_bar)
-
-    # Window buttons
-    for i, col in enumerate(["#ef4444", "#f59e0b", "#10b981"]):
-        c = plt.Circle((0.8 + i*0.25, 7.55), 0.08, facecolor=col, edgecolor="#000000", lw=0.5, zorder=3)
-        ax.add_patch(c)
-
-    # URL Bar
-    url_box = patches.Rectangle((2.2, 7.4), 8.5, 0.3, facecolor="#0b132b", edgecolor="#555555", lw=0.8, zorder=3)
-    ax.add_patch(url_box)
-    ax.text(2.4, 7.55, "http://192.168.4.1 (FloodGuard_AP) | mDNS: http://floodguard.local",
-            fontsize=8.0, color="#38bdf8", va='center', zorder=4)
-
-    # Title header
-    ax.text(6.5, 6.9, "FLOODGUARD - GIÁM SÁT & CHỐNG NGẬP TỰ ĐỘNG",
-            fontsize=12.0, fontweight='bold', color="#38bdf8", ha='center', va='center', zorder=4)
-    ax.text(6.5, 6.6, "Hệ Thống Trạm IoT ESP32 - Chế Độ Mạng SoftAP Nội Bộ",
-            fontsize=8.5, color="#94a3b8", ha='center', va='center', zorder=4)
-
-    # 4 Cards in 2x2 grid
-    # Card 1: Water Level (Top Left)
-    c1 = patches.Rectangle((1.0, 3.8), 5.2, 2.5, facecolor="#1c2541", edgecolor=(1.0, 1.0, 1.0, 0.25), lw=1.2, zorder=3)
-    ax.add_patch(c1)
-    ax.text(1.2, 6.0, "GIÁM SÁT MỰC NƯỚC HỒ THU", fontsize=9.0, fontweight='bold', color="#94a3b8", zorder=4)
-    ax.text(3.6, 5.3, "75%", fontsize=26.0, fontweight='bold', color="#ef4444", ha='center', va='center', zorder=4)
-    ax.text(3.6, 4.6, "Khoảng cách: 16.2 cm | Đỉnh hồ: 5.0 cm", fontsize=8.5, color="#ffffff", ha='center', zorder=4)
-    # Progress bar
-    p_bg = patches.Rectangle((1.4, 4.1), 4.4, 0.25, facecolor="#334155", edgecolor="#000000", lw=0.5, zorder=4)
-    p_fg = patches.Rectangle((1.4, 4.1), 3.3, 0.25, facecolor="#ef4444", edgecolor="#000000", lw=0.5, zorder=5)
-    ax.add_patch(p_bg)
-    ax.add_patch(p_fg)
-
-    # Card 2: Rain Sensor & FSM State (Top Right)
-    c2 = patches.Rectangle((6.8, 3.8), 5.2, 2.5, facecolor="#1c2541", edgecolor=(1.0, 1.0, 1.0, 0.25), lw=1.2, zorder=3)
-    ax.add_patch(c2)
-    ax.text(7.0, 6.0, "CẢM BIẾN MƯA & TRẠNG THÁI FSM", fontsize=9.0, fontweight='bold', color="#94a3b8", zorder=4)
-    ax.text(9.4, 5.3, "MƯA TO (DANGER)", fontsize=13.0, fontweight='bold', color="#f59e0b", ha='center', zorder=4)
-    ax.text(9.4, 4.7, "Điện áp ADC: 1420 / 4095 (Tương tự AO)", fontsize=8.5, color="#ffffff", ha='center', zorder=4)
-    # Badge
-    b1 = patches.FancyBboxPatch((8.2, 4.05), 2.4, 0.35, boxstyle="round,pad=0.05", facecolor="#ef4444", edgecolor="#000000", zorder=4)
-    ax.add_patch(b1)
-    ax.text(9.4, 4.22, "FSM: CRITICAL", fontsize=9.0, fontweight='bold', color="#ffffff", ha='center', va='center', zorder=5)
-
-    # Card 3: Actuators Status (Bottom Left)
-    c3 = patches.Rectangle((1.0, 0.9), 5.2, 2.6, facecolor="#1c2541", edgecolor=(1.0, 1.0, 1.0, 0.25), lw=1.2, zorder=3)
-    ax.add_patch(c3)
-    ax.text(1.2, 3.2, "TRẠNG THÁI THIẾT BỊ CHẤP HÀNH", fontsize=9.0, fontweight='bold', color="#94a3b8", zorder=4)
-    ax.text(1.5, 2.7, "• Máy Bơm Thoát Nước 5V:", fontsize=8.5, color="#ffffff", zorder=4)
-    ax.text(4.8, 2.7, "ĐANG BẬT", fontsize=9.0, fontweight='bold', color="#10b981", zorder=4)
-
-    ax.text(1.5, 2.2, "• Cửa Van Thoát Lũ (Servo):", fontsize=8.5, color="#ffffff", zorder=4)
-    ax.text(4.8, 2.2, "MỞ 100% (180°)", fontsize=9.0, fontweight='bold', color="#38bdf8", zorder=4)
-
-    ax.text(1.5, 1.7, "• Còi Báo Động Buzzer:", fontsize=8.5, color="#ffffff", zorder=4)
-    ax.text(4.8, 1.7, "HÚ LIÊN TỤC", fontsize=9.0, fontweight='bold', color="#ef4444", zorder=4)
-
-    ax.text(1.5, 1.2, "• Chế Độ Điều Hành:", fontsize=8.5, color="#ffffff", zorder=4)
-    ax.text(4.8, 1.2, "TỰ ĐỘNG (AUTO)", fontsize=9.0, fontweight='bold', color="#38bdf8", zorder=4)
-
-    # Card 4: Control Buttons / Manual Override (Bottom Right)
-    c4 = patches.Rectangle((6.8, 0.9), 5.2, 2.6, facecolor="#1c2541", edgecolor=(1.0, 1.0, 1.0, 0.25), lw=1.2, zorder=3)
-    ax.add_patch(c4)
-    ax.text(7.0, 3.2, "BẢNG ĐIỀU KHIỂN CAN THIỆP TỪ XA", fontsize=9.0, fontweight='bold', color="#94a3b8", zorder=4)
-
-    # Button Mode Toggle
-    btn1 = patches.FancyBboxPatch((7.2, 2.5), 4.4, 0.45, boxstyle="round,pad=0.05", facecolor="#3a86ff", edgecolor="#ffffff", lw=0.8, zorder=4)
-    ax.add_patch(btn1)
-    ax.text(9.4, 2.72, "Chuyển Sang Chế Độ Thủ Công (MANUAL)", fontsize=8.5, fontweight='bold', color="#ffffff", ha='center', va='center', zorder=5)
-
-    # Button Pump Toggle (Disabled in AUTO)
-    btn2 = patches.FancyBboxPatch((7.2, 1.85), 4.4, 0.45, boxstyle="round,pad=0.05", facecolor="#475569", edgecolor="#64748b", lw=0.8, zorder=4)
-    ax.add_patch(btn2)
-    ax.text(9.4, 2.07, "Bật / Tắt Bơm Thủ Công (Khóa ở AUTO)", fontsize=8.2, color="#94a3b8", ha='center', va='center', zorder=5)
-
-    # 3 Buttons for Valve
-    for i, (txt, bg) in enumerate([("Van 0°", "#475569"), ("Van 50%", "#475569"), ("Van 100%", "#475569")]):
-        bx = 7.2 + i * 1.55
-        btn_v = patches.FancyBboxPatch((bx, 1.2), 1.3, 0.45, boxstyle="round,pad=0.05", facecolor=bg, edgecolor="#64748b", lw=0.8, zorder=4)
-        ax.add_patch(btn_v)
-        ax.text(bx + 0.65, 1.42, txt, fontsize=8.0, color="#94a3b8", ha='center', va='center', zorder=5)
-
-    save_fig(fig, "dashboard_mockup.png")
+    import sys
+    fig_dir = os.path.dirname(os.path.abspath(__file__))
+    if fig_dir not in sys.path:
+        sys.path.insert(0, fig_dir)
+    from generate_real_dashboard_screenshot import generate_dashboard_image
+    print("Capturing real Chrome dashboard screenshot...")
+    generate_dashboard_image()
 
 if __name__ == "__main__":
     print("Generating comprehensive Chapter 3 & 4 Figures...")

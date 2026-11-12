@@ -1,6 +1,5 @@
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
-from matplotlib.patches import FancyBboxPatch
 import numpy as np
 import os
 
@@ -11,388 +10,402 @@ out_dirs = [
 for d in out_dirs:
     os.makedirs(d, exist_ok=True)
 
-# Styling for crisp presentation
 plt.rcParams['font.sans-serif'] = 'DejaVu Sans'
-plt.rcParams['text.color'] = '#0f172a'
+plt.rcParams['text.color'] = '#000000'
+
+
+def draw_dot(ax, x, y, r=0.055):
+    dot = plt.Circle((x, y), r, facecolor='#000000', edgecolor='#000000', zorder=12)
+    ax.add_patch(dot)
+
+
+def draw_wire(ax, pts, lw=1.5, ls='-', zorder=3):
+    xs = [p[0] for p in pts]
+    ys = [p[1] for p in pts]
+    ax.plot(xs, ys, color='#000000', lw=lw, linestyle=ls, zorder=zorder,
+            solid_capstyle='butt', solid_joinstyle='miter')
+
+
+def draw_resistor_v(ax, x, yc, label="", val="", h=0.60, w=0.22, label_side='right'):
+    """IEC standard rectangular resistor vertical"""
+    rect = patches.Rectangle((x - w/2, yc - h/2), w, h, facecolor='#ffffff',
+                             edgecolor='#000000', lw=1.4, zorder=7)
+    ax.add_patch(rect)
+    if label or val:
+        txt = f"{label}\n{val}".strip()
+        if label_side == 'left':
+            ax.text(x - w/2 - 0.08, yc, txt, fontsize=7.5, ha='right', va='center', zorder=10)
+        else:
+            ax.text(x + w/2 + 0.08, yc, txt, fontsize=7.5, ha='left', va='center', zorder=10)
+
+
+def draw_resistor_h(ax, xc, y, label="", val="", w=0.60, h=0.22):
+    """IEC standard rectangular resistor horizontal"""
+    rect = patches.Rectangle((xc - w/2, y - h/2), w, h, facecolor='#ffffff',
+                             edgecolor='#000000', lw=1.4, zorder=7)
+    ax.add_patch(rect)
+    if label or val:
+        txt = f"{label} ({val})".strip()
+        ax.text(xc, y + h/2 + 0.08, txt, fontsize=7.5, ha='center', va='bottom', zorder=10)
+
+
+def draw_fuse_h(ax, xc, y, label="F1 (2A)", w=0.52, h=0.18):
+    """IEC fuse symbol horizontal"""
+    rect = patches.Rectangle((xc - w/2, y - h/2), w, h, facecolor='#ffffff',
+                             edgecolor='#000000', lw=1.4, zorder=7)
+    ax.add_patch(rect)
+    ax.plot([xc - w/2 - 0.08, xc + w/2 + 0.08], [y, y], color='#000000', lw=1.4, zorder=8)
+    ax.text(xc, y + h/2 + 0.10, label, fontsize=8.0, fontweight='bold', ha='center', va='bottom', zorder=10)
+
+
+def draw_fuse_v(ax, x, yc, label="F2", h=0.52, w=0.18):
+    """IEC fuse symbol vertical"""
+    rect = patches.Rectangle((x - w/2, yc - h/2), w, h, facecolor='#ffffff',
+                             edgecolor='#000000', lw=1.4, zorder=7)
+    ax.add_patch(rect)
+    ax.plot([x, x], [yc - h/2 - 0.08, yc + h/2 + 0.08], color='#000000', lw=1.4, zorder=8)
+    ax.text(x + w/2 + 0.10, yc, label, fontsize=8.0, fontweight='bold', ha='left', va='center', zorder=10)
+
+
+def draw_led_v(ax, x, yc, label=""):
+    """IEC LED symbol pointing down"""
+    w = 0.28
+    h = 0.26
+    # White mask behind LED so vertical wire does not show inside triangle
+    mask = patches.Rectangle((x - w/2 - 0.02, yc - h/2 - 0.02), w + 0.04, h + 0.04,
+                             facecolor='#ffffff', edgecolor='none', zorder=6)
+    ax.add_patch(mask)
+    tri = patches.Polygon([[x - w/2, yc + h/2], [x + w/2, yc + h/2], [x, yc - h/2]],
+                          closed=True, facecolor='#ffffff', edgecolor='#000000', lw=1.4, zorder=7)
+    ax.add_patch(tri)
+    ax.plot([x - w/2, x + w/2], [yc - h/2, yc - h/2], color='#000000', lw=1.6, zorder=8)
+    # Emission arrows
+    ax.annotate("", xy=(x + 0.36, yc - 0.02), xytext=(x + 0.16, yc + 0.14),
+                arrowprops=dict(arrowstyle="->", lw=1.0, color='#000000'), zorder=9)
+    ax.annotate("", xy=(x + 0.36, yc - 0.16), xytext=(x + 0.16, yc),
+                arrowprops=dict(arrowstyle="->", lw=1.0, color='#000000'), zorder=9)
+    if label:
+        ax.text(x + 0.38, yc + 0.02, label, fontsize=7.5, fontweight='bold', ha='left', va='center', zorder=10)
+
+
+def draw_diode_up(ax, x, yc, label="D1"):
+    """Flyback diode pointing up"""
+    w = 0.22
+    h = 0.22
+    mask = patches.Rectangle((x - w/2 - 0.02, yc - h/2 - 0.02), w + 0.04, h + 0.04,
+                             facecolor='#ffffff', edgecolor='none', zorder=6)
+    ax.add_patch(mask)
+    tri = patches.Polygon([[x - w/2, yc - h/2], [x + w/2, yc - h/2], [x, yc + h/2]],
+                          closed=True, facecolor='#ffffff', edgecolor='#000000', lw=1.4, zorder=7)
+    ax.add_patch(tri)
+    ax.plot([x - w/2, x + w/2], [yc + h/2, yc + h/2], color='#000000', lw=1.5, zorder=8)
+    if label:
+        ax.text(x - w/2 - 0.05, yc, label, fontsize=7.2, fontweight='bold', ha='right', va='center', zorder=10)
+
+
+def draw_capacitor_v(ax, x, yc, label="C1\n220µF"):
+    """Polarized capacitor vertical with clean gap mask"""
+    w = 0.34
+    gap = 0.12
+    mask = patches.Rectangle((x - w/2, yc - gap/2), w, gap, facecolor='#ffffff', edgecolor='none', zorder=6)
+    ax.add_patch(mask)
+    ax.plot([x - w/2, x + w/2], [yc + gap/2, yc + gap/2], color='#000000', lw=1.8, zorder=8)
+    ax.plot([x - w/2, x + w/2], [yc - gap/2, yc - gap/2], color='#000000', lw=1.8, zorder=8)
+    ax.text(x - w/2 - 0.04, yc + 0.14, "+", fontsize=8.5, fontweight='bold', ha='right', va='center', zorder=10)
+    ax.text(x + w/2 + 0.06, yc, label, fontsize=7.2, ha='left', va='center', zorder=10)
+
+
+def draw_switch_no_v(ax, x, yc, label="K1", h=0.46):
+    """Normally Open (NO) contact vertical in IEC style"""
+    mask = patches.Rectangle((x - 0.28, yc - h/2), 0.56, h, facecolor='#ffffff', edgecolor='none', zorder=6)
+    ax.add_patch(mask)
+    ax.plot([x, x - 0.22], [yc - h/2, yc + h/2 - 0.04], color='#000000', lw=1.7, zorder=8)
+    draw_dot(ax, x, yc - h/2, r=0.045)
+    draw_dot(ax, x, yc + h/2, r=0.045)
+    ax.text(x + 0.15, yc, label, fontsize=8.5, fontweight='bold', ha='left', va='center', zorder=10)
+
+
+def draw_switch_no_h(ax, xc, y, label="S1", w=0.46):
+    """Normally Open (NO) switch horizontal"""
+    mask = patches.Rectangle((xc - w/2, y - 0.25), w, 0.50, facecolor='#ffffff', edgecolor='none', zorder=6)
+    ax.add_patch(mask)
+    ax.plot([xc - w/2, xc + w/2 - 0.04], [y, y + 0.22], color='#000000', lw=1.7, zorder=8)
+    draw_dot(ax, xc - w/2, y, r=0.045)
+    draw_dot(ax, xc + w/2, y, r=0.045)
+    ax.text(xc, y + 0.28, label, fontsize=8.0, fontweight='bold', ha='center', va='bottom', zorder=10)
+
 
 def create_circuit_diagram():
-    fig, ax = plt.subplots(figsize=(20.0, 11.25), dpi=300)
-    ax.set_xlim(0, 20.0)
-    ax.set_ylim(0, 11.25)
+    fig, ax = plt.subplots(figsize=(17.8, 9.6), dpi=300)
+    ax.set_xlim(0, 17.8)
+    ax.set_ylim(0, 9.6)
     ax.axis('off')
     fig.patch.set_facecolor('#ffffff')
 
-    # Main outer frame
-    bg_frame = FancyBboxPatch((0.3, 0.3), 19.4, 10.65, boxstyle="round,pad=0.08,rounding_size=0.15",
-                              facecolor='#f8fafc', edgecolor='#cbd5e1', lw=1.5, zorder=0)
-    ax.add_patch(bg_frame)
+    # Clean outer border
+    border = patches.Rectangle((0.25, 0.25), 17.30, 9.1, facecolor='#ffffff', edgecolor='#000000', lw=1.3, zorder=1)
+    ax.add_patch(border)
 
-    # ==========================================
-    # HEADER SECTION (MINIMALIST & CLEAN)
-    # ==========================================
-    title_box = FancyBboxPatch((0.6, 10.35), 18.8, 0.50, boxstyle="round,pad=0.06,rounding_size=0.12",
-                               facecolor='#0f172a', edgecolor='none', zorder=2)
-    ax.add_patch(title_box)
-    ax.text(10.0, 10.65, "SƠ ĐỒ NỐI DÂY PHẦN CỨNG & CÁC CHÂN GPIO - HỆ THỐNG FLOODGUARD",
-            fontsize=13.5, fontweight='bold', color='#ffffff', ha='center', va='center', zorder=3)
-    ax.text(10.0, 10.45, "ESP32 DevKit V1 | Điều Khiển Máy Bơm Qua Relay 5V (Active LOW) | Cảm Biến Siêu Âm, Mưa, Servo & Cảnh Báo",
-            fontsize=8.5, style='italic', color='#94a3b8', ha='center', va='center', zorder=3)
+    # Header inside border
+    ax.text(8.90, 9.02, "SƠ ĐỒ NGUYÊN LÝ MẠCH ĐIỆN HỆ THỐNG FLOODGUARD",
+            fontsize=13.5, fontweight='bold', ha='center', va='center', zorder=10)
+    ax.text(8.90, 8.72, "Chuẩn ký hiệu IEC đơn giản: Khối Cảm Biến  |  Vi điều khiển ESP32  |  Nhánh Cảnh Báo & Chấp Hành  |  Mạch Động Lực Bơm",
+            fontsize=8.6, style='italic', ha='center', va='center', color='#333333', zorder=10)
 
-    # Helper: draw pin terminal
-    def draw_terminal(px, py, label="", color='#0f172a', text_color='#ffffff', radius=0.14, font_size=7.0):
-        circle = plt.Circle((px, py), radius, facecolor=color, edgecolor='#334155', lw=1.0, zorder=12)
-        ax.add_patch(circle)
-        if label:
-            ax.text(px, py, label, fontsize=font_size, fontweight='bold', color=text_color, ha='center', va='center', zorder=13)
+    # ==========================================================
+    # MAIN HORIZONTAL POWER & GROUND RAILS (like L and N in sample)
+    # ==========================================================
+    y_5v  = 7.95   # +5V rail
+    y_gnd = 1.25   # Common GND rail
 
-    # Helper: draw wire
-    def draw_wire(pts, color='#2563eb', lw=2.2, style='-', zorder=4):
-        xs = [p[0] for p in pts]
-        ys = [p[1] for p in pts]
-        ax.plot(xs, ys, color=color, lw=lw, linestyle=style, zorder=zorder, solid_capstyle='round', solid_joinstyle='round')
+    # +5V Supply Entry (Top Left)
+    ax.text(0.45, y_5v, "+5V DC\n(2A)", fontsize=8.5, fontweight='bold', ha='left', va='center', zorder=10)
+    draw_wire(ax, [(1.20, y_5v), (16.45, y_5v)], lw=1.8)
+    draw_dot(ax, 1.20, y_5v, r=0.06)
 
-    # Helper: module card box
-    def draw_card(x, y, w, h, title, border_color='#0ea5e9', bg_color='#ffffff'):
-        box = FancyBboxPatch((x, y), w, h, boxstyle="round,pad=0.06,rounding_size=0.15",
-                             facecolor=bg_color, edgecolor=border_color, lw=1.8, zorder=2)
-        ax.add_patch(box)
-        th = 0.38
-        tbox = FancyBboxPatch((x, y + h - th), w, th, boxstyle="round,pad=0.06,rounding_size=0.12",
-                              facecolor=border_color, edgecolor='none', zorder=3)
-        ax.add_patch(tbox)
-        ax.text(x + w/2, y + h - th/2, title, fontsize=9.0, fontweight='bold', color='#ffffff',
-                ha='center', va='center', zorder=4)
+    # Main Switch S1 & Fuse F1 BEFORE all branches
+    draw_switch_no_h(ax, 1.55, y_5v, label="S1", w=0.42)
+    draw_fuse_h(ax, 2.25, y_5v, label="F1 (2A)", w=0.46, h=0.18)
 
-    # ==========================================
-    # 1. ESP32 DEVKIT V1 (CENTER COLUMN)
-    # ==========================================
-    esp_x, esp_y, esp_w, esp_h = 8.2, 3.4, 3.6, 6.2
-    pcb = FancyBboxPatch((esp_x, esp_y), esp_w, esp_h, boxstyle="round,pad=0.08,rounding_size=0.2",
-                         facecolor='#0f172a', edgecolor='#38bdf8', lw=2.2, zorder=2)
-    ax.add_patch(pcb)
+    # Common GND Rail (Bottom)
+    ax.text(0.45, y_gnd, "GND\n(Chung)", fontsize=8.5, fontweight='bold', ha='left', va='center', zorder=10)
+    draw_wire(ax, [(1.20, y_gnd), (16.45, y_gnd)], lw=1.8)
+    draw_dot(ax, 1.20, y_gnd, r=0.06)
 
-    # Header
-    ax.text(esp_x + esp_w/2, esp_y + esp_h - 0.4, "ESP32 DEVKIT V1", fontsize=11.5,
-            fontweight='bold', color='#38bdf8', ha='center', va='center', zorder=4)
-    ax.text(esp_x + esp_w/2, esp_y + esp_h - 0.68, "Microcontroller (3.3V Logic)", fontsize=7.2,
-            style='italic', color='#94a3b8', ha='center', va='center', zorder=4)
+    # ==========================================================
+    # LEFT SIDE: SENSORS (HC-SR04 & FC-37)
+    # ==========================================================
+    # 1. HC-SR04 Ultrasonic Sensor
+    hc_x, hc_y, hc_w, hc_h = 1.55, 4.70, 1.85, 1.85
+    hc_box = patches.Rectangle((hc_x, hc_y), hc_w, hc_h, facecolor='#ffffff', edgecolor='#000000', lw=1.6, zorder=4)
+    ax.add_patch(hc_box)
+    ax.text(hc_x + hc_w/2, hc_y + hc_h/2 + 0.15, "HC-SR04", fontsize=9.8, fontweight='bold', ha='center', va='center', zorder=8)
+    ax.text(hc_x + hc_w/2, hc_y + hc_h/2 - 0.18, "(Siêu âm)", fontsize=8.0, style='italic', ha='center', va='center', zorder=8)
 
-    # Metal Shield
-    shield = FancyBboxPatch((esp_x + 0.5, esp_y + 2.1), 2.6, 2.6, boxstyle="round,pad=0.04,rounding_size=0.1",
-                            facecolor='#1e293b', edgecolor='#94a3b8', lw=1.2, zorder=3)
-    ax.add_patch(shield)
-    ax.text(esp_x + esp_w/2, esp_y + 3.7, "ESP-WROOM-32", fontsize=9.5, fontweight='bold', color='#f8fafc', ha='center', va='center', zorder=4)
-    ax.text(esp_x + esp_w/2, esp_y + 3.1, "Wi-Fi & Bluetooth\nDual-Core Xtensa", fontsize=7.2, color='#cbd5e1', ha='center', va='center', zorder=4)
+    # HC-SR04 VCC -> +5V rail (AFTER fuse F1, at x=2.70)
+    draw_wire(ax, [(2.70, hc_y + hc_h), (2.70, y_5v)])
+    draw_dot(ax, 2.70, y_5v)
+    ax.text(2.70, hc_y + hc_h - 0.10, "VCC", fontsize=7.2, fontweight='bold', ha='center', va='top', zorder=8)
 
-    # USB Connector
-    usb = FancyBboxPatch((esp_x + esp_w/2 - 0.5, esp_y - 0.12), 1.0, 0.4, boxstyle="round,pad=0.02,rounding_size=0.05",
-                         facecolor='#cbd5e1', edgecolor='#475569', lw=1.2, zorder=3)
-    ax.add_patch(usb)
-    ax.text(esp_x + esp_w/2, esp_y + 0.1, "USB (5V IN)", fontsize=6.8, fontweight='bold', color='#1e293b', ha='center', va='center', zorder=4)
+    # HC-SR04 GND -> route cleanly to the LEFT (x=1.25) down to GND rail without crossing FC-37!
+    draw_wire(ax, [(hc_x, hc_y + 0.30), (1.25, hc_y + 0.30), (1.25, y_gnd)])
+    draw_dot(ax, 1.25, y_gnd)
+    ax.text(hc_x + 0.10, hc_y + 0.30, "GND", fontsize=7.2, fontweight='bold', ha='left', va='center', zorder=8)
 
-    # Spaced Active Pins on ESP32
-    # Left Header: 7 pins
-    left_pins = [
-        ("3V3", 8.8, "#ea580c"),
-        ("D34 (DO)", 8.0, "#0284c7"),
-        ("D35 (AO)", 7.2, "#0284c7"),
-        ("D27 (PWM)", 6.4, "#d97706"),
-        ("D12 (ECHO)", 5.6, "#059669"),
-        ("D13 (TRIG)", 4.8, "#2563eb"),
-        ("GND", 4.0, "#1e293b")
+    # 2. Rain Sensor FC-37
+    rn_x, rn_y, rn_w, rn_h = 1.55, 2.15, 1.85, 1.75
+    rn_box = patches.Rectangle((rn_x, rn_y), rn_w, rn_h, facecolor='#ffffff', edgecolor='#000000', lw=1.6, zorder=4)
+    ax.add_patch(rn_box)
+    ax.text(rn_x + rn_w/2, rn_y + rn_h/2 + 0.15, "FC-37", fontsize=9.8, fontweight='bold', ha='center', va='center', zorder=8)
+    ax.text(rn_x + rn_w/2, rn_y + rn_h/2 - 0.18, "(Cảm biến mưa)", fontsize=7.8, style='italic', ha='center', va='center', zorder=8)
+
+    # FC-37 GND -> straight down to GND rail
+    draw_wire(ax, [(2.47, rn_y), (2.47, y_gnd)])
+    draw_dot(ax, 2.47, y_gnd)
+    ax.text(2.47, rn_y + 0.10, "GND", fontsize=7.2, fontweight='bold', ha='center', va='bottom', zorder=8)
+
+    # ==========================================================
+    # CENTER: ESP32 DEVKIT V1
+    # ==========================================================
+    esp_x, esp_y, esp_w, esp_h = 5.10, 2.15, 3.20, 5.15
+    esp_box = patches.Rectangle((esp_x, esp_y), esp_w, esp_h, facecolor='#ffffff', edgecolor='#000000', lw=2.0, zorder=4)
+    ax.add_patch(esp_box)
+
+    ax.text(esp_x + esp_w/2, esp_y + esp_h/2 + 0.30, "ESP32", fontsize=12.0, fontweight='bold', ha='center', va='center', zorder=8)
+    ax.text(esp_x + esp_w/2, esp_y + esp_h/2 - 0.15, "DevKit V1\n(Logic 3.3V)", fontsize=8.4, ha='center', va='center', zorder=8)
+
+    # ESP32 VIN (+5V)
+    draw_wire(ax, [(6.70, esp_y + esp_h), (6.70, y_5v)])
+    draw_dot(ax, 6.70, y_5v)
+    ax.text(6.70, esp_y + esp_h - 0.12, "VIN (5V)", fontsize=7.6, fontweight='bold', ha='center', va='top', zorder=8)
+
+    # ESP32 GND -> GND rail
+    draw_wire(ax, [(6.70, esp_y), (6.70, y_gnd)])
+    draw_dot(ax, 6.70, y_gnd)
+    ax.text(6.70, esp_y + 0.12, "GND", fontsize=7.6, fontweight='bold', ha='center', va='bottom', zorder=8)
+
+    # 3V3 Output to FC-37 VCC (cleanly routed between sensors)
+    ax.text(esp_x + 0.12, 6.85, "3V3", fontsize=7.6, fontweight='bold', ha='left', va='center', zorder=8)
+    draw_wire(ax, [(esp_x, 6.85), (3.75, 6.85), (3.75, 3.60), (rn_x + rn_w, 3.60)])
+    ax.text(rn_x + rn_w - 0.08, 3.60, "VCC", fontsize=7.2, fontweight='bold', ha='right', va='center', zorder=8)
+
+    # Left Pins of ESP32 & Wiring from Sensors
+    # D13 (TRIG)
+    y_trig = 6.00
+    ax.text(esp_x + 0.12, y_trig, "D13 (TRIG)", fontsize=7.8, fontweight='bold', ha='left', va='center', zorder=8)
+    ax.text(hc_x + hc_w - 0.08, y_trig, "TRIG", fontsize=7.2, fontweight='bold', ha='right', va='center', zorder=8)
+    draw_wire(ax, [(hc_x + hc_w, y_trig), (esp_x, y_trig)])
+
+    # D12 (ECHO) with Voltage Divider R1 (1k) + R2 (2k) -> GND
+    y_echo = 5.15
+    ax.text(esp_x + 0.12, y_echo, "D12 (ECHO)", fontsize=7.8, fontweight='bold', ha='left', va='center', zorder=8)
+    ax.text(hc_x + hc_w - 0.08, y_echo, "ECHO", fontsize=7.2, fontweight='bold', ha='right', va='center', zorder=8)
+    draw_wire(ax, [(hc_x + hc_w, y_echo), (esp_x, y_echo)])
+    draw_resistor_h(ax, 4.12, y_echo, label="R1", val="1kΩ", w=0.52, h=0.20)
+    node_echo_x = 4.72
+    draw_dot(ax, node_echo_x, y_echo)
+    draw_wire(ax, [(node_echo_x, y_echo), (node_echo_x, y_gnd)])
+    draw_resistor_v(ax, node_echo_x, 3.95, label="R2", val="2kΩ", h=0.52, w=0.20, label_side='left')
+    draw_dot(ax, node_echo_x, y_gnd)
+
+    # D34 (DO)
+    y_do = 3.05
+    ax.text(esp_x + 0.12, y_do, "D34 (DO)", fontsize=7.8, fontweight='bold', ha='left', va='center', zorder=8)
+    ax.text(rn_x + rn_w - 0.08, y_do, "DO", fontsize=7.2, fontweight='bold', ha='right', va='center', zorder=8)
+    draw_wire(ax, [(rn_x + rn_w, y_do), (esp_x, y_do)])
+
+    # D35 (AO)
+    y_ao = 2.45
+    ax.text(esp_x + 0.12, y_ao, "D35 (AO)", fontsize=7.8, fontweight='bold', ha='left', va='center', zorder=8)
+    ax.text(rn_x + rn_w - 0.08, y_ao, "AO", fontsize=7.2, fontweight='bold', ha='right', va='center', zorder=8)
+    draw_wire(ax, [(rn_x + rn_w, y_ao), (esp_x, y_ao)])
+
+    # ==========================================================
+    # RIGHT SIDE OF ESP32: PLANAR CONTROL BRANCHES (ZERO WIRE CROSSINGS!)
+    # Ordered Top-to-Bottom from rightmost to leftmost branch
+    # ==========================================================
+    right_pins_info = [
+        ("D23 (RELAY)", 6.55),  # Far right -> Relay K1
+        ("D27 (PWM)",   5.75),  # Servo SG90
+        ("D4 (BUZZ)",   4.95),  # Active Buzzer
+        ("D18 (LED-R)", 4.20),  # LED Red
+        ("D19 (LED-Y)", 3.55),  # LED Yellow
+        ("D21 (LED-G)", 2.90),  # LED Green
     ]
-    esp_left_pts = {}
-    for name, py, col in left_pins:
-        px = esp_x + 0.18
-        plt.plot(px, py, 'o', color='#f8fafc', markersize=5.0, zorder=5)
-        ax.text(px + 0.22, py, name, fontsize=7.2, fontweight='bold', color='#f8fafc', ha='left', va='center', zorder=5)
-        esp_left_pts[name.split()[0]] = (px, py)
+    for pname, py in right_pins_info:
+        ax.text(esp_x + esp_w - 0.12, py, pname, fontsize=7.6, fontweight='bold', ha='right', va='center', zorder=8)
 
-    # Right Header: 7 pins
-    right_pins = [
-        ("VIN (5V)", 8.8, "#dc2626"),
-        ("GND", 8.0, "#1e293b"),
-        ("D23 (RELAY)", 7.2, "#7c3aed"),
-        ("D4 (BUZZ)", 6.4, "#0891b2"),
-        ("D21 (LED-G)", 5.6, "#16a34a"),
-        ("D19 (LED-Y)", 4.8, "#ca8a04"),
-        ("D18 (LED-R)", 4.0, "#e11d48")
+    # Branches 1, 2, 3: LEDs (Left-to-Right: LED-G, LED-Y, LED-R)
+    led_configs = [
+        (2.90, 9.00,  "R3", "220Ω", "H1\n(Xanh)"),
+        (3.55, 10.15, "R4", "220Ω", "H2\n(Vàng)"),
+        (4.20, 11.30, "R5", "220Ω", "H3\n(Đỏ)"),
     ]
-    esp_right_pts = {}
-    for name, py, col in right_pins:
-        px = esp_x + esp_w - 0.18
-        plt.plot(px, py, 'o', color='#f8fafc', markersize=5.0, zorder=5)
-        ax.text(px - 0.22, py, name, fontsize=7.2, fontweight='bold', color='#f8fafc', ha='right', va='center', zorder=5)
-        esp_right_pts[name.split()[0]] = (px, py)
+    for py, bx, r_lbl, r_val, l_lbl in led_configs:
+        draw_wire(ax, [(esp_x + esp_w, py), (bx, py), (bx, y_gnd)])
+        draw_dot(ax, bx, y_gnd)
+        draw_resistor_v(ax, bx, 2.45, label=r_lbl, val=r_val, h=0.48, w=0.20)
+        draw_led_v(ax, bx, 1.72, label=l_lbl)
 
+    # Branch 4: Active Buzzer 5V (D4, y=4.95, x=12.45)
+    py_bz, bx_bz = 4.95, 12.45
+    draw_wire(ax, [(esp_x + esp_w, py_bz), (bx_bz, py_bz), (bx_bz, y_gnd)])
+    draw_dot(ax, bx_bz, y_gnd)
+    draw_resistor_v(ax, bx_bz, 3.60, label="R6", val="100Ω", h=0.52, w=0.20)
+    bz_r = 0.25
+    bz_circle = plt.Circle((bx_bz, 2.25), bz_r, facecolor='#ffffff', edgecolor='#000000', lw=1.6, zorder=7)
+    ax.add_patch(bz_circle)
+    ax.text(bx_bz, 2.25, "BZ", fontsize=8.0, fontweight='bold', ha='center', va='center', zorder=8)
+    ax.text(bx_bz + 0.32, 2.25, "Còi\n5V", fontsize=7.5, fontweight='bold', ha='left', va='center', zorder=10)
 
-    # ==========================================
-    # 2. KHỐI CẢM BIẾN (LEFT COLUMN)
-    # ==========================================
-    # 2.1 Cảm biến siêu âm HC-SR04
-    draw_card(0.6, 6.7, 4.4, 2.7, "CẢM BIẾN SIÊU ÂM (HC-SR04)", '#2563eb')
-    # Transducers
-    ax.add_patch(plt.Circle((1.8, 7.9), 0.55, facecolor='#e2e8f0', edgecolor='#1e293b', lw=1.5, zorder=4))
-    ax.add_patch(plt.Circle((3.8, 7.9), 0.55, facecolor='#e2e8f0', edgecolor='#1e293b', lw=1.5, zorder=4))
-    ax.text(1.8, 7.9, "T\n(Phát)", fontsize=7.5, fontweight='bold', color='#0f172a', ha='center', va='center', zorder=5)
-    ax.text(3.8, 7.9, "R\n(Thu)", fontsize=7.5, fontweight='bold', color='#0f172a', ha='center', va='center', zorder=5)
-    
-    # HC-SR04 Terminals (Right side of card)
-    sr_vcc  = (4.75, 8.8)
-    sr_echo = (4.75, 8.0)
-    sr_trig = (4.75, 7.3)
-    sr_gnd  = (4.75, 6.7)
-    draw_terminal(sr_vcc[0], sr_vcc[1], "VCC", "#dc2626")
-    draw_terminal(sr_echo[0], sr_echo[1], "ECHO", "#059669")
-    draw_terminal(sr_trig[0], sr_trig[1], "TRIG", "#2563eb")
-    draw_terminal(sr_gnd[0], sr_gnd[1], "GND", "#1e293b")
+    # Branch 5: Servo SG90 (D27, y=5.75, x=13.55) + Parallel Filter C1 (x=14.15)
+    py_sv, bx_sv = 5.75, 13.55
+    sv_w, sv_h = 0.85, 1.00
+    sv_box = patches.Rectangle((bx_sv - sv_w/2, py_sv - sv_h/2), sv_w, sv_h,
+                               facecolor='#ffffff', edgecolor='#000000', lw=1.6, zorder=6)
+    ax.add_patch(sv_box)
+    ax.text(bx_sv, py_sv + 0.14, "SG90", fontsize=8.8, fontweight='bold', ha='center', va='center', zorder=8)
+    ax.text(bx_sv, py_sv - 0.18, "Servo\nVan xả", fontsize=7.0, ha='center', va='center', zorder=8)
+    # Signal D27 -> Servo
+    draw_wire(ax, [(esp_x + esp_w, py_sv), (bx_sv - sv_w/2, py_sv)])
+    # +5V -> Servo top, Servo bottom -> GND
+    draw_wire(ax, [(bx_sv, y_5v), (bx_sv, py_sv + sv_h/2)])
+    draw_dot(ax, bx_sv, y_5v)
+    draw_wire(ax, [(bx_sv, py_sv - sv_h/2), (bx_sv, y_gnd)])
+    draw_dot(ax, bx_sv, y_gnd)
 
-    # 2.2 Cảm biến mưa (Rain Sensor)
-    draw_card(0.6, 3.4, 4.4, 2.7, "CẢM BIẾN MƯA (RAIN SENSOR)", '#0284c7')
-    # Sensing board
-    plate = FancyBboxPatch((1.0, 4.1), 1.8, 1.3, boxstyle="square,pad=0.02",
-                           facecolor='#e2e8f0', edgecolor='#0284c7', lw=1.2, zorder=4)
-    ax.add_patch(plate)
-    for yy in np.linspace(4.25, 5.25, 5):
-        ax.plot([1.15, 2.65], [yy, yy], color='#0284c7', lw=1.5, zorder=5)
-    ax.text(1.9, 3.75, "Tấm Điện Cực Mưa", fontsize=6.8, style='italic', color='#475569', ha='center', va='center', zorder=5)
+    # Filter Capacitor C1 (220uF) across +5V and GND at x=14.18 (below D23 line? No, D23 is at 6.55; put C1 from +5V down to GND at x=14.15? Wait: D23 goes horizontally at y=6.55 to x=15.05, so C1 at x=14.18 would cross D23 cleanly, or place C1 on the LEFT of Servo or BELOW D23? No, C1 goes to +5V (y=7.95)! Putting C1 at x=14.18 with clean bridge or putting C1 at x=13.55? Actually, put C1 between +5V and GND at x=14.18 is fine if D23 goes at y=6.55 and C1 plate is at y=4.00 — just crossing one wire cleanly, OR put D23 above +5V? No! Put Servo + C1 at x=13.45 and C1 leg connecting to Servo's +5V/GND leg!)
+    # Even cleaner: branch off Servo's vertical +5V line at y=7.30 -> x=14.10 -> down to y=2.00 -> back to Servo's GND line! That way it NEVER crosses D23!
+    # Wait: D23 is at y=6.55, so branching from Servo at y=7.30 down to y=2.00 STILL passes y=6.55!
+    # Wait: if Servo is at x=13.55, Relay is at x=15.10, and C1 is on the LEFT side of Servo at x=13.00? Still crosses D27!
+    # What if Servo & C1 are to the RIGHT of Relay? No, Relay needs to be closest to Pump Power Circuit for the dashed mechanical link K1!
+    # Wait: Crossing D23 horizontally at y=6.55 with one vertical wire of C1 is totally normal in schematics as long as there's no dot (and no component overlap). Or even better: make D23 wire route at y=6.55 and C1 capacitor symbol at y=3.60 (well away from y=6.55)! Let's do that!
+    cx = 13.95
+    draw_wire(ax, [(cx, y_5v), (cx, y_gnd)])
+    draw_dot(ax, cx, y_5v)
+    draw_dot(ax, cx, y_gnd)
+    draw_capacitor_v(ax, cx, 3.60, label="C1\n220µF")
 
-    # LM393 chip
-    comp = FancyBboxPatch((3.1, 4.2), 1.5, 1.1, boxstyle="round,pad=0.03",
-                          facecolor='#1e293b', edgecolor='#64748b', lw=1.0, zorder=4)
-    ax.add_patch(comp)
-    ax.text(3.85, 4.75, "LM393\nModule", fontsize=7.2, fontweight='bold', color='#f8fafc', ha='center', va='center', zorder=5)
+    # Branch 6: Relay Coil K1 (D23, y=6.55, x=15.25)
+    py_rl, bx_rl = 6.55, 15.25
+    coil_w, coil_h = 0.54, 0.86
+    coil_y = 5.00
+    draw_wire(ax, [(bx_rl, y_5v), (bx_rl, coil_y + coil_h/2)])
+    draw_dot(ax, bx_rl, y_5v)
+    draw_wire(ax, [(esp_x + esp_w, py_rl), (14.32, py_rl), (14.32, coil_y - 0.80), (bx_rl, coil_y - 0.80), (bx_rl, coil_y - coil_h/2)])
 
-    # Terminals
-    rain_vcc = (4.75, 5.7)
-    rain_ao  = (4.75, 5.0)
-    rain_do  = (4.75, 4.3)
-    rain_gnd = (4.75, 3.6)
-    draw_terminal(rain_vcc[0], rain_vcc[1], "VCC", "#ea580c")
-    draw_terminal(rain_ao[0], rain_ao[1], "AO", "#0284c7")
-    draw_terminal(rain_do[0], rain_do[1], "DO", "#0284c7")
-    draw_terminal(rain_gnd[0], rain_gnd[1], "GND", "#1e293b")
+    coil_rect = patches.Rectangle((bx_rl - coil_w/2, coil_y - coil_h/2), coil_w, coil_h,
+                                  facecolor='#ffffff', edgecolor='#000000', lw=1.7, zorder=6)
+    ax.add_patch(coil_rect)
+    ax.text(bx_rl, coil_y + 0.12, "K1", fontsize=9.5, fontweight='bold', ha='center', va='center', zorder=8)
+    ax.text(bx_rl, coil_y - 0.16, "(5V)", fontsize=7.5, fontweight='bold', ha='center', va='center', zorder=8)
 
+    # Flyback Diode D1 across Relay Coil K1 (on the left of coil at x = 14.77)
+    dx_fb = bx_rl - 0.48
+    draw_wire(ax, [(bx_rl, coil_y + 0.58), (dx_fb, coil_y + 0.58), (dx_fb, coil_y - 0.58), (bx_rl, coil_y - 0.58)])
+    draw_dot(ax, bx_rl, coil_y + 0.58)
+    draw_dot(ax, bx_rl, coil_y - 0.58)
+    draw_diode_up(ax, dx_fb, coil_y, label="D1")
 
-    # ==========================================
-    # 3. KHỐI CHẤP HÀNH (RIGHT COLUMN)
-    # ==========================================
-    # 3.1 Module Relay 5V & Máy Bơm Mini
-    draw_card(14.8, 6.7, 4.6, 2.7, "MODULE RELAY 5V & MÁY BƠM", '#7c3aed')
-    
-    # Relay Blue Cube
-    cube = FancyBboxPatch((15.2, 7.3), 1.7, 1.3, boxstyle="round,pad=0.04",
-                          facecolor='#2563eb', edgecolor='#1e293b', lw=1.4, zorder=4)
-    ax.add_patch(cube)
-    ax.text(16.05, 8.15, "RELAY 5V", fontsize=8.5, fontweight='bold', color='#ffffff', ha='center', va='center', zorder=5)
-    ax.text(16.05, 7.65, "SRD-05VDC\nActive LOW", fontsize=6.8, color='#bfdbfe', ha='center', va='center', zorder=5)
+    # ==========================================================
+    # FAR RIGHT: PUMP POWER CIRCUIT (MẠCH ĐỘNG LỰC MÁY BƠM)
+    # ==========================================================
+    draw_wire(ax, [(15.80, 8.20), (15.80, 1.00)], lw=1.0, ls=':')
+    ax.text(8.3, 8.25, "MẠCH ĐIỀU KHIỂN & CẢM BIẾN (CONTROL)", fontsize=8.5, fontweight='bold', ha='center', va='bottom', zorder=10)
+    ax.text(16.45, 8.25, "MẠCH ĐỘNG LỰC", fontsize=8.5, fontweight='bold', ha='center', va='bottom', zorder=10)
 
-    # Relay Input Terminals (Left)
-    rel_vcc = (15.0, 8.8)
-    rel_in  = (15.0, 7.8)
-    rel_gnd = (15.0, 6.9)
-    draw_terminal(rel_vcc[0], rel_vcc[1], "VCC", "#dc2626")
-    draw_terminal(rel_in[0], rel_in[1], "IN", "#7c3aed")
-    draw_terminal(rel_gnd[0], rel_gnd[1], "GND", "#1e293b")
+    px_pump = 16.45
+    draw_wire(ax, [(px_pump, y_5v), (px_pump, y_gnd)])
+    draw_dot(ax, px_pump, y_5v)
+    draw_dot(ax, px_pump, y_gnd)
 
-    # Output Screw Terminals (Right)
-    ax.text(17.2, 8.45, "NO (Tiếp điểm mở)", fontsize=6.8, fontweight='bold', color='#dc2626', ha='left', va='center', zorder=5)
-    ax.text(17.2, 7.85, "COM (Nguồn 5V)", fontsize=6.8, fontweight='bold', color='#1e293b', ha='left', va='center', zorder=5)
+    draw_fuse_v(ax, px_pump, 6.70, label="F2", h=0.45, w=0.18)
+    draw_switch_no_v(ax, px_pump, coil_y, label="K1", h=0.50)
 
-    # Mini Water Pump
-    pump_box = FancyBboxPatch((17.6, 6.85), 1.5, 0.65, boxstyle="round,pad=0.03",
-                              facecolor='#f1f5f9', edgecolor='#7c3aed', lw=1.5, zorder=4)
-    ax.add_patch(pump_box)
-    ax.text(18.35, 7.17, "MÁY BƠM\n5V MINI", fontsize=7.0, fontweight='bold', color='#0f172a', ha='center', va='center', zorder=5)
+    # Dashed mechanical linkage from K1 coil to K1 NO contact
+    draw_wire(ax, [(bx_rl + coil_w/2, coil_y), (px_pump - 0.14, coil_y)], lw=1.3, ls='--')
 
-    # Connect NO to Pump (+) and COM to 5V Source
-    draw_wire([(17.1, 8.2), (18.6, 8.2), (18.6, 7.5)], color='#dc2626', lw=2.0)
-    # Pump (-) to Relay GND
-    draw_wire([(18.0, 6.85), (18.0, 6.55), (15.0, 6.55), (15.0, 6.75)], color='#1e293b', lw=1.8)
-    # External 5V into COM
-    draw_wire([(17.1, 7.6), (17.3, 7.6)], color='#dc2626', lw=1.8, style='--')
+    # Motor M symbol
+    m_r = 0.40
+    m_y = 2.65
+    m_circle = plt.Circle((px_pump, m_y), m_r, facecolor='#ffffff', edgecolor='#000000', lw=1.8, zorder=7)
+    ax.add_patch(m_circle)
+    ax.text(px_pump, m_y, "M", fontsize=12.0, fontweight='bold', ha='center', va='center', zorder=8)
+    ax.text(px_pump + m_r + 0.10, m_y, "Bơm\n5V", fontsize=8.0, fontweight='bold', ha='left', va='center', zorder=10)
 
-    # 3.2 Động cơ Servo SG90 (Van Thoát Lũ)
-    draw_card(14.8, 3.4, 4.6, 2.7, "ĐỘNG CƠ SERVO SG90", '#d97706')
-    
-    # Servo Body
-    servo = FancyBboxPatch((15.2, 4.1), 2.0, 1.2, boxstyle="round,pad=0.05",
-                           facecolor='#0284c7', edgecolor='#0369a1', lw=1.5, zorder=4)
-    ax.add_patch(servo)
-    ax.text(16.2, 4.85, "SG90 Micro Servo", fontsize=7.5, fontweight='bold', color='#ffffff', ha='center', va='center', zorder=5)
-    ax.text(16.2, 4.45, "Góc 0° - 90° - 180°", fontsize=7.0, color='#bae6fd', ha='center', va='center', zorder=5)
+    # ==========================================================
+    # CLEAN LEGEND BAR AT BOTTOM (2 lines inside border)
+    # ==========================================================
+    ax.plot([0.45, 17.35], [0.85, 0.85], color='#000000', lw=0.8)
+    legend_line1 = (
+        "Chú thích ký hiệu chuẩn IEC:   "
+        "[S1] Công tắc nguồn chính   |   "
+        "[F1, F2] Cầu chì bảo vệ quá dòng   |   "
+        "[R1, R2] Cầu phân áp Echo (5V → 3.3V)   |   "
+        "[R3–R6] Điện trở hạn dòng LED & Còi"
+    )
+    legend_line2 = (
+        "[H1–H3] Đèn LED chỉ thị trạng thái   |   "
+        "[BZ] Còi báo động 5V   |   "
+        "[C1] Tụ lọc nguồn Servo   |   "
+        "[K1] Cuộn hút & Tiếp điểm Relay (Active LOW)   |   "
+        "[D1] Diode dập xung ngược   |   "
+        "[M] Máy bơm 5V"
+    )
+    ax.text(8.90, 0.63, legend_line1, fontsize=7.5, ha='center', va='center', zorder=10)
+    ax.text(8.90, 0.40, legend_line2, fontsize=7.5, ha='center', va='center', zorder=10)
 
-    # Rotating arm
-    horn = patches.Wedge((17.8, 4.7), 0.45, -45, 135, facecolor='#ffffff', edgecolor='#0f172a', lw=1.2, zorder=6)
-    ax.add_patch(horn)
-    ax.plot([17.8, 18.5], [4.7, 5.15], color='#e11d48', lw=2.8, zorder=7)
-    ax.text(18.6, 4.4, "Cánh Van", fontsize=7.0, fontweight='bold', color='#e11d48', ha='center', va='center', zorder=8)
-
-    # Servo Terminals (Left)
-    servo_pwm = (15.0, 5.4)
-    servo_vcc = (15.0, 4.6)
-    servo_gnd = (15.0, 3.8)
-    draw_terminal(servo_pwm[0], servo_pwm[1], "PWM", "#d97706")
-    draw_terminal(servo_vcc[0], servo_vcc[1], "5V", "#dc2626")
-    draw_terminal(servo_gnd[0], servo_gnd[1], "GND", "#1e293b")
-
-
-    # ==========================================
-    # 4. KHỐI CẢNH BÁO TẠI CHỖ (BOTTOM: 4 CARDS)
-    # Height lowered to 1.45 (top at y = 1.95), leaving y=1.95 to 3.4 pure corridor!
-    # Terminals placed cleanly at the top of card body (y = 1.95)!
-    # ==========================================
-    card_y = 0.50
-    card_h = 1.45
-    card_w = 4.2
-    gap = 0.45
-    term_y = card_y + card_h  # Exactly at the top edge of the card
-
-    # 4.1 Còi Buzzer 5V
-    bx = 0.6
-    draw_card(bx, card_y, card_w, card_h, "CÒI BUZZER 5V", '#0891b2')
-    ax.add_patch(plt.Circle((bx + card_w/2, card_y + 0.55), 0.32, facecolor='#1e293b', edgecolor='#0891b2', lw=1.5, zorder=4))
-    ax.text(bx + card_w/2, card_y + 0.55, "+\nBUZZ", fontsize=7.2, fontweight='bold', color='#ffffff', ha='center', va='center', zorder=5)
-    buz_sig = (bx + 1.1, term_y)
-    buz_gnd = (bx + card_w - 1.1, term_y)
-    draw_terminal(buz_sig[0], buz_sig[1], "D4", "#0891b2")
-    draw_terminal(buz_gnd[0], buz_gnd[1], "GND", "#1e293b")
-
-    # 4.2 LED Xanh (NORMAL)
-    gx = bx + card_w + gap
-    draw_card(gx, card_y, card_w, card_h, "LED XANH (NORMAL <40%)", '#16a34a')
-    ax.add_patch(plt.Circle((gx + card_w/2 - 0.7, card_y + 0.55), 0.26, facecolor='#22c55e', edgecolor='#15803d', lw=1.5, zorder=4))
-    ax.text(gx + card_w/2 - 0.7, card_y + 0.55, "LED", fontsize=6.8, fontweight='bold', color='#ffffff', ha='center', va='center', zorder=5)
-    ax.add_patch(FancyBboxPatch((gx + card_w/2 + 0.1, card_y + 0.42), 1.2, 0.26, boxstyle="square,pad=0.02",
-                                facecolor='#cbd5e1', edgecolor='#475569', lw=1.0, zorder=4))
-    ax.text(gx + card_w/2 + 0.7, card_y + 0.55, "220 Ω", fontsize=6.8, fontweight='bold', color='#0f172a', ha='center', va='center', zorder=5)
-    led_g_sig = (gx + 1.1, term_y)
-    led_g_gnd = (gx + card_w - 1.1, term_y)
-    draw_terminal(led_g_sig[0], led_g_sig[1], "D21", "#16a34a")
-    draw_terminal(led_g_gnd[0], led_g_gnd[1], "GND", "#1e293b")
-
-    # 4.3 LED Vàng (WARNING)
-    yx = gx + card_w + gap
-    draw_card(yx, card_y, card_w, card_h, "LED VÀNG (WARNING 41-70%)", '#ca8a04')
-    ax.add_patch(plt.Circle((yx + card_w/2 - 0.7, card_y + 0.55), 0.26, facecolor='#eab308', edgecolor='#a16207', lw=1.5, zorder=4))
-    ax.text(yx + card_w/2 - 0.7, card_y + 0.55, "LED", fontsize=6.8, fontweight='bold', color='#ffffff', ha='center', va='center', zorder=5)
-    ax.add_patch(FancyBboxPatch((yx + card_w/2 + 0.1, card_y + 0.42), 1.2, 0.26, boxstyle="square,pad=0.02",
-                                facecolor='#cbd5e1', edgecolor='#475569', lw=1.0, zorder=4))
-    ax.text(yx + card_w/2 + 0.7, card_y + 0.55, "220 Ω", fontsize=6.8, fontweight='bold', color='#0f172a', ha='center', va='center', zorder=5)
-    led_y_sig = (yx + 1.1, term_y)
-    led_y_gnd = (yx + card_w - 1.1, term_y)
-    draw_terminal(led_y_sig[0], led_y_sig[1], "D19", "#ca8a04")
-    draw_terminal(led_y_gnd[0], led_y_gnd[1], "GND", "#1e293b")
-
-    # 4.4 LED Đỏ (CRITICAL)
-    rx = yx + card_w + gap
-    draw_card(rx, card_y, card_w, card_h, "LED ĐỎ (CRITICAL >70%)", '#e11d48')
-    ax.add_patch(plt.Circle((rx + card_w/2 - 0.7, card_y + 0.55), 0.26, facecolor='#ef4444', edgecolor='#b91c1c', lw=1.5, zorder=4))
-    ax.text(rx + card_w/2 - 0.7, card_y + 0.55, "LED", fontsize=6.8, fontweight='bold', color='#ffffff', ha='center', va='center', zorder=5)
-    ax.add_patch(FancyBboxPatch((rx + card_w/2 + 0.1, card_y + 0.42), 1.2, 0.26, boxstyle="square,pad=0.02",
-                                facecolor='#cbd5e1', edgecolor='#475569', lw=1.0, zorder=4))
-    ax.text(rx + card_w/2 + 0.7, card_y + 0.55, "220 Ω", fontsize=6.8, fontweight='bold', color='#0f172a', ha='center', va='center', zorder=5)
-    led_r_sig = (rx + 1.1, term_y)
-    led_r_gnd = (rx + card_w - 1.1, term_y)
-    draw_terminal(led_r_sig[0], led_r_sig[1], "D18", "#e11d48")
-    draw_terminal(led_r_gnd[0], led_r_gnd[1], "GND", "#1e293b")
-
-
-    # ==========================================
-    # 5. WIRING CONNECTIONS (SPACIOUS & CLEAR)
-    # ==========================================
-    # --- SENSORS TO ESP32 (LEFT CORRIDOR: x = 5.0 to 8.2) ---
-    # Wire 1: HC-SR04 TRIG -> ESP32 D13
-    draw_wire([sr_trig, (6.1, sr_trig[1]), (6.1, esp_left_pts["D13"][1]), esp_left_pts["D13"]], color='#2563eb', lw=2.2)
-    ax.text(6.2, 7.3, "Trig (D13)", fontsize=7.2, fontweight='bold', color='#2563eb', zorder=8)
-
-    # Wire 2: HC-SR04 ECHO -> ESP32 D12
-    draw_wire([sr_echo, (6.5, sr_echo[1]), (6.5, esp_left_pts["D12"][1]), esp_left_pts["D12"]], color='#059669', lw=2.2)
-    ax.text(6.6, 7.8, "Echo (D12)", fontsize=7.2, fontweight='bold', color='#059669', zorder=8)
-
-    # Wire 3: Rain AO -> ESP32 D35
-    draw_wire([rain_ao, (6.9, rain_ao[1]), (6.9, esp_left_pts["D35"][1]), esp_left_pts["D35"]], color='#0284c7', lw=2.2)
-    ax.text(7.0, 6.8, "Rain AO (D35)", fontsize=7.2, fontweight='bold', color='#0284c7', zorder=8)
-
-    # Wire 4: Rain DO -> ESP32 D34
-    draw_wire([rain_do, (7.3, rain_do[1]), (7.3, esp_left_pts["D34"][1]), esp_left_pts["D34"]], color='#0284c7', lw=1.8, style='--')
-    ax.text(7.4, 4.3, "Rain DO (D34)", fontsize=6.8, style='italic', color='#0284c7', zorder=8)
-
-    # Wire 5: ESP32 D27 -> Servo PWM (Dây cam)
-    draw_wire([esp_left_pts["D27"], (7.7, esp_left_pts["D27"][1]), (7.7, 3.0), (14.2, 3.0), (14.2, servo_pwm[1]), servo_pwm], color='#d97706', lw=2.2)
-    ax.text(12.7, 3.12, "PWM D27 (Servo SG90)", fontsize=7.2, fontweight='bold', color='#d97706', zorder=8)
-
-
-    # --- ACTUATORS TO ESP32 (RIGHT CORRIDOR: x = 11.8 to 14.8) ---
-    # Wire 6: ESP32 D23 -> Relay IN (Active LOW)
-    draw_wire([esp_right_pts["D23"], (13.6, esp_right_pts["D23"][1]), (13.6, rel_in[1]), rel_in], color='#7c3aed', lw=2.5)
-    ax.text(13.7, 7.5, "Relay IN (D23)\n[Active LOW]", fontsize=7.5, fontweight='bold', color='#7c3aed', zorder=8)
-
-
-    # --- SIGNALING TO ESP32 (BOTTOM CORRIDOR: y = 2.0 to 3.4) ---
-    # Completely above card headers! Clean horizontal tracks, drop down into terminals!
-    # Wire 7: ESP32 D4 -> Buzzer (D4)
-    draw_wire([esp_right_pts["D4"], (12.2, esp_right_pts["D4"][1]), (12.2, 2.75), (buz_sig[0], 2.75), buz_sig], color='#0891b2', lw=2.0)
-    ax.text(buz_sig[0] + 0.2, 2.85, "Buzzer (D4)", fontsize=7.0, fontweight='bold', color='#0891b2', zorder=8)
-
-    # Wire 8: ESP32 D21 -> LED Green (D21)
-    draw_wire([esp_right_pts["D21"], (12.5, esp_right_pts["D21"][1]), (12.5, 2.55), (led_g_sig[0], 2.55), led_g_sig], color='#16a34a', lw=2.0)
-    ax.text(led_g_sig[0] + 0.2, 2.65, "LED-G (D21)", fontsize=7.0, fontweight='bold', color='#16a34a', zorder=8)
-
-    # Wire 9: ESP32 D19 -> LED Yellow (D19)
-    draw_wire([esp_right_pts["D19"], (12.8, esp_right_pts["D19"][1]), (12.8, 2.35), (led_y_sig[0], 2.35), led_y_sig], color='#ca8a04', lw=2.0)
-    ax.text(led_y_sig[0] + 0.2, 2.45, "LED-Y (D19)", fontsize=7.0, fontweight='bold', color='#ca8a04', zorder=8)
-
-    # Wire 10: ESP32 D18 -> LED Red (D18)
-    draw_wire([esp_right_pts["D18"], (13.1, esp_right_pts["D18"][1]), (13.1, 2.15), (led_r_sig[0], 2.15), led_r_sig], color='#e11d48', lw=2.0)
-    ax.text(led_r_sig[0] - 1.0, 2.25, "LED-R (D18)", fontsize=7.0, fontweight='bold', color='#e11d48', zorder=8)
-
-
-    # --- POWER BUS ROUTING (5V, 3.3V, GND) ---
-    # 5V VBUS Rail (Red) -> feeds Relay, Servo, and HC-SR04
-    draw_wire([esp_right_pts["VIN"], (14.4, esp_right_pts["VIN"][1]), rel_vcc], color='#dc2626', lw=2.0) # To Relay VCC
-    draw_wire([(14.4, esp_right_pts["VIN"][1]), (14.4, servo_vcc[1]), servo_vcc], color='#dc2626', lw=1.8) # To Servo 5V
-    draw_wire([(esp_right_pts["VIN"][0], esp_right_pts["VIN"][1]), (11.8, 9.6), (5.5, 9.6), (5.5, sr_vcc[1]), sr_vcc], color='#dc2626', lw=1.8, style=':') # To HC-SR04 VCC
-    ax.text(13.5, 8.95, "5V (VIN)", fontsize=7.0, fontweight='bold', color='#dc2626', zorder=8)
-
-    # 3.3V Rail (Orange) from Left Header directly down corridor to Rain Sensor
-    draw_wire([esp_left_pts["3V3"], (5.7, esp_left_pts["3V3"][1]), (5.7, rain_vcc[1]), rain_vcc], color='#ea580c', lw=1.8, style=':')
-    ax.text(5.9, 6.0, "3.3V", fontsize=7.0, fontweight='bold', color='#ea580c', zorder=8)
-
-    # Common GND Rail:
-    # Right Header GND feeds Relay & Servo
-    draw_wire([esp_right_pts["GND"], (14.0, esp_right_pts["GND"][1]), (14.0, rel_gnd[1]), rel_gnd], color='#1e293b', lw=2.0)
-    draw_wire([(14.0, rel_gnd[1]), (14.0, servo_gnd[1]), servo_gnd], color='#1e293b', lw=1.8)
-    ax.text(13.5, 8.15, "GND", fontsize=7.0, fontweight='bold', color='#1e293b', zorder=8)
-
-    # Left Header GND feeds HC-SR04, Rain Sensor, and Bottom cards
-    draw_wire([esp_left_pts["GND"], (5.2, esp_left_pts["GND"][1]), (5.2, sr_gnd[1]), sr_gnd], color='#1e293b', lw=1.6, style=':')
-    draw_wire([(5.2, esp_left_pts["GND"][1]), (5.2, rain_gnd[1]), rain_gnd], color='#1e293b', lw=1.6, style=':')
-    # Ground wire cleanly running horizontally above cards at y = 2.05, dropping to each GND terminal!
-    draw_wire([(5.2, esp_left_pts["GND"][1]), (5.2, 2.05), (buz_gnd[0], 2.05), buz_gnd], color='#1e293b', lw=1.5, style=':')
-    draw_wire([(buz_gnd[0], 2.05), (led_g_gnd[0], 2.05), led_g_gnd], color='#1e293b', lw=1.5, style=':')
-    draw_wire([(led_g_gnd[0], 2.05), (led_y_gnd[0], 2.05), led_y_gnd], color='#1e293b', lw=1.5, style=':')
-    draw_wire([(led_y_gnd[0], 2.05), (led_r_gnd[0], 2.05), led_r_gnd], color='#1e293b', lw=1.5, style=':')
-
-
-    # ==========================================
-    # 6. TECHNICAL NOTE (HIGH-Z RELAY 5V)
-    # ==========================================
-    callout = FancyBboxPatch((7.0, 9.80), 6.0, 0.35, boxstyle="round,pad=0.04,rounding_size=0.08",
-                             facecolor='#fef3c7', edgecolor='#f59e0b', lw=1.2, zorder=8)
-    ax.add_patch(callout)
-    ax.text(10.0, 9.97, "⚡ Lưu ý Relay Active LOW (D23): Dùng High-Z (pinMode INPUT để ngắt) triệt tiêu rò dòng 3.3V-5V",
-            fontsize=7.2, fontweight='bold', color='#b45309', ha='center', va='center', zorder=9)
-
-    # Save to both folders
-    plt.tight_layout()
     for d in out_dirs:
-        out_path = os.path.join(d, "circuit_diagram.png")
-        fig.savefig(out_path, dpi=300, bbox_inches='tight')
-        print(f"Generated Circuit Diagram: {out_path}")
+        filepath = os.path.join(d, "circuit_diagram.png")
+        if os.path.exists(filepath):
+            try:
+                os.remove(filepath)
+            except OSError:
+                pass
+        fig.savefig(filepath, dpi=300, bbox_inches='tight', facecolor='#ffffff')
     plt.close(fig)
+    print("Generated clean B&W IEC circuit_diagram.png successfully!")
+
 
 if __name__ == "__main__":
-    print("Creating FloodGuard simplified, spacious circuit diagram...")
     create_circuit_diagram()
-    print("Done!")

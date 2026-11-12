@@ -1,4 +1,5 @@
 \chapter{Giao Diện Web Dashboard \& Tích Hợp Hệ Thống IoT}
+\label{ch:web_dashboard}
 
 \section{Tổng Quan Kiến Trúc Mạng \& Chế Độ Hoạt Động}
 
@@ -172,6 +173,7 @@ const char HTML_DASHBOARD[] PROGMEM = R"rawliteral(
 \end{itemize}
 
 \subsection{Đánh Giá Hiệu Năng Truyền Thông Mạng}
+\label{sec:network_performance}
 \begin{itemize}
     \item \textbf{Kích thước tải dữ liệu (\textit{Payload Size}):} Chuỗi JSON telemetry trả về tại endpoint \texttt{/api/status} có kích thước trung bình chỉ khoảng $210\,\text{bytes}$, đảm bảo tốc độ truyền tải cực nhanh.
     \item \textbf{Độ trễ phản hồi qua mạng Wi-Fi SoftAP (\textit{Round-Trip Time - RTT}):} Thực nghiệm đo đạc cho thấy thời gian phản hồi một yêu cầu API trung bình chỉ từ $8\,\text{ms}$ đến $18\,\text{ms}$ ở khoảng cách $10\,\text{m}$.

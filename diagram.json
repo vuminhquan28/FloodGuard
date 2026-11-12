@@ -24,7 +24,8 @@
       "top": 170,
       "left": 60,
       "attrs": {
-        "label": "Cam Bien Mua"
+        "label": "Cam Bien Mua (100:Kho, 0:Ngap)",
+        "value": "100"
       }
     },
     {
@@ -109,6 +110,25 @@
       "attrs": {
         "value": "220"
       }
+    },
+    {
+      "type": "wokwi-led",
+      "id": "led_pump",
+      "top": 370,
+      "left": 760,
+      "attrs": {
+        "color": "blue",
+        "label": "DONG CO BOM (5V)"
+      }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "r_pump",
+      "top": 440,
+      "left": 760,
+      "attrs": {
+        "value": "220"
+      }
     }
   ],
   "connections": [
@@ -128,6 +148,11 @@
     [ "esp:GND.2", "relay_pump:GND", "black", [ "v0" ] ],
     [ "esp:5V", "relay_pump:VCC", "red", [ "v0" ] ],
     [ "esp:23", "relay_pump:IN", "purple", [ "v0" ] ],
+
+    [ "esp:5V", "relay_pump:COM", "red", [ "v0" ] ],
+    [ "relay_pump:NO", "led_pump:A", "blue", [ "v0" ] ],
+    [ "led_pump:C", "r_pump:1", "black", [ "v0" ] ],
+    [ "r_pump:2", "esp:GND.2", "black", [ "v0" ] ],
 
     [ "esp:GND.2", "buzzer:1", "black", [ "v0" ] ],
     [ "esp:4", "buzzer:2", "brown", [ "v0" ] ],

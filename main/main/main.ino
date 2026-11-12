@@ -606,7 +606,12 @@ void setup() {
   digitalWrite(PIN_LED_RED, LOW);
   noTone(PIN_BUZZER);
 
-  // Khởi tạo Servo van xả
+  // Khởi tạo Servo van xả (Cấu hình chuẩn ESP32Servo để không bị xung đột Timer với tone buzzer)
+  ESP32PWM::allocateTimer(0);
+  ESP32PWM::allocateTimer(1);
+  ESP32PWM::allocateTimer(2);
+  ESP32PWM::allocateTimer(3);
+  valveServo.setPeriodHertz(50); // Tần số 50Hz chuẩn cho servo SG90
   valveServo.attach(PIN_SERVO, 500, 2400);
   valveServo.write(0);
 

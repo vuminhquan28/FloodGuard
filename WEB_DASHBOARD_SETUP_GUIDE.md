@@ -243,3 +243,18 @@ Các lập trình viên có thể dùng Postman, cURL hoặc ứng dụng di đ�
 * **Cách khắc phục:**
   1. F5 tải lại trang web.
   2. Đảm bảo trong mã nguồn hàm `loop()` không chứa bất kỳ hàm `delay()` lớn nào chặn luồng `server.handleClient()`.
+
+### Sự cố 5: Ở MANUAL, bấm nút trên Web thì đèn xanh Relay bật sáng nhưng Bơm không chạy và Van không đổi
+Đây là hiện tượng rất phổ biến khi đấu nối thực tế:
+* **Khẳng định kết nối Code & Vi điều khiển:** Đèn xanh trên Relay sáng chứng minh **ESP32, Web Server, lệnh API và chân GPIO 23 đã hoạt động hoàn hảo 100%**.
+* **Nguyên nhân Máy Bơm không chạy (Lỗi mạch điện tiếp điểm khô):**
+  * Module Relay 1 kênh là một **công tắc tiếp điểm khô (Dry Contact)**, các chân ốc `COM` và `NO` **hoàn toàn KHÔNG tự phát ra điện 5V**.
+  * Nếu cắm 2 dây của bơm trực tiếp vào `COM` và `NO` thì bơm sẽ không có nguồn điện (mạch hở).
+  * **Cách đấu chuẩn:** Phải mắc **nối tiếp** nguồn $5\,\text{V}$ qua tiếp điểm Relay:
+    1. Cực dương nguồn $5\,\text{V}$ (Dây đỏ) $\rightarrow$ Chân **`COM`** của Relay.
+    2. Chân **`NO`** của Relay $\rightarrow$ Dây đỏ ($+$) của Máy bơm mini.
+    3. Dây đen ($-$) của Máy bơm mini $\rightarrow$ Nối thẳng vào **GND** của nguồn $5\,\text{V}$ (và nối chung GND ESP32).
+* **Nguyên nhân Servo Van không quay:**
+  1. **Nút bấm trên Web phân tách độc lập:** Nút `Bật/Tắt Bơm (Manual)` **chỉ** điều khiển máy bơm. Để xoay van, bạn phải bấm vào các nút riêng biệt: **`Van 0% (Đóng)`**, **`Van 50% (Mở Nửa)`**, hoặc **`Van 100% (Mở Hết)`**.
+  2. **Nguồn cấp Servo SG90:** Dây đỏ của Servo phải cắm vào chân **`5V / VIN`** của ESP32 (hoặc nguồn $5\,\text{V}$ ngoài). Cắm vào chân $3.3\,\text{V}$ sẽ không đủ điện áp và dòng làm mô tơ rung giật hoặc đứng im.
+  3. **Khởi tạo Timer xung PWM:** Firmware đã được bổ sung cấu hình `ESP32PWM::allocateTimer(0..3)` và `setPeriodHertz(50)` để chống xung đột Timer giữa Servo và còi Buzzer. Nạp lại firmware mới nhất để đồng bộ.

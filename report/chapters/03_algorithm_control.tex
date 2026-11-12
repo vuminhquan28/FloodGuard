@@ -1,6 +1,8 @@
 \chapter{Thuật Toán Điều Khiển \& Vận Hành Phần Mềm Nhúng}
+\label{ch:algorithm}
 
 \section{Kiến Trúc Phần Mềm Nhúng (Firmware Architecture)}
+\label{sec:firmware_architecture}
 
 \subsection{Sơ Đồ Phân Khối Chức Năng Firmware}
 Phần mềm điều khiển trạm FloodGuard được xây dựng trên nền tảng vi điều khiển ESP32 với cấu trúc module hóa phân tầng rõ ràng, đảm bảo tính độc lập giữa khối thu thập dữ liệu, khối xử lý logic thuật toán và khối điều khiển phần cứng. Kiến trúc phần mềm bao gồm 7 phân hệ chính:
@@ -115,17 +117,16 @@ Môi trường mặt nước hồ thu luôn chịu tác động của bọt khí
 \end{itemize}
 
 \subsection{Ánh Xạ \& Giới Hạn Giá Trị (\textit{Clamp/Constrain}) Về Dải $0 - 100\%$}
-Dựa trên kích thước hình học thực nghiệm của mô hình hồ thu:
+Hệ thống thiết kế công thức ánh xạ tuyến tính tổng quát theo hai cấu hình kích thước hình học hồ thu:
 \begin{itemize}
-    \item Khoảng cách khi đáy hồ cạn hoàn toàn ($0\%$ dung tích): $d_{\text{empty}} = 50.0\,\text{cm}$.
-    \item Khoảng cách khi hồ đầy tràn mép bờ ($100\%$ dung tích): $d_{\text{full}} = 5.0\,\text{cm}$.
-    \item Chiều sâu làm việc hiệu dụng của hồ: $\Delta d = d_{\text{empty}} - d_{\text{full}} = 50.0 - 5.0 = 45.0\,\text{cm}$.
+    \item \textbf{Cấu hình mô phỏng Wokwi / Bể tiêu chuẩn:} Khoảng cách cạn $d_{\text{empty}} = 50.0\,\text{cm}$ ($0\%$), đầy tràn $d_{\text{full}} = 5.0\,\text{cm}$ ($100\%$), chiều sâu làm việc $\Delta d = 45.0\,\text{cm}$.
+    \item \textbf{Cấu hình mô hình thực nghiệm Mica mini ($28 \times 16 \times 22\,\text{cm}$):} Khoảng cách từ mặt cảm biến tới đáy bể cạn $d_{\text{empty}} = 16.0\,\text{cm}$ ($0\%$), mức nước dâng đầy quy ước $10.0\,\text{cm}$ tương ứng khoảng cách an toàn $d_{\text{full}} = 6.0\,\text{cm}$ ($100\%$, tránh vùng mù $<3\,\text{cm}$ của HC-SR04), chiều sâu làm việc $\Delta d = 10.0\,\text{cm}$.
 \end{itemize}
-Công thức tính toán phần trăm mực nước thô ($P_{\text{raw}}$):
+Công thức tổng quát tính toán phần trăm mực nước thô ($P_{\text{raw}}$):
 \begin{equation}
-P_{\text{raw}} = \frac{d_{\text{empty}} - d_{\text{filtered}}}{d_{\text{empty}} - d_{\text{full}}} \times 100\% = \frac{50.0 - d_{\text{filtered}}}{45.0} \times 100\%
+P_{\text{raw}} = \frac{d_{\text{empty}} - d_{\text{filtered}}}{d_{\text{empty}} - d_{\text{full}}} \times 100\%
 \end{equation}
-Để ngăn chặn các giá trị tính toán vượt ra ngoài giới hạn vật lý khi nước dâng ngập quá mép hồ ($d < 5\,\text{cm}$) hoặc khi cảm biến đặt trên bệ cao ($d > 50\,\text{cm}$), hệ thống áp dụng hàm kẹp giá trị (\textit{Clamp}):
+Để ngăn chặn các giá trị tính toán vượt ra ngoài giới hạn vật lý khi nước dâng vượt ngưỡng $d_{\text{full}}$ hoặc khi cảm biến đặt cao hơn $d_{\text{empty}}$, hệ thống áp dụng hàm kẹp giá trị (\textit{Clamp}):
 \begin{equation}
 \text{waterPercent} = \text{constrain}(P_{\text{raw}}, 0, 100)
 \end{equation}
@@ -156,7 +157,7 @@ Dựa trên thực nghiệm kiểm chuẩn với các điều kiện thời ti�
 
 \begin{table}[H]
 \centering
-\caption{Bảng kết quả hiệu chuẩn cảm biến siêu âm HC-SR04 so với thước đo chuẩn}
+\caption{Bảng kết quả hiệu chuẩn cảm biến siêu âm HC-SR04 trên dải chuẩn $5 - 50\,\text{cm}$}
 \label{tab:calibration_results}
 \small
 \renewcommand{\arraystretch}{1.2}
@@ -266,6 +267,7 @@ void evaluateSystemStateAuto() {
 \end{lstlisting}
 
 \section{Nguyên Lý Dải Trễ (Hysteresis) \& Chống Rung Thời Gian}
+\label{sec:hysteresis_analysis}
 
 \subsection{Phân Tích Cải Tiến Độ Rộng Dải Trễ (Hysteresis Bandwidth)}
 Trong các phiên bản thiết kế đơn giản, khoảng cách dải trễ giữa ngưỡng bật và ngưỡng tắt thường chỉ được đặt chênh lệch $1\%$ (ví dụ bật bơm khi $\ge 41\%$ và tắt khi $< 40\%$). Khoảng cách $1\%$ này tương ứng với độ biến thiên khoảng cách vật lý:
@@ -316,6 +318,7 @@ if (currentAngle < targetAngle) {
 Thuật toán chia hành trình $180^\circ$ thành 36 bước nhỏ cách nhau $20\,\text{ms}$, giúp van xả mở êm ái trong khoảng thời gian $0.72\,\text{s}$.
 
 \section{Chế Độ Vận Hành AUTO / MANUAL \& Bảo Vệ Failsafe}
+\label{sec:failsafe_mode}
 
 \subsection{Máy Trạng Thái Quản Lý Chế Độ Vận Hành}
 Hệ thống quản lý 3 trạng thái chế độ hoạt động:
@@ -362,6 +365,7 @@ Thời gian thực thi một chu kỳ vòng lặp \texttt{loop()} được đo �
 \end{itemize}
 
 \subsection{Thời Gian Phản Ứng Tối Đa (Worst-Case Reaction Time - WCRT)}
+\label{sec:wcrt_analysis}
 Thời gian phản ứng tồi tệ nhất ($T_{\text{WCRT}}$) được tính từ thời điểm mực nước thực tế chạm ngưỡng nguy hiểm cho tới khi tiếp điểm Relay đóng hoàn toàn để cấp điện cho máy bơm:
 \begin{equation}
 T_{\text{WCRT}} = T_{\text{sample\_wait}} + T_{\text{filter}} + T_{\text{FSM}} + T_{\text{relay\_delay}}
@@ -399,7 +403,7 @@ Bảng~\ref{tab:fault_matrix} tổng hợp toàn bộ các kịch bản lỗi ph
 \hline
 \textbf{Tình huống sự cố} & \textbf{Cơ chế phát hiện} & \textbf{Hành vi ứng phó an toàn của hệ thống} \\ \hline
 \textbf{HC-SR04 mất xung Echo} (đứt dây, bám bẩn màng loa) & \texttt{pulseIn()} trả về $0$ hoặc quá timeout $30\,\text{ms}$. & Giữ mẫu hợp lệ gần nhất trong 3 chu kỳ ($600\,\text{ms}$). Nếu lỗi kéo dài: chuyển sang \texttt{SENSOR\_FAULT}, còi bíp cảnh báo lỗi, mở van xả $50\%$ phòng ngừa ngập úng. \\ \hline
-\textbf{Khoảng cách ngoài dải vật lý} ($< 5\,\text{cm}$ hoặc $> 50\,\text{cm}$) & Giá trị đo nằm ngoài dải dung tích hồ thu. & Kẹp giá trị (\textit{Clamp}) tự động về $100\%$ (nếu $< 5\,\text{cm}$) hoặc $0\%$ (nếu $> 50\,\text{cm}$), ngăn chặn lỗi tràn biến số. \\ \hline
+\textbf{Khoảng cách ngoài dải vật lý} ($< d_{\text{full}}$ hoặc $> d_{\text{empty}}$) & Giá trị đo nằm ngoài dải dung tích hồ thu. & Kẹp giá trị (\textit{Clamp}) tự động về $100\%$ (nếu $< d_{\text{full}}$) hoặc $0\%$ (nếu $> d_{\text{empty}}$), ngăn chặn lỗi tràn biến số. \\ \hline
 \textbf{Cảm biến mưa hở mạch} (đứt dây tín hiệu AO/DO) & ADC đọc giá trị cực đại $4095$ ($3.3\,\text{V}$). & Hệ thống xem như điều kiện khô ráo, tự động dựa hoàn toàn vào mực nước siêu âm để điều khiển xả lũ. \\ \hline
 \textbf{Mất kết nối Wi-Fi / Đứt mạng Web Client} & Không nhận được gói tin heartbeat quá $30\,\text{s}$. & Tự động hủy chế độ MANUAL, cưỡng chế chuyển về AUTO, trao quyền cho FSM để tự hành chống tràn bể. \\ \hline
 \textbf{Sụt áp nguồn cấp (Brown-out)} & Điện áp vi điều khiển tụt dưới ngưỡng $2.8\,\text{V}$. & Bộ giám sát Brown-out Reset nội của ESP32 tự động ngắt vi điều khiển và khởi động lại an toàn khi nguồn ổn định. \\ \hline

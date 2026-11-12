@@ -1,4 +1,5 @@
 \chapter{Giới Thiệu Đề Tài \& Phân Tích Yêu Cầu}
+\label{ch:introduction}
 
 \section{Đặt Vấn Đề \& Khảo Sát Hiện Trạng}
 
@@ -17,9 +18,10 @@ Hiện tượng ngập úng đô thị cục bộ vào mùa mưa bão đang là 
 Trong khuôn khổ học phần \textit{Lập trình nhúng và thời gian thực}, đề tài tập trung nghiên cứu, thiết kế và chế tạo một \textbf{mô hình thực nghiệm quy mô trạm quan trắc (Proof of Concept / Scale Model)} mang tên \textbf{FloodGuard}. Mô hình mô phỏng khép kín toàn bộ chu trình vận hành của một trạm bơm tiêu thoát lũ thông minh: từ khâu đo đạc mực nước và lượng mưa, tiền xử lý tín hiệu số, thuật toán điều khiển máy trạng thái hữu hạn (FSM) kết hợp dải trễ, điều khiển cơ cấu chấp hành (bơm, van), cảnh báo đa giác quan tại trạm (LED, còi), đến giao diện giám sát và can thiệp điều khiển qua mạng không dây cục bộ.
 
 \section{Mục Tiêu Kỹ Thuật Định Lượng Của Dự Án}
+\label{sec:quantitative_goals}
 Hệ thống \textbf{FloodGuard} hướng tới các chỉ tiêu kỹ thuật định lượng cụ thể:
 \begin{enumerate}
-    \item \textbf{Độ chính xác đo lường mực nước:} Sai số đo khoảng cách qua cảm biến siêu âm $\le \pm 1\,\text{cm}$ trong dải đo làm việc $5 - 50\,\text{cm}$; phân giải mức nước từ $0\%$ đến $100\%$.
+    \item \textbf{Độ chính xác đo lường mực nước:} Sai số đo khoảng cách qua cảm biến siêu âm $\le \pm 1\,\text{cm}$ trong dải đo làm việc thiết kế ($5 - 50\,\text{cm}$ trên cấu hình mô phỏng/bể chuẩn và $6 - 16\,\text{cm}$ trên mô hình demo mica thu nhỏ); phân giải mức nước từ $0\%$ đến $100\%$.
     \item \textbf{Độ phân giải giám sát lượng mưa:} Thu nhận tín hiệu tương tự (ADC) 12-bit phân giải $\approx 0.8\,\text{mV}$ trên dải $0 - 3.3\,\text{V}$, phân loại 3 mức mưa (mưa nhỏ, mưa to, ngập cảm biến).
     \item \textbf{Tính thời gian thực của thuật toán điều khiển (Worst-Case Reaction Time - WCRT):} Thời gian phản ứng từ thời điểm mực nước vượt ngưỡng nguy hiểm đến khi chân GPIO xuất tín hiệu kích hoạt Relay máy bơm không vượt quá $250\,\text{ms}$.
     \item \textbf{Chống rung giật cơ cấu chấp hành (Hysteresis Guard):} Áp dụng dải trễ $5\%$ mực nước và dải trễ trạng thái, đảm bảo không xảy ra hiện tượng đóng/ngắt Relay liên tục (chattering) khi sóng nước dập dềnh quanh biên ngưỡng.
@@ -83,7 +85,7 @@ Sơ đồ Use Case tổng thể được tổ chức với các tác nhân kích
 \endlastfoot
 
 \texttt{UC01} & Đọc \& tiền xử lý dữ liệu cảm biến & Timer 200ms; Cảm biến HC-SR04, FC-37 & \textbf{Chính:} Kích Trig $10\,\mu\text{s}$, đo xung Echo, lọc trung vị 3 mẫu tính \% nước; đọc ADC mưa.\\
- & & & \textbf{Ngoại lệ:} Echo timeout ($>30\,\text{ms}$) hoặc ngoài dải $5-50\,\text{cm}$: giữ mẫu cũ tối đa 3 lần. Quá 3 lần kích hoạt cờ lỗi cảm biến (\texttt{SENSOR\_FAULT}). \\ \hline
+ & & & \textbf{Ngoại lệ:} Echo timeout ($>30\,\text{ms}$) hoặc ngoài dải đo làm việc ($d_{\text{full}} - d_{\text{empty}}$): giữ mẫu cũ tối đa 3 lần. Quá 3 lần kích hoạt cờ lỗi cảm biến (\texttt{SENSOR\_FAULT}). \\ \hline
 \texttt{UC02} & Đánh giá trạng thái FSM \& Dải trễ & Timer chu kỳ FSM & \textbf{Chính:} Đối chiếu \% nước với các ngưỡng $40\%, 70\%, 80\%$ để phân 4 cấp (NORMAL, WARNING, DANGER, CRITICAL); áp dụng dải trễ $5\%$ chống rung giật cơ cấu.\\
  & & & \textbf{Ghi chú:} Cảm biến mưa cung cấp dữ liệu hiển thị bổ trợ, không can thiệp sai lệch FSM. \\ \hline
 \texttt{UC03} & Tự động điều khiển máy bơm & Timer chu kỳ FSM; Relay 5V \& Bơm mini & \textbf{Chính (Generalization):} Phân nhánh chuyên biệt:\\

@@ -1,4 +1,5 @@
 \chapter{Kiến Trúc Phần Cứng \& Phân Công Chân}
+\label{ch:hardware_architecture}
 
 \section{Tổng Quan Kiến Trúc Hệ Thống}
 Hệ thống FloodGuard gồm 4 khối chức năng chính được tích hợp đồng bộ:
@@ -75,7 +76,7 @@ Máy bơm nước mini $5\,\text{V}$ sử dụng động cơ DC có chổi than,
 \subsection{Khối Cảm Biến: Bảo Vệ Điện Áp Echo \& Chân Strapping GPIO 12}
 \begin{itemize}
     \item \textbf{Cảm biến siêu âm HC-SR04 (GPIO 13 Trig, GPIO 12 Echo):}
-    Cảm biến HC-SR04 sử dụng nguồn cấp $5\,\text{V}$. Chân \texttt{Echo} xuất ra xung vuông mức biên độ $5\,\text{V}$. Do các chân GPIO của ESP32 chỉ dung nạp điện áp tối đa $3.3\,\text{V}$, chân \texttt{Echo} được mắc qua mạch phân áp trở hoặc điện trở hạn dòng bảo vệ kết hợp diode kẹp áp nội của vi điều khiển để hạ mức điện áp an toàn xuống $\approx 3.3\,\text{V}$.
+    Cảm biến HC-SR04 sử dụng nguồn cấp $5\,\text{V}$. Chân \texttt{Echo} xuất ra xung vuông mức biên độ $5\,\text{V}$. Do các chân GPIO của ESP32 chỉ dung nạp điện áp tối đa $3.3\,\text{V}$, chân \texttt{Echo} được mắc qua mạch phân áp trở hoặc điện trở hạn dòng bảo vệ kết hợp diode kẹp áp nội của vi điều khiển để hạ mức điện áp an toàn xuống $\approx 3.3\,\text{V}$. Về mặt vật lý lắp đặt, cảm biến có vùng mù ở khoảng cách $< 3\,\text{cm}$ và góc phát chùm tia hình nón $\pm 15^\circ$; do đó khi gá đặt trên mô hình thực nghiệm, mặt loa cần đặt cao hơn mức nước đầy tối đa ít nhất $5 - 6\,\text{cm}$ và chiếu thẳng vào tâm bể để tránh dội sóng nhiễu vào thành bể.
     \item \textbf{Lưu ý kỹ thuật đặc biệt với chân Strapping MTDI (GPIO 12):}
     Trên vi điều khiển ESP32, \texttt{GPIO 12} là chân cấu hình khởi động (\textit{Strapping Pin MTDI}). Tại thời điểm cấp nguồn/reset, chip sẽ đọc mức logic của chân này: nếu ở mức \texttt{LOW}, chip chọn điện áp cấp cho bộ nhớ SPI Flash nội là $3.3\,\text{V}$ (bình thường); nếu bị kéo lên mức \texttt{HIGH}, chip chuyển sang chế độ Flash $1.8\,\text{V}$ dẫn tới treo vi điều khiển (vòng lặp Boot loop). Trong mạch thiết kế, chân \texttt{Echo} của cảm biến HC-SR04 ở trạng thái nghỉ luôn duy trì mức \texttt{LOW} ($0\,\text{V}$), do đó hoàn toàn an toàn và không cản trở quá trình khởi động bình thường của ESP32.
     \item \textbf{Cảm biến mưa FC-37 (GPIO 34 DO, GPIO 35 AO):}

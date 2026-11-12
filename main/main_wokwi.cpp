@@ -91,6 +91,19 @@ void updateSensors() {
 
   rainRawADC = analogRead(PIN_RAIN_ADC);
   isRaining = (rainRawADC < RAIN_ADC_LIGHT);
+
+  // In thông số ra Serial Monitor mỗi 1 giây để theo dõi trực quan trên Wokwi
+  static unsigned long lastSensorLog = 0;
+  if (millis() - lastSensorLog >= 1000) {
+    lastSensorLog = millis();
+    const char* rainStr = (rainRawADC < RAIN_ADC_SUBMERGED) ? "NGAP_NUOC (CRIT)" :
+                          (rainRawADC < RAIN_ADC_HEAVY)     ? "MUA_TO (DANGER)" :
+                          (isRaining)                       ? "MUA_NHO (WARN)" : "KHO_RAO (NORMAL)";
+    const char* stNames[] = {"NORMAL", "WARNING", "DANGER", "CRITICAL"};
+    Serial.printf("[WOKWI TELEMETRY] Dist=%5.1fcm (%2d%%) | RainADC=%4d (%s) | FSM: %-8s | Bom: %s | Van: %3d%%\n",
+      currentDistance, waterPercent, rainRawADC, rainStr, stNames[sysState],
+      pumpState ? "BAT (ON) " : "TAT (OFF)", valvePercent);
+  }
 }
 
 // ==========================================
@@ -158,6 +171,15 @@ void evaluateSystemStateAuto() {
       pumpState = true;
       valvePercent = 100;
       break;
+  }
+
+  // Báo thay đổi trạng thái tức thời ra Serial
+  static SystemState lastFsmState = (SystemState)99;
+  if (sysState != lastFsmState) {
+    const char* stNames[] = {"NORMAL", "WARNING", "DANGER", "CRITICAL"};
+    Serial.printf("\n>>> [FSM TRANSITION] %s | Nuoc: %d%% | RainADC: %d | Bom: %s | Van: %d%%\n\n",
+      stNames[sysState], waterPercent, rainRawADC, pumpState ? "BAT" : "TAT", valvePercent);
+    lastFsmState = sysState;
   }
 }
 
@@ -479,7 +501,12 @@ void setup() {
   digitalWrite(PIN_LED_RED, LOW);
   noTone(PIN_BUZZER);
 
-  // Khởi tạo Servo
+  // Khởi tạo Servo van xả nước
+  ESP32PWM::allocateTimer(0);
+  ESP32PWM::allocateTimer(1);
+  ESP32PWM::allocateTimer(2);
+  ESP32PWM::allocateTimer(3);
+  valveServo.setPeriodHertz(50);
   valveServo.attach(PIN_SERVO, 500, 2400);
   valveServo.write(0);
 

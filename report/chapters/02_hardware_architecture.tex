@@ -1,13 +1,14 @@
-\chapter{Kiến Trúc Phần Cứng \& Phân Công Chân}
+\chapter{Thiết Kế và Lắp Đặt Hệ Thống}
 \label{ch:hardware_architecture}
 
 \section{Tổng Quan Kiến Trúc Hệ Thống}
-Hệ thống FloodGuard gồm 4 khối chức năng chính được tích hợp đồng bộ:
+Hệ thống FloodGuard gồm 5 khối chức năng chính được tích hợp đồng bộ:
 \begin{enumerate}
     \item \textbf{Khối xử lý trung tâm:} Vi điều khiển ESP32 DevKit V1 với chip lõi kép Xtensa 32-bit (tần số xung nhịp $240\,\text{MHz}$), tích hợp bộ nhớ SRAM $520\,\text{KB}$ và kết nối không dây Wi-Fi $802.11\,\text{b/g/n}$, đảm nhiệm đồng thời tác vụ đo đạc thời gian thực, thuật toán FSM và máy chủ Web Server nhúng.
     \item \textbf{Khối cảm biến (Sensors):} Cảm biến siêu âm HC-SR04 đo khoảng cách tới mặt nước hồ thu và cảm biến mưa FC-37 (tấm điện cực kết hợp mạch so sánh LM393) đo lượng nước mưa bề mặt.
-    \item \textbf{Khối chấp hành (Actuators):} Động cơ Servo SG90 điều khiển góc mở van xả lũ ($0^\circ - 90^\circ - 180^\circ$) và Module Relay $5\,\text{V}$ đóng/ngắt máy bơm mini thoát nước.
+    \item \textbf{Khối chấp hành (Actuators):} Gồm hai cơ cấu chấp hành độc lập: Động cơ Servo SG90 điều khiển góc mở cửa van xả lũ ($0^\circ - 90^\circ - 180^\circ$) và Module Relay $5\,\text{V}$ điều khiển đóng/ngắt máy bơm mini thoát nước.
     \item \textbf{Khối cảnh báo tại chỗ (Signaling):} Cụm 3 đèn LED màu (Xanh, Vàng, Đỏ) và còi báo động Active Buzzer $5\,\text{V}$.
+    \item \textbf{Khối máy tính vận hành (Operator PC/Laptop):} Trạm máy tính kết nối không dây qua sóng Wi-Fi SoftAP để mở giao diện Web Dashboard giám sát và can thiệp điều khiển; đồng thời kết nối có dây qua cổng Micro-USB phục vụ nạp firmware PlatformIO và theo dõi Serial Debug Monitor.
 \end{enumerate}
 
 \section{Giải Pháp Điều Khiển Qua Mạng Không Dây Cục Bộ Thay Cho Nút Nhấn Cơ Học}
@@ -94,4 +95,25 @@ Máy bơm nước mini $5\,\text{V}$ sử dụng động cơ DC có chổi than,
     \end{equation}
     Dòng điện này nằm hoàn toàn trong dải tải làm việc khuyến nghị an toàn của GPIO ESP32 ($I_{\text{source}} \le 12\,\text{mA}$), đồng thời đảm bảo cường độ sáng rõ nét tại thực địa.
     \item \textbf{Còi báo động Active Buzzer 5V (GPIO 4):} Còi tích hợp sẵn mạch tạo dao động âm thanh bên trong với tần số cộng hưởng cố định $\approx 2.3\,\text{kHz}$ (do đó không cần và không thể dùng hàm \texttt{tone()} để đổi tần số như còi thụ động Passive Buzzer). Cực dương của còi được cấp nguồn và điều khiển đóng/ngắt logic từ \texttt{GPIO 4} qua trở hạn dòng đệm $100\,\Omega$. Thuật toán điều khiển sử dụng bộ đếm thời gian phi chặn \texttt{millis()}, băm xung bật/tắt (HIGH/LOW) theo các nhịp cảnh báo xác định mà không chiếm dụng chu kỳ CPU hay gây gián đoạn luồng đo cảm biến và máy chủ Web.
+\end{itemize}
+
+\subsection{Khối Máy Tính Vận Hành: Giao Tiếp Wi-Fi SoftAP \& Cáp USB PlatformIO}
+Trên sơ đồ nguyên lý mạch điện (Hình~\ref{fig:circuit_diagram}), khối máy tính vận hành (PC / Laptop) đóng vai trò là trạm điều hành giám sát trung tâm và công cụ nạp mã nguồn bảo trì hệ thống. Máy tính tương tác trực tiếp với vi điều khiển ESP32 thông qua hai kênh truyền thông vật lý và logic độc lập:
+
+\begin{itemize}
+    \item \textbf{Kênh truyền thông không dây (Wi-Fi 2.4 GHz SoftAP):}
+    \begin{itemize}
+        \item \textit{Phương thức kết nối:} Vi điều khiển ESP32 khởi tạo một điểm truy cập không dây cục bộ (SoftAP) độc lập với SSID \texttt{FloodGuard\_AP}, bảo mật WPA2-PSK và cấp phát địa chỉ IP tự động cho máy tính qua giao thức DHCP nội bộ.
+        \item \textit{Giao thức truyền tải:} Máy tính mở trình duyệt Web kết nối tới địa chỉ IP tĩnh của trạm \texttt{192.168.4.1} (hoặc tên miền \texttt{http://floodguard.local} qua mDNS). Dữ liệu giám sát telemetry được cập nhật định kỳ mỗi $1000\,\text{ms}$ qua endpoint \texttt{/api/status} với payload JSON $\approx 210\,\text{byte}$.
+        \item \textit{Can thiệp điều khiển:} Khi người vận hành chuyển sang chế độ thủ công (\texttt{MANUAL}) và ra lệnh kích hoạt bơm hoặc chỉnh góc van xả, máy tính gửi các yêu cầu HTTP GET/POST tới endpoint \texttt{/api/control?mode=manual\&pump=1\&valve=90}. Quá trình truyền thông diễn ra hoàn toàn cục bộ, không phụ thuộc vào hạ tầng Internet hay trạm phát sóng viễn thông công cộng, đảm bảo độ sẵn sàng cao trong điều kiện thiên tai bão lũ.
+    \end{itemize}
+    
+    \item \textbf{Kênh truyền thông có dây (Cáp Micro-USB qua cầu nạp CP2102):}
+    \begin{itemize}
+        \item \textit{Nạp mã nguồn nhúng (Firmware Upload):} Cáp Micro-USB kết nối cổng USB của máy tính với chip chuyển đổi USB-to-UART CP2102 tích hợp sẵn trên bo mạch ESP32 DevKit V1. Môi trường phát triển PlatformIO IDE sử dụng các chân tín hiệu DTR và RTS điều khiển tự động mạch transistor kép để kéo chân \texttt{EN} (Reset) và \texttt{GPIO 0} (Boot mode) xuống mức thấp, tự động đưa vi điều khiển vào chế độ nhận firmware nạp vào bộ nhớ Flash $4\,\text{MB}$ mà kỹ thuật viên không cần thao tác bấm giữ nút vật lý tại hiện trường.
+        \item \textit{Giám sát Serial Debug Monitor ($115200\,\text{bps}$):} Kênh UART phần cứng cho phép máy tính thu thập trực tiếp luồng log dữ liệu thời gian thực từ vi điều khiển: các giá trị khoảng cách thô và sau lọc trung vị, giá trị ADC cảm biến mưa, thời gian thực thi của từng tác vụ (Task execution time) và nhật ký chuyển đổi trạng thái FSM. Đây là công cụ kỹ thuật then chốt phục vụ công tác hiệu chuẩn sai số, đánh giá thời gian đáp ứng tồi nhất (WCRT) và khoanh vùng sự cố phần cứng.
+    \end{itemize}
+    
+    \item \textbf{Giải pháp bảo vệ cách ly nguồn và chống xung ngược:}
+    Trong cấu hình vận hành tiêu chuẩn, ESP32 và các tải động lực (động cơ bơm, Servo SG90) nhận nguồn công suất từ bộ nguồn DC $5\,\text{V} - 2\,\text{A}$ bên ngoài thông qua chân \texttt{VIN}. Nhờ mạch diode Schottky bảo vệ nguồn nội trên bo mạch ESP32 DevKit V1, nguồn điện cấp từ cáp USB máy tính ($5\,\text{V}$ VBUS) được tự động cách ly khỏi đường nguồn công suất khi nguồn ngoài đang cấp điện. Thiết kế này ngăn chặn triệt để nguy cơ sụt áp cổng USB máy tính do dòng khởi động của động cơ, đồng thời loại trừ nguy cơ các xung điện áp quá độ từ cuộn cảm động cơ đánh thủng bo mạch chủ của máy tính vận hành.
 \end{itemize}

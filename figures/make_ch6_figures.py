@@ -159,103 +159,132 @@ def make_dashboard_4states():
                 os.remove(p)
 
 def make_cloud_architecture():
-    fig, ax = plt.subplots(figsize=(14.0, 8.4), dpi=300)
-    ax.set_xlim(0, 14.0)
-    ax.set_ylim(0, 8.4)
+    import textwrap
+    fig, ax = plt.subplots(figsize=(16.0, 9.0), dpi=300)
+    ax.set_xlim(0, 16.0)
+    ax.set_ylim(0, 9.0)
     ax.axis('off')
     fig.patch.set_facecolor('#ffffff')
 
     # Main title
-    ax.text(7.0, 8.0, "KIẾN TRÚC MỞ RỘNG ĐỀ XUẤT CHO HỆ THỐNG FLOODGUARD", fontsize=14, fontweight='bold', ha='center', va='center')
-    ax.text(7.0, 7.65, "Tích Hợp Truyền Thông Đám Mây MQTT/TLS, Giám Sát Tập Trung & Nguồn Dự Phòng An Toàn", fontsize=9.5, style='italic', color='#444444', ha='center', va='center')
+    ax.text(8.0, 8.55, 'KIẾN TRÚC MỞ RỘNG ĐỀ XUẤT CHO HỆ THỐNG FLOODGUARD', fontsize=13.5, fontweight='bold', ha='center', va='center', color='#0f172a')
+    ax.text(8.0, 8.20, 'Tích Hợp Truyền Thông Đám Mây MQTT/TLS, Giám Sát Tập Trung & Nguồn Dự Phòng An Toàn', fontsize=9.2, style='italic', color='#475569', ha='center', va='center')
+
+    # Styles for minimalist, clean, low-color look
+    zone_bg = '#f8fafc'
+    zone_border = '#334155'
+    box_bg = '#ffffff'
+    box_border = '#64748b'
+    text_title = '#0f172a'
+    text_body = '#334155'
+    subbox_bg = '#f1f5f9'
+    subbox_border = '#94a3b8'
 
     # 3 Main Zones
-    # Zone 1: Trạm Hiện Trường (Left)
-    z1 = patches.FancyBboxPatch((0.5, 0.6), 4.3, 6.7, boxstyle="round,pad=0.15", facecolor="#f8fafc", edgecolor="#0284c7", lw=1.8)
+    # Zone 1: x = 0.5 to 4.0 (w=3.5)
+    # Gap 1:  x = 4.0 to 6.1 (w=2.1, center=5.05)
+    # Zone 2: x = 6.1 to 9.8 (w=3.7, center=7.95)
+    # Gap 2:  x = 9.8 to 11.9 (w=2.1, center=10.85)
+    # Zone 3: x = 11.9 to 15.5 (w=3.6, center=13.70)
+    z1 = patches.FancyBboxPatch((0.5, 0.5), 3.5, 7.1, boxstyle='round,pad=0.12', facecolor=zone_bg, edgecolor=zone_border, lw=1.3)
+    z2 = patches.FancyBboxPatch((6.1, 0.5), 3.7, 7.1, boxstyle='round,pad=0.12', facecolor=zone_bg, edgecolor=zone_border, lw=1.3)
+    z3 = patches.FancyBboxPatch((11.9, 0.5), 3.6, 7.1, boxstyle='round,pad=0.12', facecolor=zone_bg, edgecolor=zone_border, lw=1.3)
     ax.add_patch(z1)
-    ax.text(2.65, 7.05, "TẦNG 1: TRẠNG HIỆN TRƯỜNG\n(FIELD STATION HARDWARE)", fontsize=9.5, fontweight='bold', ha='center', va='center', color="#0369a1")
-
-    # Zone 2: An Toàn Truyền Thông (Middle)
-    z2 = patches.FancyBboxPatch((5.1, 0.6), 3.8, 6.7, boxstyle="round,pad=0.15", facecolor="#f8fafc", edgecolor="#059669", lw=1.8)
     ax.add_patch(z2)
-    ax.text(7.0, 7.05, "TẦNG 2: MẠNG & AN TOÀN\n(SECURE IoT PROTOCOLS)", fontsize=9.5, fontweight='bold', ha='center', va='center', color="#047857")
-
-    # Zone 3: Hạ Tầng Đám Mây & Ứng Dụng (Right)
-    z3 = patches.FancyBboxPatch((9.2, 0.6), 4.3, 6.7, boxstyle="round,pad=0.15", facecolor="#f8fafc", edgecolor="#7c3aed", lw=1.8)
     ax.add_patch(z3)
-    ax.text(11.35, 7.05, "TẦNG 3: ĐÁM MÂY & GIÁM SÁT\n(CLOUD IoT PLATFORM)", fontsize=9.5, fontweight='bold', ha='center', va='center', color="#6d28d9")
 
-    # Content in Zone 1 (Trạm hiện trường)
-    # Box ESP32
-    b_esp = patches.FancyBboxPatch((0.8, 3.8), 3.7, 2.7, boxstyle="round,pad=0.08", facecolor="#ffffff", edgecolor="#0284c7", lw=1.4)
+    # Zone Headers
+    ax.text(2.25, 7.20, 'TẦNG 1: TRẠM HIỆN TRƯỜNG\n(FIELD STATION HARDWARE)', fontsize=9.5, fontweight='bold', ha='center', va='center', color=text_title)
+    ax.text(7.95, 7.20, 'TẦNG 2: MẠNG & AN TOÀN\n(SECURE IoT PROTOCOLS)', fontsize=9.5, fontweight='bold', ha='center', va='center', color=text_title)
+    ax.text(13.70, 7.20, 'TẦNG 3: ĐÁM MÂY & GIÁM SÁT\n(CLOUD IoT PLATFORM)', fontsize=9.5, fontweight='bold', ha='center', va='center', color=text_title)
+
+    # Separator lines
+    for xc in [2.25, 7.95, 13.70]:
+        ax.plot([xc - 1.45, xc + 1.45], [6.75, 6.75], color='#cbd5e1', lw=0.9)
+
+    # Zone 1 contents: (x from 0.70 to 3.80, w=3.1)
+    # Box 1: ESP32
+    b_esp = patches.FancyBboxPatch((0.70, 3.95), 3.1, 2.55, boxstyle='round,pad=0.08', facecolor=box_bg, edgecolor=box_border, lw=1.1)
     ax.add_patch(b_esp)
-    ax.text(2.65, 6.2, "ESP32 SoC (Station Mode)", fontsize=10.0, fontweight='bold', ha='center', color="#0369a1")
-    ax.text(2.65, 5.8, "FreeRTOS Dual-Core Architecture", fontsize=8.2, style='italic', ha='center', color="#555555")
-    
-    # Core 0 / Core 1
-    c0 = patches.Rectangle((1.0, 4.0), 1.55, 1.5, facecolor="#eff6ff", edgecolor="#93c5fd", lw=1.0)
+    ax.text(2.25, 6.25, 'Vi Điều Khiển Trung Tâm ESP32', fontsize=9.0, fontweight='bold', ha='center', color=text_title)
+    ax.text(2.25, 5.95, 'Kiến Trúc FreeRTOS Dual-Core (Station Mode)', fontsize=7.4, style='italic', ha='center', color='#64748b')
+
+    c0 = patches.FancyBboxPatch((0.85, 4.15), 1.30, 1.55, boxstyle='round,pad=0.05', facecolor=subbox_bg, edgecolor=subbox_border, lw=0.9)
+    c1 = patches.FancyBboxPatch((2.35, 4.15), 1.30, 1.55, boxstyle='round,pad=0.05', facecolor=subbox_bg, edgecolor=subbox_border, lw=0.9)
     ax.add_patch(c0)
-    ax.text(1.77, 5.15, "Core 0", fontsize=8.5, fontweight='bold', ha='center', color="#1e40af")
-    ax.text(1.77, 4.65, "Network Task\nMQTT Client\nTLS 1.3 Stack", fontsize=7.2, ha='center')
-
-    c1 = patches.Rectangle((2.75, 4.0), 1.55, 1.5, facecolor="#eff6ff", edgecolor="#93c5fd", lw=1.0)
     ax.add_patch(c1)
-    ax.text(3.52, 5.15, "Core 1", fontsize=8.5, fontweight='bold', ha='center', color="#1e40af")
-    ax.text(3.52, 4.65, "FSM Control\nMedian Filter\nActuator Drive", fontsize=7.2, ha='center')
+    ax.text(1.50, 5.45, 'Core 0 (Mạng)', fontsize=8.0, fontweight='bold', ha='center', color=text_title)
+    ax.text(1.50, 4.75, '• MQTT Client\n• TLS 1.3 Stack\n• Network Task\n• REST API Server', fontsize=6.8, ha='center', va='center', color=text_body)
 
-    # Sensors Box with redundancy
-    b_sens = patches.FancyBboxPatch((0.8, 2.3), 3.7, 1.25, boxstyle="round,pad=0.08", facecolor="#ffffff", edgecolor="#475569", lw=1.2)
+    ax.text(3.00, 5.45, 'Core 1 (Điều khiển)', fontsize=8.0, fontweight='bold', ha='center', color=text_title)
+    ax.text(3.00, 4.75, '• FSM chu kỳ 200ms\n• Lọc trung vị 3 mẫu\n• Điều khiển Bơm/Van\n• Cảnh báo LED & Còi', fontsize=6.8, ha='center', va='center', color=text_body)
+
+    # Box 2: Sensors
+    b_sens = patches.FancyBboxPatch((0.70, 2.40), 3.1, 1.30, boxstyle='round,pad=0.08', facecolor=box_bg, edgecolor=box_border, lw=1.1)
     ax.add_patch(b_sens)
-    ax.text(2.65, 3.25, "Hệ Thống Cảm Biến Dự Phòng (Redundant)", fontsize=8.5, fontweight='bold', ha='center')
-    ax.text(2.65, 2.7, "• Cảm biến chính: Siêu âm JSN-SR04T (IP67)\n• Cảm biến dự phòng: Áp suất / Phao từ\n• Thuật toán biểu quyết 2-out-of-2 (Voting)", fontsize=7.2, ha='center')
+    ax.text(2.25, 3.42, 'Cảm Biến Dự Phòng & Biểu Quyết', fontsize=8.3, fontweight='bold', ha='center', color=text_title)
+    ax.text(2.25, 2.90, '• Cảm biến chính: Siêu âm JSN-SR04T (IP67)\n• Cảm biến phụ: Áp suất thủy tĩnh / Phao từ\n• Thuật toán biểu quyết 2-out-of-2 (Voting)', fontsize=7.0, ha='center', va='center', color=text_body)
 
-    # Power & E-stop Box
-    b_pwr = patches.FancyBboxPatch((0.8, 0.8), 3.7, 1.25, boxstyle="round,pad=0.08", facecolor="#ffffff", edgecolor="#ef4444", lw=1.2)
+    # Box 3: Power & E-Stop
+    b_pwr = patches.FancyBboxPatch((0.70, 0.85), 3.1, 1.30, boxstyle='round,pad=0.08', facecolor=box_bg, edgecolor=box_border, lw=1.1)
     ax.add_patch(b_pwr)
-    ax.text(2.65, 1.75, "Khối Nguồn & Dừng Khẩn Cấp (Safety)", fontsize=8.5, fontweight='bold', ha='center', color="#dc2626")
-    ax.text(2.65, 1.2, "• Nguồn lưới 220V AC + Bộ sạc tự động\n• Pin lưu điện UPS / Solar Panel 12V DC\n• Nút nhấn cơ học E-Stop cắt trực tiếp Relay", fontsize=7.2, ha='center')
+    ax.text(2.25, 1.87, 'Nguồn Dự Phòng & Dừng Khẩn Cấp', fontsize=8.3, fontweight='bold', ha='center', color=text_title)
+    ax.text(2.25, 1.35, '• Nguồn kép: AC 220V + Pin lưu điện UPS/Solar\n• Tự động nạp đệm và chuyển mạch không ngắt\n• Nút cơ học E-Stop cắt nguồn cấp Relay', fontsize=7.0, ha='center', va='center', color=text_body)
 
-    import textwrap
-    # Content in Zone 2 (An toàn truyền thông)
+    # Zone 2 contents: (x from 6.35 to 9.55, w=3.2)
     items_z2 = [
-        ("Giao Thức MQTT over TLS 1.3", "Mã hóa toàn diện đường truyền trên cổng 8883; xác thực bằng Client Certificate (X.509) chống nghe lén và giả mạo.", 5.3),
-        ("Kênh Điều Khiển Tường Minh", "Thay thế GET bằng HTTP POST hoặc MQTT Command Topic; lệnh mang trạng thái rõ ràng (targetState = 1/0).", 3.8),
-        ("Đường Truyền Sao Lưu (Dual Path)", "Kết nối chính qua Wi-Fi Station; tự động chuyển vùng sang SIM 4G LTE / LoRaWAN khi mất kết nối cáp quang.", 2.3),
-        ("Cơ Chế Heartbeat Độc Lập", "Đếm nhịp Keep-alive chuyên biệt 5s; tự động kích hoạt Failsafe thu hồi quyền MANUAL nếu mất tín hiệu điều khiển.", 0.8)
+        ('Giao Thức MQTT over TLS 1.3', 'Mã hóa toàn diện đường truyền trên cổng 8883; xác thực bằng Client Certificate (X.509) chống nghe lén.', 5.25),
+        ('Kênh Điều Khiển Tường Minh', 'Thay thế GET bằng HTTP POST hoặc MQTT Command Topic; truyền trạng thái tường minh (targetState = 1/0).', 3.80),
+        ('Đường Truyền Kép (Dual Path)', 'Kết nối chính qua Wi-Fi Station; tự động chuyển vùng sang SIM 4G LTE / LoRaWAN khi mất kết nối trạm.', 2.35),
+        ('Cơ Chế Heartbeat Độc Lập', 'Đếm nhịp Keep-alive 5s độc lập; tự động kích hoạt Failsafe thu hồi quyền MANUAL về AUTO sau 30s mất tín hiệu.', 0.85)
     ]
     for title, desc, yy in items_z2:
-        bx = patches.FancyBboxPatch((5.3, yy), 3.4, 1.25, boxstyle="round,pad=0.08", facecolor="#ffffff", edgecolor="#059669", lw=1.2)
+        bx = patches.FancyBboxPatch((6.35, yy), 3.2, 1.25, boxstyle='round,pad=0.08', facecolor=box_bg, edgecolor=box_border, lw=1.1)
         ax.add_patch(bx)
-        ax.text(7.0, yy + 0.95, title, fontsize=8.2, fontweight='bold', ha='center', color="#047857")
-        wrapped = textwrap.fill(desc, width=34)
-        ax.text(7.0, yy + 0.50, wrapped, fontsize=7.0, ha='center', va='center')
+        ax.text(7.95, yy + 0.95, title, fontsize=8.2, fontweight='bold', ha='center', color=text_title)
+        wrapped = textwrap.fill(desc, width=35)
+        ax.text(7.95, yy + 0.48, wrapped, fontsize=6.9, ha='center', va='center', color=text_body)
 
-    # Content in Zone 3 (Đám mây & Giám sát)
+    # Zone 3 contents: (x from 12.10 to 15.30, w=3.2)
     items_z3 = [
-        ("IoT Cloud Platform / Broker", "AWS IoT Core / EMQX / ThingsBoard CE tiếp nhận luồng telemetry với tốc độ xử lý hàng nghìn bản tin/giây.", 5.3),
-        ("Cơ Sở Dữ Liệu Time-Series", "InfluxDB / TimescaleDB lưu trữ toàn bộ chuỗi số liệu mực nước, lượng mưa và nhật ký tác động Failsafe.", 3.8),
-        ("Bản Đồ Số GIS & Web Dashboard", "Giao diện bản đồ số trực quan theo dõi toàn mạng lưới trạm chống ngập, xem biểu đồ dâng nước và điều khiển tập trung.", 2.3),
-        ("Hệ Thống Cảnh Báo Khẩn", "Tích hợp Bot Telegram, Zalo OA và cổng SMS Gateway tự động nhắn tin cảnh báo cho người dân và cơ quan quản lý.", 0.8)
+        ('IoT Cloud Platform & Broker', 'AWS IoT Core / EMQX / ThingsBoard CE tiếp nhận luồng telemetry với tốc độ xử lý hàng nghìn bản tin/giây.', 5.25),
+        ('Cơ Sở Dữ Liệu Time-Series', 'InfluxDB / TimescaleDB lưu trữ toàn bộ chuỗi số liệu mực nước, lượng mưa và nhật ký tác động Failsafe.', 3.80),
+        ('Bản Đồ Số GIS & SCADA', 'Giao diện bản đồ số trực quan theo dõi toàn mạng lưới trạm chống ngập, xem biểu đồ dâng nước và điều khiển tập trung.', 2.35),
+        ('Hệ Thống Cảnh Báo Đa Kênh', 'Tích hợp Bot Telegram, Zalo OA và cổng SMS Gateway tự động nhắn tin cảnh báo cho người dân và cơ quan quản lý.', 0.85)
     ]
     for title, desc, yy in items_z3:
-        bx = patches.FancyBboxPatch((9.4, yy), 3.9, 1.25, boxstyle="round,pad=0.08", facecolor="#ffffff", edgecolor="#7c3aed", lw=1.2)
+        bx = patches.FancyBboxPatch((12.10, yy), 3.2, 1.25, boxstyle='round,pad=0.08', facecolor=box_bg, edgecolor=box_border, lw=1.1)
         ax.add_patch(bx)
-        ax.text(11.35, yy + 0.95, title, fontsize=8.2, fontweight='bold', ha='center', color="#6d28d9")
-        wrapped = textwrap.fill(desc, width=40)
-        ax.text(11.35, yy + 0.50, wrapped, fontsize=7.0, ha='center', va='center')
+        ax.text(13.70, yy + 0.95, title, fontsize=8.2, fontweight='bold', ha='center', color=text_title)
+        wrapped = textwrap.fill(desc, width=35)
+        ax.text(13.70, yy + 0.48, wrapped, fontsize=6.9, ha='center', va='center', color=text_body)
 
-    # Interconnecting Arrows
-    # Zone 1 -> Zone 2
-    ax.annotate("", xy=(5.25, 5.18), xytext=(4.55, 5.18), arrowprops=dict(arrowstyle="->", lw=1.6, color="#0284c7"))
-    ax.annotate("", xy=(4.55, 3.65), xytext=(5.25, 3.65), arrowprops=dict(arrowstyle="->", lw=1.6, color="#059669", linestyle="--"))
-    ax.text(4.90, 5.30, "Publish", fontsize=6.8, ha='center', fontweight='bold', color="#0284c7")
-    ax.text(4.90, 3.48, "Command", fontsize=6.8, ha='center', fontweight='bold', color="#059669")
+    # Arrows & Labels with generous horizontal and vertical clearance:
+    # Gap 1: from x = 4.0 to 6.1 (w=2.1, center=5.05)
+    # Arrow 1: Uplink at y = 5.25
+    ax.annotate('', xy=(5.95, 5.25), xytext=(4.15, 5.25),
+                arrowprops=dict(arrowstyle='-|>', lw=1.4, color='#1e293b', mutation_scale=14))
+    ax.text(5.05, 5.62, 'Publish Telemetry', fontsize=7.6, fontweight='bold', ha='center', va='bottom', color='#0f172a')
+    ax.text(5.05, 4.88, 'Gói tin JSON chu kỳ 1s', fontsize=6.9, style='italic', ha='center', va='top', color='#475569')
 
-    # Zone 2 -> Zone 3
-    ax.annotate("", xy=(9.35, 5.18), xytext=(8.75, 5.18), arrowprops=dict(arrowstyle="->", lw=1.6, color="#059669"))
-    ax.annotate("", xy=(8.75, 3.65), xytext=(9.35, 3.65), arrowprops=dict(arrowstyle="->", lw=1.6, color="#7c3aed", linestyle="--"))
-    ax.text(9.05, 5.30, "TLS 8883", fontsize=6.8, ha='center', fontweight='bold', color="#059669")
-    ax.text(9.05, 3.48, "Control", fontsize=6.8, ha='center', fontweight='bold', color="#7c3aed")
+    # Arrow 2: Downlink at y = 3.35
+    ax.annotate('', xy=(4.15, 3.35), xytext=(5.95, 3.35),
+                arrowprops=dict(arrowstyle='-|>', lw=1.4, color='#334155', linestyle='--', mutation_scale=14))
+    ax.text(5.05, 3.72, 'Lệnh Can Thiệp Từ Xa', fontsize=7.6, fontweight='bold', ha='center', va='bottom', color='#0f172a')
+    ax.text(5.05, 2.98, 'Bật/Tắt Bơm, Góc Van', fontsize=6.9, style='italic', ha='center', va='top', color='#475569')
+
+    # Gap 2: from x = 9.8 to 11.9 (w=2.1, center=10.85)
+    # Arrow 3: Uplink at y = 5.25
+    ax.annotate('', xy=(11.75, 5.25), xytext=(9.95, 5.25),
+                arrowprops=dict(arrowstyle='-|>', lw=1.4, color='#1e293b', mutation_scale=14))
+    ax.text(10.85, 5.62, 'Giao Thức MQTT / TLS', fontsize=7.6, fontweight='bold', ha='center', va='bottom', color='#0f172a')
+    ax.text(10.85, 4.88, 'Cổng 8883 (Mã hóa X.509)', fontsize=6.9, style='italic', ha='center', va='top', color='#475569')
+
+    # Arrow 4: Downlink at y = 3.35
+    ax.annotate('', xy=(9.95, 3.35), xytext=(11.75, 3.35),
+                arrowprops=dict(arrowstyle='-|>', lw=1.4, color='#334155', linestyle='--', mutation_scale=14))
+    ax.text(10.85, 3.72, 'Lệnh Giám Sát SCADA', fontsize=7.6, fontweight='bold', ha='center', va='bottom', color='#0f172a')
+    ax.text(10.85, 2.98, 'Web App / GIS / Báo động', fontsize=6.9, style='italic', ha='center', va='top', color='#475569')
 
     out_p = "figures/proposed_cloud_architecture.png"
     rep_p = "report/figures/proposed_cloud_architecture.png"

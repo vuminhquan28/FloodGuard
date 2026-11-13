@@ -79,6 +79,22 @@
 \pagenumbering{alph}
 
 % --- TRANG BÌA ---
+% Khung viền đôi trang bìa chuẩn luận văn: Khung đậm dày ở ngoài và khung mỏng nhỏ hơn ở trong
+\AddToHookNext{shipout/background}{%
+    % Khung ngoài: Nét đậm dày (2.8pt)
+    % Tọa độ chuẩn: Trái 25mm, Phải 15mm (Rộng 170mm), Trên 16mm, Dưới 16mm (Cao 265mm)
+    \put(70.87,-48.15){\rule{481.89pt}{2.8pt}}% Cạnh trên ngoài
+    \put(70.87,-796.54){\rule{481.89pt}{2.8pt}}% Cạnh dưới ngoài
+    \put(70.87,-796.54){\rule{2.8pt}{751.18pt}}% Cạnh trái ngoài
+    \put(549.96,-796.54){\rule{2.8pt}{751.18pt}}% Cạnh phải ngoài
+    %
+    % Khung trong: Nét thanh mỏng (0.9pt), lùi vào trong 2.5mm so với khung ngoài
+    % Trái 27.5mm (Rộng 165mm), Trên 18.5mm (Cao 260mm)
+    \put(77.95,-53.34){\rule{467.72pt}{0.9pt}}% Cạnh trên trong
+    \put(77.95,-789.45){\rule{467.72pt}{0.9pt}}% Cạnh dưới trong
+    \put(77.95,-789.45){\rule{0.9pt}{737.01pt}}% Cạnh trái trong
+    \put(544.77,-789.45){\rule{0.9pt}{737.01pt}}% Cạnh phải trong
+}
 \begin{titlepage}
     \centering
     \vspace*{0.3cm}

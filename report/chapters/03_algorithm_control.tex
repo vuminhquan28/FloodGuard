@@ -94,7 +94,7 @@ Trong mã nguồn, hàm đo xung được thiết lập với ngưỡng chặn t
 long duration = pulseIn(PIN_ECHO, HIGH, 30000); // Timeout 30ms (~5.14m)
 \end{lstlisting}
 \begin{itemize}
-    \item \textbf{Timeout $30000\,\mu\text{s}$ ($30\,\text{ms}$):} Tương ứng với khoảng cách đo cực đại $d_{\max} \approx 5.14\,\text{m}$. Nếu không có sóng phản hồi hoặc cảm biến hở mạch, hàm tự động kết thúc sau đúng $30\,\text{ms}$ và trả về $0$, ngăn ngừa việc CPU bị treo vô hạn.
+    \item \textbf{Timeout $30000\,\mu\text{s}$ ($30\,\text{ms}$):} Tương ứng với khoảng cách đo cực đại $d_{\max} \approx 5.14\,\text{m}$. Hàm \texttt{pulseIn()} trong kiến trúc Arduino bản chất là một hàm đồng bộ chặn CPU (\textit{Blocking execution}). Việc thiết lập timeout $30\,\text{ms}$ giúp chặn thời gian chờ tối đa: nếu không có sóng phản hồi hoặc cảm biến hở mạch, hàm tự động kết thúc sau $30\,\text{ms}$ và trả về $0$, ngăn ngừa việc CPU bị treo vô hạn.
     \item \textbf{Giãn cách phát xung tối thiểu:} Sau khi đo xong, hệ thống duy trì khoảng nghỉ tối thiểu giữa các lần kích Trig từ $12\,\text{ms}$ đến $60\,\text{ms}$ để đảm bảo năng lượng sóng phản xạ cũ suy giảm hoàn toàn dưới ngưỡng kích hoạt của đầu thu, tránh hiện tượng giao thoa dội âm.
 \end{itemize}
 
@@ -112,7 +112,7 @@ Môi trường mặt nước hồ thu luôn chịu tác động của bọt khí
 \textbf{Đặc tính kỹ thuật của bộ lọc:}
 \begin{itemize}
     \item \textbf{Khả năng triệt tiêu nhiễu đỉnh đột biến (Impulse Noise Rejection):} Nếu 1 trong 3 mẫu bị nhảy vọt (ví dụ do hạt nước bắn dính màng loa hoặc nhiễu sụt áp), giá trị lỗi đó sẽ bị đẩy về biên $s_{(1)}$ hoặc $s_{(3)}$ và hoàn toàn bị loại bỏ, không làm sai lệch giá trị trung vị $s_{(2)}$.
-    \item \textbf{Độ trễ xử lý (Filter Latency):} Tổng thời gian lấy 3 mẫu là $3 \times \approx 12\,\text{ms} = 36\,\text{ms}$. Với tốc độ dâng nước tối đa trong các kịch bản ngập úng đô thị ($< 5\,\text{cm/s}$), độ trễ $36\,\text{ms}$ tương đương với độ dịch chuyển mực nước chưa tới $0.18\,\text{mm}$, hoàn toàn không gây ảnh hưởng đến tính kịp thời của quyết định xả lũ.
+    \item \textbf{Độ trễ xử lý (Filter Latency):} Tổng thời gian lấy 3 mẫu đo danh định là $3 \times \approx 12\,\text{ms} = 36\,\text{ms}$. Với tốc độ dâng nước tối đa trong các kịch bản ngập úng đô thị ($< 5\,\text{cm/s}$), độ trễ $36\,\text{ms}$ tương đương với độ dịch chuyển mực nước tối đa $5\,\text{cm/s} \times 0.036\,\text{s} = 0.18\,\text{cm} = 1.8\,\text{mm}$, hoàn toàn không gây ảnh hưởng đến tính kịp thời của quyết định xả lũ. Trong trường hợp xấu nhất mất tín hiệu khiến cả 3 mẫu đều bị timeout, thời gian chờ tối đa của bộ lọc đạt $3 \times 30\,\text{ms} = 90\,\text{ms}$.
     \item \textbf{Cơ chế dự phòng giữ mẫu cũ (\textit{Sample-and-Hold Fallback}):} Nếu cả 3 mẫu đo đều bị timeout (trường hợp mất tín hiệu tạm thời), hệ thống tự động giữ nguyên giá trị hợp lệ gần nhất (\texttt{lastValidDistance}) để FSM không bị nhảy trạng thái hỗn loạn.
 \end{itemize}
 
@@ -172,7 +172,7 @@ $40.0\,\text{cm}$ & $39.5\,\text{cm}$ & $0.5\,\text{cm}$ & $1.25\%$ & $23.3\%$ \
 $50.0\,\text{cm}$ & $50.3\,\text{cm}$ & $0.3\,\text{cm}$ & $0.60\%$ & $0.0\%$ \\ \hline
 \end{tabularx}
 \end{table}
-Kết quả cho thấy sai số tuyệt đối cực đại của hệ thống luôn nhỏ hơn $0.5\,\text{cm}$ trên toàn bộ dải đo làm việc, hoàn toàn thỏa mãn chỉ tiêu kỹ thuật $\le \pm 1.0\,\text{cm}$ đã đặt ra.
+Kết quả thực nghiệm trên cho thấy sai số tuyệt đối cực đại của hệ thống đạt $|e|_{\max} \le 0.5\,\text{cm}$ trên toàn bộ dải đo kiểm chuẩn $5.0 - 50.0\,\text{cm}$ (đo lặp lại 5 lần tại mỗi mốc đối chứng với tấm phẳng phản xạ mica ở nhiệt độ phòng $25^\circ\text{C}$), hoàn toàn thỏa mãn chỉ tiêu kỹ thuật $\le \pm 1.0\,\text{cm}$ đã đặt ra.
 
 \section{Máy Trạng Thái Hữu Hạn FSM (Finite State Machine)}
 
@@ -191,7 +191,7 @@ Ma trận chuyển dịch giữa các trạng thái được xác định chặt
 
 \begin{table}[H]
 \centering
-\caption{Bảng ma trận chuyển trạng thái của thuật toán FSM}
+\caption{Bảng ma trận chuyển trạng thái của thuật toán FSM kết hợp dải trễ Hysteresis}
 \label{tab:fsm_transitions}
 \small
 \renewcommand{\arraystretch}{1.3}
@@ -199,15 +199,16 @@ Ma trận chuyển dịch giữa các trạng thái được xác định chặt
 \hline
 \textbf{Trạng thái hiện tại} & \textbf{Điều kiện kích hoạt chuyển dịch (Guards)} & \textbf{Trạng thái kế tiếp} & \textbf{Hành động thực thi khi vào trạng thái} \\ \hline
 \texttt{STATE\_NORMAL} & $P_{\text{water}} \ge 71\%$ hoặc \texttt{isSubmerged} & \texttt{STATE\_CRITICAL} & Bật bơm, mở van $100\%$, LED đỏ chớp, còi hú liên tục. \\
- & $P_{\text{water}} \ge 41\%$ hoặc \texttt{isHeavyRain} & \texttt{STATE\_DANGER} & Bật bơm, mở van $50\%$, LED đỏ sáng, còi dồn dập $300\,\text{ms}$. \\
- & $P_{\text{water}} \ge 21\%$ hoặc \texttt{isLightRain} & \texttt{STATE\_WARNING} & Tắt bơm, đóng van $0^\circ$, LED vàng sáng, còi bíp nhẹ $1.5\,\text{s}$. \\ \hline
-\texttt{STATE\_WARNING} & $P_{\text{water}} \ge 71\%$ hoặc \texttt{isSubmerged} & \texttt{STATE\_CRITICAL} & Bật bơm, mở van $100\%$, nâng còi lên hú liên tục. \\
- & $P_{\text{water}} \ge 41\%$ hoặc \texttt{isHeavyRain} & \texttt{STATE\_DANGER} & Bật bơm, mở van $50\%$, nâng còi dồn dập $300\,\text{ms}$. \\
- & $P_{\text{water}} < 20\%$ và tạnh mưa hoàn toàn & \texttt{STATE\_NORMAL} & Tắt toàn bộ còi, LED xanh sáng (an toàn). \\ \hline
+ & $P_{\text{water}} \ge 41\%$ hoặc \texttt{isHeavyRain} & \texttt{STATE\_DANGER} & Bật bơm (nếu $P \ge 20\%$), mở van $50\%$, LED đỏ sáng, còi dồn dập $400\,\text{ms}$. \\
+ & $P_{\text{water}} \ge 21\%$ hoặc \texttt{isLightRain} & \texttt{STATE\_WARNING} & Tắt bơm, đóng van $0^\circ$, LED vàng sáng, còi bíp thưa $1.5\,\text{s}$. \\ \hline
+\texttt{STATE\_WARNING} & $P_{\text{water}} \ge 71\%$ hoặc \texttt{isSubmerged} & \texttt{STATE\_CRITICAL} & Bật bơm, mở van $100\%$, còi hú liên tục. \\
+ & $P_{\text{water}} \ge 41\%$ hoặc \texttt{isHeavyRain} & \texttt{STATE\_DANGER} & Bật bơm, mở van $50\%$, còi dồn dập $400\,\text{ms}$. \\
+ & $P_{\text{water}} < 18\%$ và tạnh mưa hoàn toàn & \texttt{STATE\_NORMAL} & Tắt còi, LED xanh sáng (an toàn). \\ \hline
 \texttt{STATE\_DANGER} & $P_{\text{water}} \ge 71\%$ hoặc \texttt{isSubmerged} & \texttt{STATE\_CRITICAL} & Tăng góc van lên $100\%$, chuyển còi sang hú liên tục. \\
- & $P_{\text{water}} < 40\%$ và không mưa to & \texttt{STATE\_WARNING} & Ngắt bơm (thả nổi High-Z), đóng van về $0^\circ$, hạ còi. \\ \hline
-\texttt{STATE\_CRITICAL} & $P_{\text{water}} < 71\%$ và không ngập sensor & \texttt{STATE\_DANGER} & Giảm van về $50\%$, chuyển còi về nhịp dồn dập $300\,\text{ms}$. \\ \hline
-\textbf{Mọi trạng thái} & Mất xung Echo liên tiếp $> 600\,\text{ms}$ & \texttt{SENSOR\_FAULT} & Giữ bơm an toàn, mở van $50\%$, còi ngắt quãng báo lỗi. \\ \hline
+ & $P_{\text{water}} < 38\%$ và không mưa to & \texttt{STATE\_WARNING} & Ngắt bơm (sau $T_{\text{min\_run}} \ge 5\,\text{s}$), đóng van về $0^\circ$, hạ còi. \\ \hline
+\texttt{STATE\_CRITICAL} & $P_{\text{water}} < 68\%$ và không ngập sensor & \texttt{STATE\_DANGER} & Giảm van về $50\%$, chuyển còi về nhịp dồn dập $400\,\text{ms}$. \\ \hline
+\textbf{Mọi trạng thái} & Mất xung Echo liên tiếp $> 450\,\text{ms}$ (3 chu kỳ) & \texttt{SENSOR\_FAULT} & Tắt bơm (chống cháy bơm), mở van $50\%$ xả an toàn, 3 LED chớp, còi ngắt quãng báo sự cố. \\ \hline
+\texttt{SENSOR\_FAULT} & Nhận lại $\ge 5$ mẫu đo ToF hợp lệ liên tiếp & \texttt{STATE\_NORMAL} hoặc cấp tương ứng & Phục hồi vận hành tự động bình thường. \\ \hline
 \end{tabularx}
 \end{table}
 
@@ -223,24 +224,28 @@ Tương ứng với mỗi trạng thái FSM, hệ thống thiết lập đồng 
 \begin{tabularx}{\textwidth}{|p{2.9cm}|>{\centering\arraybackslash}p{1.1cm}|>{\centering\arraybackslash}p{1.1cm}|>{\centering\arraybackslash}p{1.1cm}|X|>{\centering\arraybackslash}p{2.0cm}|>{\centering\arraybackslash}p{2.0cm}|}
 \hline
 \textbf{Trạng thái FSM} & \textbf{LED Xanh} & \textbf{LED Vàng} & \textbf{LED Đỏ} & \textbf{Còi Buzzer 5V} & \textbf{Relay Bơm} & \textbf{Van Servo} \\ \hline
-\texttt{STATE\_NORMAL} & BẬT & TẮT & TẮT & Tắt hoàn toàn (0Hz) & OFF (High-Z) & Đóng $0^\circ$ ($0\%$) \\ \hline
+\texttt{STATE\_NORMAL} & BẬT & TẮT & TẮT & Tắt hoàn toàn (0V) & OFF (High-Z) & Đóng $0^\circ$ ($0\%$) \\ \hline
 \texttt{STATE\_WARNING} & TẮT & BẬT & TẮT & Bíp thưa ($120\,\text{ms}$ on / $1380\,\text{ms}$ off) & OFF (High-Z) & Đóng $0^\circ$ ($0\%$) \\ \hline
-\texttt{STATE\_DANGER} & TẮT & TẮT & BẬT & Dồn dập ($150\,\text{ms}$ on / $150\,\text{ms}$ off) & ON (Active LOW) & Mở $90^\circ$ ($50\%$) \\ \hline
-\texttt{STATE\_CRITICAL} & TẮT & TẮT & Chớp $100\,\text{ms}$ & Hú liên tục ($2500\,\text{Hz}$) & ON (Active LOW) & Mở $180^\circ$ ($100\%$) \\ \hline
-\texttt{SENSOR\_FAULT} & Chớp & Chớp & Chớp & Bíp ngắt quãng báo sự cố & Giữ nguyên & Mở an toàn $90^\circ$ \\ \hline
+\texttt{STATE\_DANGER} & TẮT & TẮT & BẬT & Dồn dập ($150\,\text{ms}$ on / $250\,\text{ms}$ off) & ON (Active LOW) & Mở $90^\circ$ ($50\%$) \\ \hline
+\texttt{STATE\_CRITICAL} & TẮT & TẮT & Chớp $100\,\text{ms}$ & Hú liên tục ($\approx 2.3\,\text{kHz}$) & ON (Active LOW) & Mở $180^\circ$ ($100\%$) \\ \hline
+\texttt{SENSOR\_FAULT} & Chớp & Chớp & Chớp & Bíp ngắt quãng báo sự cố & TẮT (Bảo vệ) & Mở an toàn $90^\circ$ ($50\%$) \\ \hline
 \end{tabularx}
 \end{table}
 
 \subsection{Mã C++ Hiện Thực FSM Bằng Cấu Trúc Switch-Case}
-Đoạn mã C++ tiêu biểu hiện thực hóa logic FSM và điều khiển cơ cấu chấp hành trong firmware:
+Đoạn mã C++ chuẩn hóa hiện thực hóa logic FSM, tích hợp dải trễ Hysteresis, bộ lọc Debounce và cơ chế Safety Override:
 \begin{lstlisting}[language=C++]
-void evaluateSystemStateAuto() {
-  if (!isAutoMode) return;
+// Bang hang so nguong Hysteresis dong bo toan he thong
+const int THRESHOLD_WARN_ENTER   = 21, THRESHOLD_WARN_EXIT   = 18; // Delta = 3%
+const int THRESHOLD_DANGER_ENTER = 41, THRESHOLD_DANGER_EXIT = 38; // Delta = 3%
+const int THRESHOLD_CRIT_ENTER   = 71, THRESHOLD_CRIT_EXIT   = 68; // Delta = 3%
 
+void evaluateSystemStateAuto() {
   bool isLightRain = isRaining;
   bool isHeavyRain = (rainRawADC < RAIN_ADC_HEAVY);
   bool isSubmerged = (rainRawADC < RAIN_ADC_SUBMERGED);
 
+  // 1. Luon cap nhat FSM va LED/Coi de bao ve an toan ngay ca o MANUAL
   switch (sysState) {
     case STATE_NORMAL:
       if (waterPercent >= THRESHOLD_CRIT_ENTER || isSubmerged) sysState = STATE_CRITICAL;
@@ -260,8 +265,32 @@ void evaluateSystemStateAuto() {
       break;
 
     case STATE_CRITICAL:
-      if (waterPercent < THRESHOLD_CRIT_ENTER && !isSubmerged) sysState = STATE_DANGER;
+      if (waterPercent < THRESHOLD_CRIT_EXIT && !isSubmerged) sysState = STATE_DANGER;
       break;
+  }
+
+  // 2. Dieu khien co cau chap hanh tu dong (chi khi isAutoMode == true)
+  if (isAutoMode) {
+    switch (sysState) {
+      case STATE_NORMAL:
+      case STATE_WARNING:
+        pumpState = false; valvePercent = 0; break;
+      case STATE_DANGER:
+        pumpState = (waterPercent >= 20); // Khoa chong chay kho bom khi nuoc < 20%
+        valvePercent = 50; break;
+      case STATE_CRITICAL:
+        pumpState = true; valvePercent = 100; break;
+    }
+  } else {
+    // MANUAL MODE: Giam sat ghi de an toan toi cao (Safety Override)
+    static unsigned long critStart = 0;
+    if (sysState == STATE_CRITICAL) {
+      if (critStart == 0) critStart = millis();
+      else if (millis() - critStart >= 10000) { // Qua 10s o muc CRITICAL
+        isAutoMode = true; pumpState = true; valvePercent = 100; // Cuong che cuu ho
+        critStart = 0;
+      }
+    } else critStart = 0;
   }
 }
 \end{lstlisting}
@@ -276,11 +305,17 @@ Trong các phiên bản thiết kế đơn giản, khoảng cách dải trễ gi
 \end{equation}
 Khoảng cách $4.5\,\text{mm}$ này nhỏ hơn biên độ sóng vỗ tự nhiên trên mặt hồ thu khi máy bơm công suất lớn vận hành ($\pm 10 - 20\,\text{mm}$) và ngang bằng với sai số đo lường của cảm biến. Hậu quả là máy bơm vẫn bị bật/tắt liên tục (chattering) khi mặt nước dâng mấp mé ngưỡng $40\%$.
 
-Để khắc phục triệt để, hệ thống nâng độ rộng dải trễ Hysteresis lên $3\% - 5\%$ ($\approx 1.35 - 2.25\,\text{cm}$):
+Để khắc phục triệt để, hệ thống áp dụng dải trễ Hysteresis biên độ $3\%$ chuẩn hóa trên toàn bộ các ngưỡng:
 \begin{itemize}
-    \item \textbf{Cặp ngưỡng WARNING / DANGER:} Ngưỡng lên là $41\%$ ($d \le 31.5\,\text{cm}$); ngưỡng rút hạ trạng thái là $38\%$ ($d > 32.9\,\text{cm}$) $\to$ Dải trễ $\Delta = 3\% = 1.35\,\text{cm}$.
-    \item \textbf{Cặp ngưỡng DANGER / CRITICAL:} Ngưỡng lên là $71\%$ ($d \le 18.0\,\text{cm}$); ngưỡng rút hạ trạng thái là $68\%$ ($d > 19.4\,\text{cm}$) $\to$ Dải trễ $\Delta = 3\% = 1.35\,\text{cm}$.
+    \item \textbf{Cặp ngưỡng NORMAL / WARNING:} Ngưỡng lên là $21\%$ ($d \le 40.55\,\text{cm}$); ngưỡng rút hạ trạng thái là $18\%$ ($d > 41.90\,\text{cm}$) $\to$ Dải trễ $\Delta = 3\% = 1.35\,\text{cm}$.
+    \item \textbf{Cặp ngưỡng WARNING / DANGER:} Ngưỡng lên là $41\%$ ($d \le 31.55\,\text{cm}$); ngưỡng rút hạ trạng thái là $38\%$ ($d > 32.90\,\text{cm}$) $\to$ Dải trễ $\Delta = 3\% = 1.35\,\text{cm}$.
+    \item \textbf{Cặp ngưỡng DANGER / CRITICAL:} Ngưỡng lên là $71\%$ ($d \le 18.05\,\text{cm}$); ngưỡng rút hạ trạng thái là $68\%$ ($d > 19.40\,\text{cm}$) $\to$ Dải trễ $\Delta = 3\% = 1.35\,\text{cm}$.
 \end{itemize}
+
+\noindent\textbf{Đặc thù khi triển khai trên mô hình sa bàn Mica thu nhỏ ($10\,\text{cm}$ nước):}\\
+Trên mô hình sa bàn thực tế, dải trễ $3\%$ tương ứng với khoảng dịch chuyển mực nước vật lý chỉ đạt $\Delta d_{\text{mica}} = 3\% \times 10.0\,\text{cm} = 3.0\,\text{mm}$. Khoảng cách $3.0\,\text{mm}$ này tiệm cận với độ phân giải giới hạn của cảm biến siêu âm HC-SR04 và hoàn toàn có thể bị vượt qua bởi các đợt sóng dập dềnh cơ học khi máy bơm mini xả nước. Do đó, nếu chỉ dựa thuần túy vào dải trễ biên độ $3\%$, rơ-le vẫn có nguy cơ bị đóng ngắt dao động. 
+
+Để giải quyết triệt để vấn đề này trên phần cứng thực tế, chốt chặn bảo vệ quyết định của hệ thống chính là sự kết hợp chặt chẽ giữa dải trễ biên độ với **bộ lọc chống rung thời gian Debounce $1.0\,\text{s}$** và **thời gian chạy tối thiểu của máy bơm $5.0\,\text{s}$ (Min-run Time)** được phân tích dưới đây.
 
 \subsection{Cơ Chế Chống Rung Theo Thời Gian (\textit{Time-Based Debouncing \& Dwell Time})}
 Song song với dải trễ biên độ, hệ thống bổ sung hai ràng buộc thời gian nghiêm ngặt:
@@ -350,7 +385,7 @@ Hệ thống quản lý 3 trạng thái chế độ hoạt động:
 \subsection{Hành Vi Khôi Phục Kết Nối \& Quy Tắc Ghi Đè An Toàn Tối Cao}
 \begin{itemize}
     \item \textbf{Khôi phục kết nối:} Khi mạng Wi-Fi được kết nối lại và trình duyệt gửi request tiếp theo, ESP32 sẽ trả về chuỗi JSON chứa trường cờ \texttt{"failsafe": true}. Giao diện Web Dashboard sẽ lập tức hiển thị một thanh thông báo màu cam với nội dung: *"Hệ thống đã tự động chuyển về chế độ AUTO do mất kết nối quá 30 giây"*. Để tiếp tục can thiệp thủ công, người vận hành bắt buộc phải nhấp nút xác nhận trên Web để chuyển lại sang MANUAL.
-    \item \textbf{Quy tắc ghi đè an toàn tối cao (\textit{Safety Priority Override}):} Ngay cả khi đang ở chế độ MANUAL, nếu mực nước đo được đạt mức nguy cấp CRITICAL ($\ge 80\%$) mà sau $10\,\text{s}$ người vận hành không ra lệnh bật bơm hoặc mở van, hệ thống sẽ tự động tước quyền MANUAL, chuyển về AUTO và kích hoạt toàn bộ cơ cấu xả lũ hết công suất để chống tràn hồ.
+    \item \textbf{Quy tắc ghi đè an toàn tối cao (\textit{Safety Priority Override}):} Ngay cả khi đang ở chế độ MANUAL, nếu mực nước đo được đạt mức nguy cấp CRITICAL ($\ge 71\%$) mà sau $10\,\text{s}$ người vận hành không ra lệnh bật bơm hoặc mở van, hệ thống sẽ tự động tước quyền MANUAL, chuyển về AUTO và kích hoạt toàn bộ cơ cấu xả lũ hết công suất để chống tràn hồ.
 
 \end{itemize}
 
@@ -366,28 +401,46 @@ Thời gian thực thi một chu kỳ vòng lặp \texttt{loop()} được đo �
 
 \subsection{Thời Gian Phản Ứng Tối Đa (Worst-Case Reaction Time - WCRT)}
 \label{sec:wcrt_analysis}
-Thời gian phản ứng tồi tệ nhất ($T_{\text{WCRT}}$) được tính từ thời điểm mực nước thực tế chạm ngưỡng nguy hiểm cho tới khi tiếp điểm Relay đóng hoàn toàn để cấp điện cho máy bơm:
+Thời gian phản ứng tồi tệ nhất trong tình huống khẩn cấp ($T_{\text{WCRT\_urgent}}$) được tính từ thời điểm mực nước thực tế chạm ngưỡng nguy hiểm hoặc ngập tràn khẩn cấp cho tới khi tiếp điểm Relay đóng hoàn toàn để cấp điện cho máy bơm (không qua bộ lọc thời gian debounce hoặc khi debounce đã tích lũy đủ):
 \begin{equation}
-T_{\text{WCRT}} = T_{\text{sample\_wait}} + T_{\text{filter}} + T_{\text{FSM}} + T_{\text{relay\_delay}}
+T_{\text{WCRT\_urgent}} = T_{\text{sample\_wait}} + T_{\text{filter\_typical}} + T_{\text{FSM}} + T_{\text{relay\_delay}}
 \end{equation}
 Trong đó:
 \begin{itemize}
     \item $T_{\text{sample\_wait}} = 150\,\text{ms}$: Thời gian chờ tối đa giữa hai chu kỳ kích hoạt đọc cảm biến.
-    \item $T_{\text{filter}} = 36\,\text{ms}$: Thời gian đo 3 mẫu siêu âm của bộ lọc trung vị.
-    \item $T_{\text{FSM}} = 2\,\text{ms}$: Thời gian tính toán thuật toán FSM và gán chân GPIO.
+    \item $T_{\text{filter\_typical}} = 36\,\text{ms}$: Thời gian đo 3 mẫu siêu âm của bộ lọc trung vị trong điều kiện bình thường ($3 \times 12\,\text{ms}$).
+    \item $T_{\text{FSM}} = 2\,\text{ms}$: Thời gian tính toán thuật toán FSM và cập nhật chân GPIO.
     \item $T_{\text{relay\_delay}} = 15\,\text{ms}$: Thời gian trễ cơ học để tiếp điểm lá đồng của Relay 5V đóng kín hoàn toàn mạch điện.
 \end{itemize}
-Tổng thời gian phản ứng tối đa:
+Tổng thời gian phản ứng khẩn cấp:
 \begin{equation}
-T_{\text{WCRT}} = 150 + 36 + 2 + 15 = 203\,\text{ms} < 250\,\text{ms}
+T_{\text{WCRT\_urgent}} = 150 + 36 + 2 + 15 = 203\,\text{ms} < 250\,\text{ms}
 \end{equation}
-Kết quả chứng minh hệ thống đáp ứng xuất sắc ràng buộc thời gian thực $\le 250\,\text{ms}$, đảm bảo máy bơm được kích hoạt gần như tức thời khi nước vừa chạm ngưỡng tràn.
+Kết quả chứng minh hệ thống đáp ứng xuất sắc ràng buộc thời gian thực $\le 250\,\text{ms}$ đối với các tình huống phản ứng khẩn cấp, đảm bảo máy bơm được kích hoạt gần như tức thời khi nước vừa chạm ngưỡng tràn.
 
-\subsection{Cơ Chế Tránh Chặn Luồng Bởi Ngăn Xếp Wi-Fi / HTTP}
-Thư viện \texttt{WebServer.h} của ESP32 sử dụng cơ chế lắng nghe socket bất đồng bộ non-blocking. Trong hàm \texttt{loop()}, lời gọi \texttt{server.handleClient()} chỉ thực hiện kiểm tra cờ ngắt có dữ liệu sẵn sàng trong bộ đệm ngắt mạng của chip. Nếu không có gói tin TCP mới đến, hàm lập tức trả về quyền điều khiển sau chưa đầy $0.08\,\text{ms}$, không gây bất kỳ ảnh hưởng nào tới chu kỳ lấy mẫu của cảm biến.
+\noindent\textbf{Thời gian đáp ứng ổn định có lọc chống rung (\textit{Debounced Stable Transition}):}\\
+Đối với quá trình chuyển trạng thái FSM thông thường giữa các cấp độ nhằm tránh rung tiếp điểm rơ-le do sóng vỗ dao động, điều kiện chuyển trạng thái cần được duy trì ổn định liên tục qua bộ lọc thời gian $t_{\text{debounce}} = 1.0\,\text{s}$. Do đó, thời gian đáp ứng tổng thể của hệ thống khi xác lập trạng thái chuyển cấp FSM bền vững là:
+\begin{equation}
+T_{\text{stable}} = T_{\text{WCRT\_urgent}} + t_{\text{debounce}} \approx 203\,\text{ms} + 1000\,\text{ms} \approx 1.203\,\text{s}
+\end{equation}
+Việc phân định rõ hai mốc thời gian này giúp hệ thống vừa bảo đảm an toàn cơ học cho rơ-le trong vận hành thông thường, vừa bảo đảm thời gian phát hiện và xử lý khẩn cấp dưới $250\,\text{ms}$.
+
+\noindent\textbf{Phân tích độ trễ chặn luồng tối đa khi mất tín hiệu siêu âm:}\\
+Cần lưu ý rằng hàm \texttt{pulseIn()} trong ESP32 Arduino Core là hàm chặn CPU (\textit{blocking}). Trong kịch bản xấu nhất khi cảm biến siêu âm bị mất xung Echo hoàn toàn, mỗi lượt đo sẽ phải chờ hết thời gian timeout $30\,\text{ms}$. Với bộ lọc 3 mẫu, CPU sẽ bị chặn tối đa $T_{\text{filter\_worst}} = 3 \times 30\,\text{ms} = 90\,\text{ms}$. Ngay cả trong kịch bản tồi tệ này, tổng thời gian chu kỳ quét vẫn nằm trong mức $150 + 90 + 2 = 242\,\text{ms} < 250\,\text{ms}$ trước khi rơi vào cơ chế bảo vệ giữ mẫu.
+
+\subsection{Cơ Chế Phục Vụ Yêu Cầu Mạng Wi-Fi / HTTP}
+Thư viện \texttt{WebServer.h} của ESP32 Arduino Core hoạt động theo kiến trúc đồng bộ tuần tự (\textit{synchronous polling}) trên cùng luồng chính \texttt{loopTask}. Trong hàm \texttt{loop()}, lời gọi \texttt{server.handleClient()} thực hiện kiểm tra và xử lý các kết nối socket TCP đang chờ từ lớp mạng lwIP. Trong điều kiện bình thường khi không có yêu cầu mới, hàm trả về quyền điều khiển rất nhanh ($< 0.1\,\text{ms}$), không ảnh hưởng đến chu kỳ đo lường.
+
+Tuy nhiên, do hoạt động đồng bộ, nếu máy khách truyền dữ liệu chập chờn (\textit{slow client}) hoặc gửi yêu cầu vào đúng thời điểm vi điều khiển đang xử lý, thời gian chiếm dụng CPU có thể kéo dài $10 - 30\,\text{ms}$. Để triệt tiêu tối đa hiện tượng trễ vòng lặp này:
+\begin{itemize}
+    \item Toàn bộ dữ liệu phản hồi API JSON được thu gọn tối đa ($\approx 210$ byte), truyền trực tiếp trong một khung mạng TCP duy nhất.
+    \item Trang Web Dashboard tĩnh được lưu trong bộ nhớ Flash và truyền phát bằng phương thức \texttt{server.send\_P()}, tránh hoàn toàn việc cấp phát bộ nhớ động RAM (heap) và giảm thiểu số vòng lặp chờ xử lý.
+\end{itemize}
 
 \subsection{Bảo Vệ Hệ Thống Bằng Phần Cứng Task Watchdog Timer (TWDT)}
-Để phòng ngừa tình huống vi điều khiển bị treo do sốc điện nguồn hoặc bẫy lỗi phần mềm, FloodGuard cấu hình bộ đếm thời gian giám sát phần cứng Task Watchdog Timer của ESP-IDF với chu kỳ timeout $3000\,\text{ms}$ ($3\,\text{s}$). Hàm xóa cờ watchdog được gọi đều đặn trong vòng lặp \texttt{loop()}. Nếu sau 3 giây vòng lặp không thể quay lại điểm xóa cờ (do treo luồng), phần cứng TWDT sẽ tự động phát tín hiệu Reset cứng để khởi động lại hệ thống về trạng thái ban đầu an toàn.
+Khác với cơ chế bảo vệ Failsafe $30\,\text{s}$ ở tầng ứng dụng mạng Web (Mục~\ref{sec:failsafe_mode}), để phòng ngừa tình huống vi điều khiển bị treo CPU do sốc điện, xung nhiễu nguồn hoặc bẫy lặp phần mềm vô hạn, FloodGuard tích hợp trực tiếp bộ giám sát Task Watchdog Timer (TWDT) của hệ điều hành thời gian thực ESP-IDF FreeRTOS.
+
+Bộ giám sát TWDT được gắn vào tác vụ chính \texttt{loopTask} thông qua API \texttt{esp\_task\_wdt\_add(NULL)} với chu kỳ timeout được cấu hình là $3000\,\text{ms}$ ($3\,\text{s}$). Lệnh xóa cờ \texttt{esp\_task\_wdt\_reset()} được gọi đều đặn ở đầu mỗi chu kỳ \texttt{loop()}. Nếu sau $3\,\text{s}$ vòng lặp không thể quay lại điểm xóa cờ (ví dụ do hàm \texttt{pulseIn()} bị treo phần cứng hoặc hàm Web bị nghẽn socket), ngắt phần cứng TWDT sẽ ngay lập tức được kích hoạt, ghi lại nhật ký lỗi (core dump) và thực hiện Reset phần cứng tự động để đưa toàn bộ trạm về trạng thái an toàn ban đầu.
 
 \section{Xử Lý Sự Cố \& Ma Trận An Toàn (Fault Handling Matrix)}
 
@@ -402,9 +455,10 @@ Bảng~\ref{tab:fault_matrix} tổng hợp toàn bộ các kịch bản lỗi ph
 \begin{tabularx}{\textwidth}{|p{3.2cm}|p{3.8cm}|X|}
 \hline
 \textbf{Tình huống sự cố} & \textbf{Cơ chế phát hiện} & \textbf{Hành vi ứng phó an toàn của hệ thống} \\ \hline
-\textbf{HC-SR04 mất xung Echo} (đứt dây, bám bẩn màng loa) & \texttt{pulseIn()} trả về $0$ hoặc quá timeout $30\,\text{ms}$. & Giữ mẫu hợp lệ gần nhất trong 3 chu kỳ ($600\,\text{ms}$). Nếu lỗi kéo dài: chuyển sang \texttt{SENSOR\_FAULT}, còi bíp cảnh báo lỗi, mở van xả $50\%$ phòng ngừa ngập úng. \\ \hline
-\textbf{Khoảng cách ngoài dải vật lý} ($< d_{\text{full}}$ hoặc $> d_{\text{empty}}$) & Giá trị đo nằm ngoài dải dung tích hồ thu. & Kẹp giá trị (\textit{Clamp}) tự động về $100\%$ (nếu $< d_{\text{full}}$) hoặc $0\%$ (nếu $> d_{\text{empty}}$), ngăn chặn lỗi tràn biến số. \\ \hline
-\textbf{Cảm biến mưa hở mạch} (đứt dây tín hiệu AO/DO) & ADC đọc giá trị cực đại $4095$ ($3.3\,\text{V}$). & Hệ thống xem như điều kiện khô ráo, tự động dựa hoàn toàn vào mực nước siêu âm để điều khiển xả lũ. \\ \hline
+\textbf{HC-SR04 mất xung Echo} (đứt dây, bám bẩn màng loa) & \texttt{pulseIn()} trả về $0$ hoặc quá timeout $30\,\text{ms}$. & Giữ mẫu hợp lệ gần nhất trong 3 chu kỳ ($450\,\text{ms}$). Nếu lỗi kéo dài $\ge 3$ chu kỳ: chuyển sang \texttt{SENSOR\_FAULT}, còi bíp cảnh báo lỗi, ngắt máy bơm tránh chạy cạn, mở van xả $50\%$ phòng ngừa ngập úng. Tự động phục hồi về FSM bình thường khi có $\ge 5$ mẫu siêu âm hợp lệ liên tiếp. \\ \hline
+\textbf{Mực nước dâng vượt miệng cảm biến} ($d < d_{\text{full}}$) & Cảm biến đo khoảng cách $< 5.0\,\text{cm}$. & Đây là tình huống ngập tràn khẩn cấp (\textit{water surge}), hệ thống lập tức cưỡng chế FSM lên trạng thái \texttt{CRITICAL}, bật bơm hết công suất và mở van xả $100\%$ để thoát lũ, không xem là lỗi cảm biến. \\ \hline
+\textbf{Khoảng cách ngoài dải đáy bể} ($d > d_{\text{empty}}$) & Cảm biến đo khoảng cách $> 50.0\,\text{cm}$. & Bể cạn hoàn toàn hoặc đáy sâu bất thường; hệ thống tự động kẹp (\textit{clamp}) giá trị về $0\%$, ngắt bơm ngay lập tức để chống chạy khô. \\ \hline
+\textbf{Cảm biến mưa hở mạch / đứt dây tín hiệu AO} & Chân GPIO35 (Input-only, không pull-up nội) bị thả nổi. & Nếu thả nổi, ADC có thể đọc ngẫu nhiên về mức thấp kích hoạt nhầm \texttt{isSubmerged}. Thiết kế phần cứng bắt buộc gắn trở kéo ngoài $100\,\text{k}\Omega$ lên $3.3\,\text{V}$ để khi đứt dây, ADC luôn đọc $4095$ (khô ráo), hệ thống tự hành an toàn dựa vào mực nước siêu âm. \\ \hline
 \textbf{Mất kết nối Wi-Fi / Đứt mạng Web Client} & Không nhận được gói tin heartbeat quá $30\,\text{s}$. & Tự động hủy chế độ MANUAL, cưỡng chế chuyển về AUTO, trao quyền cho FSM để tự hành chống tràn bể. \\ \hline
 \textbf{Sụt áp nguồn cấp (Brown-out)} & Điện áp vi điều khiển tụt dưới ngưỡng $2.8\,\text{V}$. & Bộ giám sát Brown-out Reset nội của ESP32 tự động ngắt vi điều khiển và khởi động lại an toàn khi nguồn ổn định. \\ \hline
 \end{tabularx}

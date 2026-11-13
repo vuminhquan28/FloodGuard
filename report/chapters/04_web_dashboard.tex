@@ -40,7 +40,7 @@ Giao diện trực quan bao gồm 6 khối chức năng chính:
 
 \section{Đặc Tả Chuẩn Hóa Giao Thức HTTP REST API}
 
-Hệ thống giao tiếp hai chiều giữa trình duyệt người dùng và vi điều khiển ESP32 thông qua các endpoint REST API được chuẩn hóa trong Bảng~\ref{tab:api_specifications}.
+Hệ thống giao tiếp hai chiều giữa trình duyệt người dùng và vi điều khiển ESP32 thông qua các endpoint REST API được chuẩn hóa trong Bảng~\ref{tab:api_specifications}. Nhằm khắc phục triệt để nguy cơ đảo ngược trạng thái ngoài ý muốn khi truyền tin mạng, firmware hỗ trợ song song hai định dạng: cú pháp tham số tường minh (\textit{Explicit State Parameters} -- khuyến nghị) và cú pháp hành động (\textit{Action-based Tokens}).
 
 \begin{table}[H]
 \centering
@@ -51,13 +51,14 @@ Hệ thống giao tiếp hai chiều giữa trình duyệt người dùng và vi
 \begin{tabularx}{\textwidth}{|l|c|l|c|X|}
 \hline
 \textbf{Endpoint URL} & \textbf{Method} & \textbf{Tham số truyền} & \textbf{Mã HTTP} & \textbf{Cấu trúc dữ liệu phản hồi \& Chức năng} \\ \hline
-\texttt{/} & \texttt{GET} & Không có & 200 & Trả về toàn bộ mã nguồn HTML/CSS/JS của trang Dashboard lưu trong bộ nhớ Flash PROGMEM. \\ \hline
+\texttt{/} & \texttt{GET} & Không có & 200 & Trả về toàn bộ mã nguồn HTML/CSS/JS của trang Dashboard lưu trong bộ nhớ Flash. \\ \hline
 \texttt{/api/status} & \texttt{GET} & Không có & 200 & Trả về chuỗi JSON chứa toàn bộ dữ liệu telemetry đo đạc thời gian thực và trạng thái thiết bị. \\ \hline
-\texttt{/api/control} & \texttt{GET} & \texttt{action=mode\_toggle} & 200 & Đảo trạng thái giữa AUTO và MANUAL. \\
- & & \texttt{action=pump\_toggle} & 200 & Bật hoặc ngắt máy bơm cưỡng chế (chỉ ở MANUAL). \\
- & & \texttt{action=valve\_0} & 200 & Xoay Servo đóng kín van $0^\circ$ (chỉ ở MANUAL). \\
- & & \texttt{action=valve\_50} & 200 & Xoay Servo mở van xả $50\%$ ($90^\circ$). \\
- & & \texttt{action=valve\_100} & 200 & Xoay Servo mở van xả tối đa $100\%$ ($180^\circ$). \\ \hline
+\texttt{/api/control} & \texttt{GET} & \texttt{mode=auto} / \texttt{mode=manual} & 200 & Thiết lập chế độ hoạt động tường minh (Idempotent). \\
+ & & \texttt{pump=1} / \texttt{pump=0} & 200 & Bật ($1$) hoặc tắt ($0$) máy bơm tường minh (chỉ ở MANUAL, Idempotent). \\
+ & & \texttt{valve=0} / \texttt{valve=50} / \texttt{valve=100} & 200 & Đặt góc mở van xả tương ứng $0^\circ, 90^\circ, 180^\circ$ (chỉ ở MANUAL). \\
+ & & \texttt{action=mode\_toggle} & 200 & Đảo trạng thái giữa AUTO và MANUAL (tương thích ngược). \\
+ & & \texttt{action=pump\_toggle} & 200 & Đảo trạng thái máy bơm cưỡng chế (chỉ ở MANUAL). \\
+ & & \texttt{action=valve\_0/50/100} & 200 & Xoay Servo đóng mở van tương ứng (tương thích ngược). \\ \hline
 \end{tabularx}
 \end{table}
 
@@ -85,8 +86,9 @@ Tại endpoint \texttt{GET /api/status}, vi điều khiển ESP32 đóng gói c�
 Trong kiến trúc phần mềm RESTful chuẩn mực quốc tế (RFC 7231):
 \begin{itemize}
     \item Phương thức \textbf{\texttt{GET}} được định nghĩa là phương thức an toàn (\textit{Safe}) và có tính bảo lưu trạng thái (\textit{Idempotent}) -- nghĩa là các yêu cầu \texttt{GET} chỉ được dùng để truy vấn dữ liệu mà tuyệt đối không được làm thay đổi trạng thái tài nguyên trên máy chủ.
-    \item Việc phiên bản thực nghiệm hiện tại sử dụng request \texttt{GET /api/control} đi kèm tham số hành động (ví dụ \texttt{action=pump\_toggle}) tiềm ẩn các rủi ro bảo mật và vận hành:
+    \item Việc phiên bản thực nghiệm ban đầu sử dụng request \texttt{GET /api/control} đi kèm tham số hành động dạng đảo trạng thái (như \texttt{action=pump\_toggle}) tiềm ẩn các rủi ro vận hành và an ninh mạng nghiêm trọng:
     \begin{enumerate}
+        \item \textbf{Mất tính toàn vẹn trạng thái khi gửi trùng gói (\textit{Non-Idempotency \& Packet Duplication}):} Nếu sóng Wi-Fi chập chờn khiến trình duyệt tự động gửi lại request hoặc người dùng nhấp đúp chuột, lệnh đảo trạng thái \texttt{pump\_toggle} sẽ bị thực thi hai lần liên tiếp -- biến hành động mong muốn ''Bật bơm'' thành ''Bật rồi Tắt ngay lập tức''. Để loại bỏ rủi ro này, firmware FloodGuard đã chuẩn hóa bổ sung cú pháp truyền trạng thái đích tường minh (\texttt{pump=1} hoặc \texttt{pump=0}, \texttt{mode=auto} hoặc \texttt{mode=manual}). Cú pháp này bảo đảm tính Idempotent: dù request có bị gửi lặp lại nhiều lần, trạng thái cuối cùng của thiết bị vẫn hoàn toàn chính xác.
         \item \textbf{Cơ chế nạp trước liên kết của trình duyệt (\textit{Browser Link Prefetching}):} Một số trình duyệt web hiện đại có tính năng tự động gửi ngầm các request GET đối với các đường dẫn xuất hiện trong trang để tăng tốc độ lướt web. Điều này có thể vô tình kích hoạt bật/tắt máy bơm mà người dùng không hề hay biết.
         \item \textbf{Bộ đệm trình duyệt (\textit{HTTP Caching}):} Trình duyệt hoặc proxy mạng có thể lưu lại kết quả của lệnh GET trước đó và trả về kết quả đệm thay vì gửi lệnh thực sự tới ESP32, dẫn tới sai lệch trạng thái điều khiển.
         \item \textbf{Lịch sử duyệt web (\textit{Browser History \& Bookmarking}):} Người dùng vô tình bookmark hoặc mở lại lịch sử URL có thể gửi lại lệnh bật bơm ngoài ý muốn.
@@ -142,21 +144,21 @@ Mối quan hệ tương tác thời gian giữa Người vận hành (trình duy
     \item \textbf{Chỉ báo mất kết nối mạng (Offline Indicator):} Nếu sau 3 chu kỳ gửi tin liên tiếp ($3\,\text{s}$) mà trình duyệt không nhận được tín hiệu phản hồi HTTP từ trạm ESP32, giao diện Web tự động làm mờ toàn bộ màn hình và hiển thị một thanh thông báo cảnh báo màu đỏ nổi bật: \textit{''Mất kết nối với trạm FloodGuard! Vui lòng kiểm tra lại kết nối Wi-Fi.''}
 \end{itemize}
 
-\section{Kỹ Thuật Lưu Trữ Web Dashboard Trong Flash (PROGMEM)}
+\section{Kỹ Thuật Lưu Trữ Web Dashboard Trong Flash \& Tối Ưu Bộ Nhớ}
 
-Để phục vụ giao diện người dùng mà không cần trang bị thêm thẻ nhớ microSD cồng kềnh, toàn bộ mã nguồn của trang web (gồm tài liệu HTML, định dạng CSS phong cách Dark Glassmorphism và mã logic JavaScript) được tích hợp trong một chuỗi ký tự duy nhất:
+Để phục vụ giao diện người dùng mà không cần trang bị thêm thẻ nhớ microSD cồng kềnh, toàn bộ mã nguồn của trang web (gồm tài liệu HTML, định dạng CSS phong cách Dark Glassmorphism và mã logic JavaScript) được tích hợp trong một chuỗi hằng số duy nhất:
 \begin{lstlisting}[language=C++]
 const char HTML_DASHBOARD[] PROGMEM = R"rawliteral(
 <!DOCTYPE html>
 <html lang="vi">
-... [Ma nguon HTML / CSS / JS] ...
+... [Ma nguon HTML / CSS / JS ~14.2 KB] ...
 </html>
 )rawliteral";
 \end{lstlisting}
 \begin{itemize}
-    \item \textbf{Cơ chế hoạt động của từ khóa \texttt{PROGMEM}:} Chỉ thị trình biên dịch GCC lưu chuỗi vào phân vùng bộ nhớ Flash (dung lượng $4\,\text{MB}$) của ESP32 thay vì nạp vào bộ nhớ truy cập ngẫu nhiên SRAM ($520\,\text{KB}$).
-    \item \textbf{Kích thước tệp nhúng:} Toàn bộ chuỗi giao diện chiếm dung lượng $\approx 14.2\,\text{KB}$ trong bộ nhớ Flash.
-    \item \textbf{Hiệu quả tiết kiệm tài nguyên:} Khi trạm hoạt động bình thường, trang web không chiếm dụng một byte dung lượng RAM nào. Chỉ khi có thiết bị kết nối gửi yêu cầu \texttt{GET /}, vi điều khiển mới cấp phát một bộ đệm tạm thời để truyền dữ liệu qua ngăn xếp mạng rồi lập tức giải phóng bộ nhớ.
+    \item \textbf{Cơ chế bộ nhớ Flash trên ESP32:} Khác với vi điều khiển AVR 8-bit (như Arduino Uno) đòi hỏi từ khóa \texttt{PROGMEM} và các hàm truy xuất đặc biệt, ESP32 sở hữu khối quản lý bộ nhớ phần cứng (MMU) có khả năng ánh xạ trực tiếp phân vùng Flash vào không gian địa chỉ bộ nhớ tuyến tính của CPU (vùng DROM / IROM). Khai báo \texttt{const char[]} giúp trình biên dịch đặt toàn bộ chuỗi $14.2\,\text{KB}$ vào phân vùng \texttt{.rodata} trong bộ nhớ Flash mà không tiêu tốn RAM khi khởi động.
+    \item \textbf{Truyền phát trực tiếp bằng \texttt{server.send\_P()}:} Trong hàm phục vụ yêu cầu gốc \texttt{handleRoot()}, vi điều khiển gọi \texttt{server.send\_P(200, "text/html", HTML\_DASHBOARD)}. Phương thức này đọc và truyền thẳng các đoạn dữ liệu từ Flash vào bộ đệm socket mạng TCP/IP của lwIP mà không cần cấp phát thêm một chuỗi đệm tạm thời trên heap RAM.
+    \item \textbf{Triệt tiêu hiện tượng phân mảnh RAM (Heap Fragmentation):} Nhờ cơ chế \textit{zero-copy streaming} của \texttt{send\_P()}, hệ thống tránh hoàn toàn việc cấp phát và giải phóng liên tục $14.2\,\text{KB}$ bộ nhớ động mỗi khi có client tải trang, duy trì tính ổn định tuyệt đối cho vi điều khiển trong quá trình vận hành dài hạn.
 \end{itemize}
 
 \section{An Ninh Bảo Mật \& Hiệu Năng Truyền Thông}

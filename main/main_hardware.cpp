@@ -35,8 +35,9 @@ const int THRESHOLD_DANGER_ENTER = 41;
 const int THRESHOLD_CRIT_ENTER   = 71;
 
 // Dải trễ (Hysteresis) FSM - Thoát trạng thái (khi nước rút)
-const int THRESHOLD_DANGER_EXIT  = 40;
-const int THRESHOLD_WARN_EXIT    = 20;
+const int THRESHOLD_CRIT_EXIT    = 68;
+const int THRESHOLD_DANGER_EXIT  = 38;
+const int THRESHOLD_WARN_EXIT    = 18;
 
 // ==========================================
 // CẤP ĐỘ CẢM BIẾN MƯA (ESP32 ADC 12-bit: 0 - 4095)
@@ -180,14 +181,13 @@ void updateSensors() {
 // THUẬT TOÁN FSM VÀ HYSTERESIS
 // ==========================================
 void evaluateSystemStateAuto() {
-  if (!isAutoMode) return;
-
   // Xác định các cấp độ mưa
   bool isLightRain = isRaining;                         // ADC < 2800 hoặc DO == LOW (Mưa nhỏ)
   bool isHeavyRain = (rainRawADC < RAIN_ADC_HEAVY);     // ADC < 1800 (Mưa to / nhúng 1 phần)
   bool isSubmerged = (rainRawADC < RAIN_ADC_SUBMERGED); // ADC < 1100 (Nhúng ngập hết vào nước / mưa xối xả)
 
   // --- Chuyển trạng thái FSM (kết hợp cả Mực nước và Cảm biến mưa) ---
+  // Luôn đánh giá để cập nhật hiển thị LED, Còi và giám sát an toàn Failsafe
   switch (sysState) {
 
     case STATE_NORMAL:
@@ -219,33 +219,47 @@ void evaluateSystemStateAuto() {
       break;
 
     case STATE_CRITICAL:
-      if (waterPercent < THRESHOLD_CRIT_ENTER && !isSubmerged) {
-        sysState = STATE_DANGER;   // Rút khỏi mức ngập nghiêm trọng
+      if (waterPercent < THRESHOLD_CRIT_EXIT && !isSubmerged) {
+        sysState = STATE_DANGER;   // Rút khỏi mức ngập nghiêm trọng (Dải trễ 68%)
       }
       break;
   }
 
-  // --- Điều khiển Bơm và Van theo trạng thái FSM (Hysteresis) ---
-  switch (sysState) {
-    case STATE_NORMAL:
-      pumpState    = false;
-      valvePercent = 0;    // Van đóng hoàn toàn 0°
-      break;
+  // --- Điều khiển Bơm và Van theo trạng thái FSM (chỉ khi ở AUTO) ---
+  if (isAutoMode) {
+    switch (sysState) {
+      case STATE_NORMAL:
+      case STATE_WARNING:
+        pumpState    = false;
+        valvePercent = 0;    // Van đóng hoàn toàn 0°
+        break;
 
-    case STATE_WARNING:
-      pumpState    = false;
-      valvePercent = 0;    // Van đóng hoàn toàn 0°
-      break;
+      case STATE_DANGER:
+        pumpState    = (waterPercent >= 20); // Chống chạy khô nếu nước < 20%
+        valvePercent = 50;   // Mở van thoát lũ 50% (90°)
+        break;
 
-    case STATE_DANGER:
-      pumpState    = true; // BẬT máy bơm 5V
-      valvePercent = 50;   // Mở van thoát lũ 50% (90°)
-      break;
-
-    case STATE_CRITICAL:
-      pumpState    = true; // BẬT máy bơm 5V
-      valvePercent = 100;  // Mở van thoát lũ tối đa 100% (180°)
-      break;
+      case STATE_CRITICAL:
+        pumpState    = true; // BẬT máy bơm 5V
+        valvePercent = 100;  // Mở van thoát lũ tối đa 100% (180°)
+        break;
+    }
+  } else {
+    // Chế độ MANUAL: Giám sát an toàn tối cao (Safety Priority Override)
+    static unsigned long criticalStart = 0;
+    if (sysState == STATE_CRITICAL) {
+      if (criticalStart == 0) criticalStart = millis();
+      else if (millis() - criticalStart >= 10000) {
+        // Mực nước chạm ngưỡng nguy cấp CRITICAL quá 10s ở MANUAL: Cưỡng chế xả lũ cứu trạm
+        isAutoMode   = true;
+        pumpState    = true;
+        valvePercent = 100;
+        Serial.println("\n>>> [SAFETY OVERRIDE] Muc nuoc CRITICAL > 10s o MANUAL! Cuong che bat bom & mo van 100% ve AUTO!\n");
+        criticalStart = 0;
+      }
+    } else {
+      criticalStart = 0;
+    }
   }
 
   // [DEBUG] In trạng thái FSM ra Serial khi có thay đổi
@@ -521,7 +535,7 @@ const char HTML_DASHBOARD[] PROGMEM = R"rawliteral(
 // CÁC HÀM XỬ LÝ REQUEST CỦA WEB SERVER
 // ==========================================
 void handleRoot() {
-  server.send(200, "text/html", HTML_DASHBOARD);
+  server.send_P(200, "text/html", HTML_DASHBOARD);
 }
 
 void handleStatusApi() {
@@ -556,6 +570,23 @@ void handleStatusApi() {
 }
 
 void handleControlApi() {
+  // 1. Tiếp nhận tham số điều khiển tường minh (Explicit State Parameters)
+  if (server.hasArg("mode")) {
+    String m = server.arg("mode");
+    if (m == "auto") isAutoMode = true;
+    else if (m == "manual") isAutoMode = false;
+  }
+  if (server.hasArg("pump") && !isAutoMode) {
+    String p = server.arg("pump");
+    if (p == "1" || p == "on") pumpState = true;
+    else if (p == "0" || p == "off") pumpState = false;
+    else if (p == "toggle") pumpState = !pumpState;
+  }
+  if (server.hasArg("valve") && !isAutoMode) {
+    valvePercent = constrain(server.arg("valve").toInt(), 0, 100);
+  }
+
+  // 2. Tiếp nhận tham số hành động (Web Dashboard UI Buttons)
   if (server.hasArg("action")) {
     String act = server.arg("action");
     if (act == "mode_toggle") {
@@ -569,8 +600,8 @@ void handleControlApi() {
     } else if (act == "valve_100" && !isAutoMode) {
       valvePercent = 100;
     }
-    applyOutputs();
   }
+  applyOutputs();
   server.send(200, "text/plain", "OK");
 }
 

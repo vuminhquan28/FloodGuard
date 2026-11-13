@@ -212,8 +212,8 @@ Giao diện Dark Glassmorphism sẽ hiển thị trực quan toàn bộ trạng 
     \end{itemize}
     \item \textbf{Can thiệp đóng mở van \& máy bơm:}
     \begin{itemize}
-        \item Nhấn nút \textbf{BẬT / TẮT MÁY BƠM}: ESP32 nhận lệnh API \texttt{/api/control?pump=1} (hoặc \texttt{0}) và kích đóng rơ-le ngay lập tức.
-        \item Thao tác van xả lũ: Nhấn các nút chọn góc van (\textbf{0\%}, \textbf{50\%}, hoặc \textbf{100\%}), ESP32 sẽ điều chế xung PWM xoay góc Servo tương ứng ($0^\circ, 90^\circ, 180^\circ$).
+        \item Nhấn nút \textbf{BẬT / TẮT MÁY BƠM}: ESP32 nhận lệnh API \texttt{/api/control?pump=1} (hoặc \texttt{pump=0}, hoặc \texttt{action=pump\_toggle}) và kích đóng rơ-le ngay lập tức.
+        \item Thao tác van xả lũ: Nhấn các nút chọn góc van (\textbf{0\%}, \textbf{50\%}, hoặc \textbf{100\%}), ESP32 nhận lệnh API (\texttt{valve=0}, \texttt{valve=50}, hoặc \texttt{valve=100}) và điều chế xung PWM xoay góc Servo tương ứng ($0^\circ, 90^\circ, 180^\circ$).
     \end{itemize}
 \end{itemize}
 
@@ -224,37 +224,39 @@ Giao diện Dark Glassmorphism sẽ hiển thị trực quan toàn bộ trạng 
 
 \begin{table}[H]
 \centering
-\caption{Ma trận kịch bản kiểm thử nghiệm thu chức năng hệ thống FloodGuard}
+\caption{Ma trận kịch bản kiểm thử nghiệm thu chức năng hệ thống FloodGuard (Thực hiện 10 lần lặp trên cả Wokwi và mô hình Mica thực tế)}
 \label{tab:test_scenarios}
 \small
-\renewcommand{\arraystretch}{1.15}
-\begin{tabularx}{\textwidth}{|c|>{\raggedright\arraybackslash}p{2.6cm}|>{\raggedright\arraybackslash}X|>{\raggedright\arraybackslash}X|c|}
+\renewcommand{\arraystretch}{1.2}
+\begin{tabularx}{\textwidth}{|c|>{\raggedright\arraybackslash}p{2.3cm}|>{\raggedright\arraybackslash}X|>{\raggedright\arraybackslash}X|>{\centering\arraybackslash}p{1.4cm}|c|}
 \hline
-\textbf{STT} & \textbf{Kịch bản kiểm thử} & \textbf{Điều kiện kích hoạt đầu vào} & \textbf{Phản hồi kỳ vọng của hệ thống} & \textbf{Đánh giá} \\ \hline
+\textbf{STT} & \textbf{Kịch bản kiểm thử} & \textbf{Điều kiện kích hoạt đầu vào} & \textbf{Phản hồi kỳ vọng của hệ thống} & \textbf{Môi trường} & \textbf{Đánh giá} \\ \hline
 1 & Mực nước An toàn (\texttt{NORMAL}) 
-  & Mực nước $< 20\%$ (Mica: $d > 14.0\,\text{cm}$; Wokwi: $d > 41\,\text{cm}$), không mưa. 
-  & LED Xanh sáng; Còi tắt; Bơm tắt; Cửa van đóng $0^\circ$; Web hiển thị an toàn. 
-  & ĐẠT \\ \hline
+  & Mực nước $< 18\%$ (Mica: $d > 14.2\,\text{cm}$; Wokwi: $d > 41.9\,\text{cm}$), không mưa ($\text{ADC} \ge 3200$). 
+  & LED Xanh sáng; Còi tắt; Bơm tắt; Cửa van đóng $0^\circ$; Web hiển thị NORMAL xanh lá. 
+  & Wokwi, Mica & ĐẠT \\ \hline
 2 & Cảnh báo Dâng nước (\texttt{WARNING}) 
-  & Mực nước $21\% - 40\%$ (Mica: $12.0 - 13.9\,\text{cm}$; Wokwi: $32 - 41\,\text{cm}$) hoặc mưa nhỏ. 
-  & LED Vàng sáng; Còi bíp ngắt quãng thưa; Bơm tắt; Van đóng $0^\circ$; Web đổi màu vàng. 
-  & ĐẠT \\ \hline
+  & Mực nước $21\% - 40\%$ (Mica: $12.0 - 13.9\,\text{cm}$; Wokwi: $32.0 - 40.5\,\text{cm}$) hoặc mưa nhỏ ($1800 \le \text{ADC} < 3200$). 
+  & LED Vàng sáng; Còi bíp ngắt quãng thưa ($1.5\,\text{s}$); Bơm tắt; Van đóng $0^\circ$; Web đổi màu vàng. 
+  & Wokwi, Mica & ĐẠT \\ \hline
 3 & Cảnh báo Nguy cơ (\texttt{DANGER}) 
-  & Mực nước $41\% - 70\%$ (Mica: $9.0 - 11.9\,\text{cm}$; Wokwi: $18.5 - 32\,\text{cm}$) kèm mưa lớn. 
-  & LED Đỏ sáng; Còi bíp dồn dập; Bơm tự BẬT; Van xả mở $90^\circ$ ($50\%$); Web báo động đỏ. 
-  & ĐẠT \\ \hline
+  & Mực nước $41\% - 70\%$ (Mica: $9.0 - 11.9\,\text{cm}$; Wokwi: $18.5 - 31.5\,\text{cm}$) hoặc mưa lớn ($\text{ADC} < 1800$). 
+  & LED Đỏ sáng; Còi bíp dồn dập ($400\,\text{ms}$); Bơm tự BẬT (kèm khóa chống cháy cạn $P \ge 20\%$); Van xả mở $90^\circ$ ($50\%$); Web báo động đỏ. 
+  & Wokwi, Mica & ĐẠT \\ \hline
 4 & Báo động Nguy cấp (\texttt{CRITICAL}) 
-  & Mực nước $> 70\%$ (Mica: $d \le 8.9\,\text{cm}$, đầy tại $6.0\,\text{cm}$; Wokwi: $\le 18.5\,\text{cm}$). 
+  & Mực nước $\ge 71\%$ (Mica: $d \le 8.9\,\text{cm}$; Wokwi: $d \le 18.0\,\text{cm}$), hoặc ngập cảm biến mưa ($\text{ADC} < 1100$), hoặc tràn mép ($d < d_{\text{full}}$). 
   & LED Đỏ nháy; Còi hú liên tục không ngắt; Bơm chạy toàn tải; Van mở tối đa $180^\circ$ ($100\%$). 
-  & ĐẠT \\ \hline
-5 & Kiểm thử Vùng trễ (Hysteresis) 
-  & Mực nước dao động dập dềnh quanh ngưỡng $40\%$ ($39\% \leftrightarrow 41\%$). 
-  & Trạng thái FSM giữ nguyên, không đóng cắt rơ-le liên tục, loại bỏ rung giật relay. 
-  & ĐẠT \\ \hline
-6 & Kiểm thử Watchdog (Failsafe) 
-  & Người dùng bật \texttt{MANUAL}, sau đó ngắt kết nối Wi-Fi quá $30\,\text{s}$. 
-  & Hệ thống tự động thu hồi quyền, chuyển hoàn nguyên về \texttt{AUTO} để bảo vệ trạm. 
-  & ĐẠT \\ \hline
+  & Wokwi, Mica & ĐẠT \\ \hline
+5 & Kiểm thử Vùng trễ (Hysteresis \& Debounce) 
+  & Mực nước dao động dập dềnh quanh biên ngưỡng $38\% \leftrightarrow 41\%$. 
+  & Dải trễ $3\%$ kết hợp Debounce $1.0\,\text{s}$ và thời gian bơm chạy tối thiểu $5.0\,\text{s}$ giữ FSM ổn định; rơ-le chỉ đóng $1$ lần dứt khoát, loại bỏ rung giật relay. 
+  & Wokwi, Mica & ĐẠT \\ \hline
+6 & Kiểm thử Failsafe \& Safety Override 
+  & (a) Ở \texttt{MANUAL}, ngắt Wi-Fi quá $30\,\text{s}$.\newline
+    (b) Ở \texttt{MANUAL}, nước đạt $\ge 71\%$ quá $10\,\text{s}$ không xử lý. 
+  & (a) Tự động hoàn nguyên về \texttt{AUTO}, hiện thông báo Failsafe trên Web.\newline
+    (b) Safety Override cưỡng chế bật bơm và mở van $100\%$ chống tràn. 
+  & Wokwi, Mica & ĐẠT \\ \hline
 \end{tabularx}
 \end{table}
 

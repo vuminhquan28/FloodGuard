@@ -30,6 +30,15 @@
 const float DISTANCE_EMPTY = 50.0;
 const float DISTANCE_FULL  = 5.0;
 
+// Dải trễ (Hysteresis) FSM
+const int THRESHOLD_WARN_ENTER   = 21;
+const int THRESHOLD_DANGER_ENTER = 41;
+const int THRESHOLD_CRIT_ENTER   = 71;
+
+const int THRESHOLD_CRIT_EXIT    = 68;
+const int THRESHOLD_DANGER_EXIT  = 38;
+const int THRESHOLD_WARN_EXIT    = 18;
+
 // Ngưỡng cảm biến mưa (Chiết áp / ADC 12-bit: 0 - 4095)
 const int RAIN_ADC_LIGHT      = 2800; // Mưa nhỏ / ẩm ướt
 const int RAIN_ADC_HEAVY      = 1800; // Mưa to / vặn chiết áp thấp
@@ -110,67 +119,80 @@ void updateSensors() {
 // THUẬT TOÁN FSM & HYSTERESIS (UC03, UC04, UC05)
 // ==========================================
 void evaluateSystemStateAuto() {
-  if (!isAutoMode) return;
-
   bool isLightRain = isRaining;
   bool isHeavyRain = (rainRawADC < RAIN_ADC_HEAVY);
   bool isSubmerged = (rainRawADC < RAIN_ADC_SUBMERGED);
 
   // Logic Hysteresis kết hợp mực nước và cấp độ mưa:
+  // Luôn đánh giá để đồng bộ LED/Còi ở mọi chế độ
   switch (sysState) {
     case STATE_NORMAL:
-      if (waterPercent >= 71 || isSubmerged) {
+      if (waterPercent >= THRESHOLD_CRIT_ENTER || isSubmerged) {
         sysState = STATE_CRITICAL;
-      } else if (waterPercent >= 41 || isHeavyRain || (isLightRain && waterPercent >= 21)) {
+      } else if (waterPercent >= THRESHOLD_DANGER_ENTER || isHeavyRain || (isLightRain && waterPercent >= THRESHOLD_WARN_ENTER)) {
         sysState = STATE_DANGER;
-      } else if (waterPercent >= 21 || isLightRain) {
+      } else if (waterPercent >= THRESHOLD_WARN_ENTER || isLightRain) {
         sysState = STATE_WARNING;
       }
       break;
 
     case STATE_WARNING:
-      if (waterPercent >= 71 || isSubmerged) {
+      if (waterPercent >= THRESHOLD_CRIT_ENTER || isSubmerged) {
         sysState = STATE_CRITICAL;
-      } else if (waterPercent >= 41 || isHeavyRain || (isLightRain && waterPercent >= 30)) {
+      } else if (waterPercent >= THRESHOLD_DANGER_ENTER || isHeavyRain || (isLightRain && waterPercent >= 30)) {
         sysState = STATE_DANGER;
-      } else if (waterPercent < 20 && !isLightRain) {
+      } else if (waterPercent < THRESHOLD_WARN_EXIT && !isLightRain) {
         sysState = STATE_NORMAL;
       }
       break;
 
     case STATE_DANGER:
-      if (waterPercent >= 71 || isSubmerged || (isHeavyRain && waterPercent >= 30)) {
+      if (waterPercent >= THRESHOLD_CRIT_ENTER || isSubmerged || (isHeavyRain && waterPercent >= 30)) {
         sysState = STATE_CRITICAL;
-      } else if (waterPercent < 40 && !isHeavyRain) {
+      } else if (waterPercent < THRESHOLD_DANGER_EXIT && !isHeavyRain) {
         sysState = STATE_WARNING;
       }
       break;
 
     case STATE_CRITICAL:
-      if (waterPercent < 71 && !isSubmerged) {
+      if (waterPercent < THRESHOLD_CRIT_EXIT && !isSubmerged) {
         sysState = STATE_DANGER;
       }
       break;
   }
 
-  // Tự động điều khiển Bơm và Van theo trạng thái FSM (AUTO)
-  switch (sysState) {
-    case STATE_NORMAL:
-      pumpState = false;
-      valvePercent = 0;
-      break;
-    case STATE_WARNING:
-      pumpState = false;
-      valvePercent = 0;
-      break;
-    case STATE_DANGER:
-      pumpState = true;
-      valvePercent = 50;
-      break;
-    case STATE_CRITICAL:
-      pumpState = true;
-      valvePercent = 100;
-      break;
+  // Tự động điều khiển Bơm và Van theo trạng thái FSM (khi ở AUTO)
+  if (isAutoMode) {
+    switch (sysState) {
+      case STATE_NORMAL:
+      case STATE_WARNING:
+        pumpState = false;
+        valvePercent = 0;
+        break;
+      case STATE_DANGER:
+        pumpState = (waterPercent >= 20); // Chống chạy khô nếu nước < 20%
+        valvePercent = 50;
+        break;
+      case STATE_CRITICAL:
+        pumpState = true;
+        valvePercent = 100;
+        break;
+    }
+  } else {
+    // Chế độ MANUAL: Giám sát an toàn khẩn cấp (Safety Priority Override)
+    static unsigned long criticalStart = 0;
+    if (sysState == STATE_CRITICAL) {
+      if (criticalStart == 0) criticalStart = millis();
+      else if (millis() - criticalStart >= 10000) {
+        isAutoMode   = true;
+        pumpState    = true;
+        valvePercent = 100;
+        Serial.println("\n>>> [SAFETY OVERRIDE] Muc nuoc CRITICAL > 10s o MANUAL! Cuong che bat bom & mo van 100% ve AUTO!\n");
+        criticalStart = 0;
+      }
+    } else {
+      criticalStart = 0;
+    }
   }
 
   // Báo thay đổi trạng thái tức thời ra Serial
@@ -425,7 +447,7 @@ const char HTML_DASHBOARD[] PROGMEM = R"rawliteral(
 )rawliteral";
 
 void handleRoot() {
-  server.send(200, "text/html", HTML_DASHBOARD);
+  server.send_P(200, "text/html", HTML_DASHBOARD);
 }
 
 void handleStatusApi() {
@@ -460,6 +482,23 @@ void handleStatusApi() {
 }
 
 void handleControlApi() {
+  // 1. Tiếp nhận tham số điều khiển tường minh (Explicit State Parameters)
+  if (server.hasArg("mode")) {
+    String m = server.arg("mode");
+    if (m == "auto") isAutoMode = true;
+    else if (m == "manual") isAutoMode = false;
+  }
+  if (server.hasArg("pump") && !isAutoMode) {
+    String p = server.arg("pump");
+    if (p == "1" || p == "on") pumpState = true;
+    else if (p == "0" || p == "off") pumpState = false;
+    else if (p == "toggle") pumpState = !pumpState;
+  }
+  if (server.hasArg("valve") && !isAutoMode) {
+    valvePercent = constrain(server.arg("valve").toInt(), 0, 100);
+  }
+
+  // 2. Tiếp nhận tham số hành động (Web Dashboard UI Buttons)
   if (server.hasArg("action")) {
     String act = server.arg("action");
     if (act == "mode_toggle") {

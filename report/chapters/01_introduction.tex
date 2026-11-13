@@ -21,13 +21,13 @@ Trong khuôn khổ học phần \textit{Lập trình nhúng và thời gian th�
 \label{sec:quantitative_goals}
 Hệ thống \textbf{FloodGuard} hướng tới các chỉ tiêu kỹ thuật định lượng cụ thể:
 \begin{enumerate}
-    \item \textbf{Độ chính xác đo lường mực nước:} Sai số đo khoảng cách qua cảm biến siêu âm $\le \pm 1\,\text{cm}$ trong dải đo làm việc thiết kế ($5 - 50\,\text{cm}$ trên cấu hình mô phỏng/bể chuẩn và $6 - 16\,\text{cm}$ trên mô hình demo mica thu nhỏ); phân giải mức nước từ $0\%$ đến $100\%$.
-    \item \textbf{Độ phân giải giám sát lượng mưa:} Thu nhận tín hiệu tương tự (ADC) 12-bit phân giải $\approx 0.8\,\text{mV}$ trên dải $0 - 3.3\,\text{V}$, phân loại 3 mức mưa (mưa nhỏ, mưa to, ngập cảm biến).
-    \item \textbf{Tính thời gian thực của thuật toán điều khiển (Worst-Case Reaction Time - WCRT):} Thời gian phản ứng từ thời điểm mực nước vượt ngưỡng nguy hiểm đến khi chân GPIO xuất tín hiệu kích hoạt Relay máy bơm không vượt quá $250\,\text{ms}$.
-    \item \textbf{Chống rung giật cơ cấu chấp hành (Hysteresis Guard):} Áp dụng dải trễ $5\%$ mực nước và dải trễ trạng thái, đảm bảo không xảy ra hiện tượng đóng/ngắt Relay liên tục (chattering) khi sóng nước dập dềnh quanh biên ngưỡng.
-    \item \textbf{Cảnh báo trực quan \& âm thanh đa cấp độ:} Cụm 3 đèn LED phản ánh trực tiếp 4 trạng thái vận hành; còi báo động phát xung âm thanh theo cơ chế bất đồng bộ (\textit{Non-blocking}) với chu kỳ nhịp thay đổi từ $1000\,\text{ms}$ (cảnh báo chậm) đến $200\,\text{ms}$ (báo động dồn dập).
-    \item \textbf{Hiệu năng giao tiếp mạng Web Dashboard:} Chu kỳ cập nhật dữ liệu telemetry thời gian thực $1000\,\text{ms}$ ($1\,\text{s}$), tỷ lệ phục vụ thành công các yêu cầu API đạt $\ge 99.5\%$ trên mạng Wi-Fi cục bộ.
-    \item \textbf{Cơ chế bảo vệ an toàn tự trị (Failsafe Timeout):} Khi ở chế độ thủ công (\texttt{MANUAL}), nếu mất kết nối điều khiển mạng quá $30\,\text{s}$, trạm tự động thu hồi quyền thủ công và chuyển về chế độ tự động (\texttt{AUTO}) để bảo vệ công trình chống tràn bể.
+    \item \textbf{Độ chính xác đo lường mực nước:} Sai số tuyệt đối đo khoảng cách qua cảm biến siêu âm $\le \pm 1.0\,\text{cm}$ trong dải đo làm việc thiết kế ($5 - 50\,\text{cm}$ trên cấu hình mô phỏng/bể chuẩn và $6 - 16\,\text{cm}$ trên mô hình demo mica thu nhỏ); độ phân giải hiển thị mức nước $1\%$ ($0\% - 100\%$).
+    \item \textbf{Độ phân giải giám sát lượng mưa:} Thu nhận tín hiệu tương tự (ADC) 12-bit phân giải $\approx 0.8\,\text{mV}$ trên dải $0 - 3.3\,\text{V}$, phân loại 4 vùng trạng thái thời tiết qua 3 mốc ngưỡng ($3200 / 1800 / 1100$): Khô ráo, Mưa nhỏ, Mưa to và Ngập cảm biến.
+    \item \textbf{Tính thời gian thực của thuật toán điều khiển (Worst-Case Reaction Time - WCRT):} Thời gian phản ứng tức thời từ lúc mực nước vượt ngưỡng nguy cấp đến khi chân GPIO xuất tín hiệu đóng Relay máy bơm khẩn cấp ($T_{\text{WCRT\_urgent}}$) không vượt quá $250\,\text{ms}$ (tính toán danh định đạt $203\,\text{ms}$ ở chu kỳ trích mẫu $T_{\text{sample}} = 150\,\text{ms}$). Với các chuyển trạng thái bậc thang thông thường có áp dụng bộ lọc chống rung thời gian $T_{\text{debounce}} = 1.0\,\text{s}$, thời gian ổn định là $T_{\text{stable}} \approx 1.2\,\text{s}$.
+    \item \textbf{Chống rung giật cơ cấu chấp hành (Hysteresis \& Debounce Guard):} Áp dụng dải trễ Hysteresis biên độ $3\%$ mực nước ($41\%/38\%$, $71\%/68\%$, $21\%/18\%$) kết hợp bộ lọc chống rung thời gian Debounce $1.0\,\text{s}$ và thời gian chạy tối thiểu của máy bơm $5.0\,\text{s}$ (Min-run Time), đảm bảo triệt tiêu hoàn toàn hiện tượng đóng/ngắt Relay liên tục (chattering) do sóng nước dập dềnh quanh biên ngưỡng.
+    \item \textbf{Cảnh báo trực quan \& âm thanh đa cấp độ:} Cụm 3 đèn LED phản ánh trực tiếp 4 trạng thái vận hành; còi Active Buzzer $5\,\text{V}$ phát xung âm thanh theo cơ chế phi chặn (\textit{Non-blocking}) qua hàm \texttt{millis()} ở tần số cộng hưởng nội $\approx 2.3\,\text{kHz}$ với 4 nhịp cảnh báo: Tắt (NORMAL) $\to$ Bíp thưa chu kỳ $1500\,\text{ms}$ (WARNING) $\to$ Bíp dồn dập chu kỳ $400\,\text{ms}$ (DANGER) $\to$ Hú liên tục (CRITICAL).
+    \item \textbf{Hiệu năng giao tiếp mạng Web Dashboard:} Chu kỳ cập nhật dữ liệu telemetry thời gian thực $1000\,\text{ms}$ ($1\,\text{s}$), độ trễ phản hồi API cục bộ $8 - 18\,\text{ms}$, tỷ lệ phục vụ thành công các yêu cầu API đạt $\ge 99.5\%$ trên mạng Wi-Fi cục bộ ở cự ly $10\,\text{m}$.
+    \item \textbf{Cơ chế bảo vệ an toàn tự trị (Failsafe Timeout):} Khi ở chế độ thủ công (\texttt{MANUAL}), nếu mất kết nối điều khiển mạng quá $30\,\text{s}$, trạm tự động thu hồi quyền thủ công và chuyển về chế độ tự động (\texttt{AUTO}) để bảo vệ công trình chống tràn bể; đồng thời kích hoạt quy tắc ghi đè an toàn tối cao (\textit{Safety Override}) nếu nước đạt mức CRITICAL quá $10\,\text{s}$.
 \end{enumerate}
 
 \section{Mô Hình Hóa Use Case Hệ Thống Theo UML}
@@ -38,7 +38,7 @@ Mô hình hóa Use Case cho hệ thống FloodGuard được phân định rõ r
     \item \textbf{Ranh giới hệ thống (\textit{System Boundary}):} Mang tên \textbf{Hệ Thống Trạm FloodGuard} (\textit{FloodGuard System}). Ranh giới bao trọn toàn bộ khối phần mềm nhúng thực thi trên vi điều khiển ESP32 bao gồm: tác vụ thu thập cảm biến, thuật toán FSM, tác vụ tạo xung cảnh báo, máy chủ HTTP Web Server và cơ chế giám sát an toàn Failsafe. Các thành phần logic nội bộ (như bộ điều phối FSM hay Web Server) nằm hoàn toàn trong ranh giới và không đóng vai trò là tác nhân.
     \item \textbf{Tác nhân chính (\textit{Primary Actors}):}
     \begin{enumerate}
-        \item \textbf{Bộ Định Thời Timer / Watchdog (\textit{Internal Timer}):} Đóng vai trò là nguồn kích hoạt sự kiện thời gian thực định kỳ từ bên ngoài luồng logic chính, bao gồm bộ định thời chu kỳ đọc cảm biến $200\,\text{ms}$, bộ định thời chu kỳ thực thi FSM, và bộ đếm thời gian giám sát mất kết nối Failsafe ($30\,\text{s}$).
+        \item \textbf{Bộ Định Thời Timer / Watchdog (\textit{Internal Timer}):} Đóng vai trò là nguồn kích hoạt sự kiện thời gian thực định kỳ từ bên ngoài luồng logic chính, bao gồm bộ định thời chu kỳ đọc cảm biến $150\,\text{ms}$, bộ định thời chu kỳ thực thi FSM, và bộ đếm thời gian giám sát mất kết nối Failsafe ($30\,\text{s}$).
         \item \textbf{Người Vận Hành (\textit{Human Operator}):} Nhân sự giám sát và vận hành tương tác trực tiếp với trạm từ thiết bị đầu cuối (điện thoại, máy tính) thông qua trình duyệt Web.
     \end{enumerate}
     \item \textbf{Tác nhân phụ / Thiết bị ngoại vi (\textit{Secondary Actors / Devices}):}
@@ -84,10 +84,10 @@ Sơ đồ Use Case tổng thể được tổ chức với các tác nhân kích
 \hline
 \endlastfoot
 
-\texttt{UC01} & Đọc \& tiền xử lý dữ liệu cảm biến & Timer 200ms; Cảm biến HC-SR04, FC-37 & \textbf{Chính:} Kích Trig $10\,\mu\text{s}$, đo xung Echo, lọc trung vị 3 mẫu tính \% nước; đọc ADC mưa.\\
- & & & \textbf{Ngoại lệ:} Echo timeout ($>30\,\text{ms}$) hoặc ngoài dải đo làm việc ($d_{\text{full}} - d_{\text{empty}}$): giữ mẫu cũ tối đa 3 lần. Quá 3 lần kích hoạt cờ lỗi cảm biến (\texttt{SENSOR\_FAULT}). \\ \hline
-\texttt{UC02} & Đánh giá trạng thái FSM \& Dải trễ & Timer chu kỳ FSM & \textbf{Chính:} Đối chiếu \% nước với các ngưỡng $40\%, 70\%, 80\%$ để phân 4 cấp (NORMAL, WARNING, DANGER, CRITICAL); áp dụng dải trễ $5\%$ chống rung giật cơ cấu.\\
- & & & \textbf{Ghi chú:} Cảm biến mưa cung cấp dữ liệu hiển thị bổ trợ, không can thiệp sai lệch FSM. \\ \hline
+\texttt{UC01} & Đọc \& tiền xử lý dữ liệu cảm biến & Timer 150ms; Cảm biến HC-SR04, FC-37 & \textbf{Chính:} Kích Trig $10\,\mu\text{s}$, đo xung Echo, lọc trung vị 3 mẫu tính \% nước; đọc ADC mưa.\\
+ & & & \textbf{Ngoại lệ:} Echo timeout ($>30\,\text{ms}$): giữ mẫu cũ tối đa 3 chu kỳ ($450\,\text{ms}$). Quá 3 chu kỳ kích hoạt cờ lỗi cảm biến (\texttt{SENSOR\_FAULT}). Nếu khoảng cách $< d_{\text{full}}$ (nước ngập tràn qua màng loa cảm biến), hệ thống nhận diện sự cố tràn bờ khẩn cấp và lập tức kích hoạt \texttt{CRITICAL} (thay vì báo lỗi); nếu khoảng cách $> d_{\text{empty}}$, kẹp về $0\%$ để bảo vệ chống chạy khô. \\ \hline
+\texttt{UC02} & Đánh giá trạng thái FSM \& Dải trễ & Timer chu kỳ FSM & \textbf{Chính:} Đối chiếu \% nước với các cặp ngưỡng vào/thoát: $21\%/18\%$ (WARNING), $41\%/38\%$ (DANGER), $71\%/68\%$ (CRITICAL); áp dụng dải trễ $3\%$ kết hợp bộ lọc debounce $1.0\,\text{s}$ chống rung giật cơ cấu.\\
+ & & & \textbf{Ghi chú:} Cảm biến mưa cung cấp dữ liệu hiển thị bổ trợ, đồng thời nâng cấp trạng thái lên DANGER / CRITICAL khi có mưa lớn hoặc ngập cảm biến để đón đầu lũ; bơm chỉ được bật khi nước $\ge 20\%$ để chống chạy khô. \\ \hline
 \texttt{UC03} & Tự động điều khiển máy bơm & Timer chu kỳ FSM; Relay 5V \& Bơm mini & \textbf{Chính (Generalization):} Phân nhánh chuyên biệt:\\
  & & & -- Mức DANGER/CRITICAL: Kích Relay Active LOW ($0\,\text{V}$) bật bơm.\\
  & & & -- Mức NORMAL/WARNING: Thả nổi chân GPIO sang High-Z ngắt bơm an toàn. \\ \hline
@@ -95,32 +95,32 @@ Sơ đồ Use Case tổng thể được tổ chức với các tác nhân kích
  & & & -- NORMAL / WARNING: Xuất PWM đóng van $0^\circ$.\\
  & & & -- DANGER: Xuất PWM mở van $50\%$ ($90^\circ$).\\
  & & & -- CRITICAL: Xuất PWM mở van $100\%$ ($180^\circ$). \\ \hline
-\texttt{UC05} & Phát tín hiệu cảnh báo tại trạm & Timer chu kỳ FSM; LED, Còi; Người dân & \textbf{Chính:} Bật LED chỉ thị tương ứng; kích còi hú Non-blocking theo nhịp thời gian.\\
+\texttt{UC05} & Phát tín hiệu cảnh báo tại trạm & Timer chu kỳ FSM; LED, Còi; Người dân & \textbf{Chính:} Bật LED chỉ thị tương ứng; kích còi hú Active Buzzer Non-blocking 4 nhịp (Tắt $\to$ Bíp thưa $1.5\,\text{s}$ $\to$ Bíp dồn $400\,\text{ms}$ $\to$ Hú liên tục).\\
  & & & \textbf{Đặc tính an toàn:} Cảnh báo tại trạm duy trì liên tục ở cả hai chế độ AUTO và MANUAL. \\ \hline
 \texttt{UC06} & Tự động chuyển an toàn (Failsafe) & Watchdog Timer; Người vận hành (nhận tin) & \textbf{Chính:} Đếm thời gian không nhận request từ Web ($>30\,\text{s}$). Tự động đảo cờ \texttt{isAutoMode = true}, gửi thông báo cảnh báo về Dashboard khi kết nối lại.\\
  & & & \textbf{Phục hồi:} Người dùng phải chủ động bấm xác nhận trên Web để chuyển lại MANUAL. \\ \hline
 \texttt{UC07} & Truyền nhận dữ liệu Web API & Người vận hành (qua trình duyệt Web) & \textbf{Chính (Generalization):} Tiếp nhận và xử lý request HTTP:\\
  & & & -- \texttt{GET /api/status}: Đóng gói JSON trả telemetry mực nước, trạng thái bơm, van, còi.\\
- & & & -- \texttt{GET /api/control}: Giải mã tham số điều khiển chế độ và cưỡng chế thiết bị. \\ \hline
+ & & & -- \texttt{GET /api/control}: Giải mã tham số điều khiển tường minh: \texttt{mode=auto/manual}, \texttt{pump=1/0/toggle}, \texttt{valve=0/50/100}. \\ \hline
 \texttt{UC08} & Giám sát trạng thái qua Web Dashboard & Người vận hành (qua trình duyệt Web) & \textbf{Chính:} Render trực quan vòng đo mực nước \%, khoảng cách cm, cấp độ mưa và thẻ màu trạng thái thời gian thực của toàn bộ thiết bị ngoại vi. \\ \hline
 \texttt{UC09} & Chuyển đổi chế độ (AUTO / MANUAL) & Người vận hành (nhấp nút gạt Web) & \textbf{Chính (Generalization):} Chuyên biệt hóa hai trạng thái:\\
  & & & -- Sang AUTO: Khóa các nút can thiệp trên Web, giao toàn quyền điều khiển cho FSM.\\
  & & & -- Sang MANUAL: Mở khóa các nút can thiệp cưỡng chế thiết bị trên Web Dashboard. \\ \hline
 \texttt{UC10} & Can thiệp điều khiển thiết bị từ Web & Người vận hành; Relay, Bơm, Servo & \textbf{Chính («extend»):} Tiền điều kiện \texttt{isAutoMode == false}. Bật/tắt bơm cưỡng chế hoặc xoay van xả theo ý muốn.\\
- & & & \textbf{Ngoại lệ an toàn:} Nếu nước vượt ngưỡng CRITICAL quá $10\,\text{s}$ mà người không can thiệp, hệ thống tự động ngắt MANUAL để cứu hộ trạm. \\ \hline
+ & & & \textbf{Ngoại lệ an toàn:} Nếu nước vượt ngưỡng CRITICAL ($\ge 71\%$) quá $10\,\text{s}$ mà người vận hành không can thiệp, hệ thống tự động kích hoạt Safety Override hủy MANUAL để cứu hộ trạm. \\ \hline
 \end{longtable}
 \normalsize
 
 \subsection{Sơ Đồ Phân Rã Chi Tiết Các Use Case}
 
 \subsubsection{UC01: Đọc và Tiền Xử Lý Dữ Liệu Cảm Biến}
-Ca sử dụng \texttt{UC01} được kích hoạt định kỳ mỗi $200\,\text{ms}$ bởi bộ định thời Timer. Trong mỗi chu kỳ lấy mẫu, ca sử dụng luôn thực thi đồng thời ba nhánh xử lý con thông qua quan hệ \texttt{«include»}:
+Ca sử dụng \texttt{UC01} được kích hoạt định kỳ mỗi $150\,\text{ms}$ bởi bộ định thời Timer. Trong mỗi chu kỳ lấy mẫu, ca sử dụng luôn thực thi đồng thời ba nhánh xử lý con thông qua quan hệ \texttt{«include»}:
 \begin{enumerate}
     \item \textit{Đo khoảng cách siêu âm (HC-SR04):} Vi điều khiển xuất xung kích Trig $10\,\mu\text{s}$ và đo độ rộng xung phản hồi Echo bằng hàm \texttt{pulseIn()}.
-    \item \textit{Lọc trung vị 3 mẫu \& Quy đổi \% nước:} Thu thập 3 giá trị liên tiếp, sắp xếp và lấy giá trị ở giữa để loại bỏ các mẫu ngoại lai (outliers) do bọt nước hoặc sóng dập dềnh; sau đó ánh xạ khoảng cách vật lý ($5 - 50\,\text{cm}$) sang dải $0\% - 100\%$.
+    \item \textit{Lọc trung vị 3 mẫu \& Quy đổi \% nước:} Thu thập 3 giá trị liên tiếp (mỗi giá trị cách nhau $12\,\text{ms}$), sắp xếp và lấy giá trị ở giữa để loại bỏ các mẫu ngoại lai (outliers) do bọt nước hoặc sóng dập dềnh; sau đó ánh xạ khoảng cách vật lý ($5 - 50\,\text{cm}$) sang dải $0\% - 100\%$.
     \item \textit{Đọc cảm biến mưa \& Phân cấp ADC/DO:} Đọc giá trị điện áp từ chân analog và mức logic chân digital để phân loại mức độ mưa.
 \end{enumerate}
-\textbf{Xử lý ngoại lệ:} Trong trường hợp cảm biến siêu âm bị mất tín hiệu phản hồi (Echo timeout quá $30\,\text{ms}$) hoặc giá trị đo bất thường nằm ngoài dải vật lý ($< 5\,\text{cm}$ hoặc $> 50\,\text{cm}$), hệ thống áp dụng cơ chế giữ mẫu hợp lệ gần nhất (Sample-and-Hold). Nếu lỗi kéo dài quá 3 chu kỳ liên tiếp ($> 600\,\text{ms}$), hệ thống thiết lập trạng thái ngoại lệ \texttt{SENSOR\_FAULT}, phát cảnh báo âm thanh và bật van xả phòng ngừa sự cố ngập úng.
+\textbf{Xử lý ngoại lệ:} Trong trường hợp cảm biến siêu âm bị mất tín hiệu phản hồi (Echo timeout quá $30\,\text{ms}$), hệ thống áp dụng cơ chế giữ mẫu hợp lệ gần nhất (Sample-and-Hold). Nếu lỗi kéo dài quá 3 chu kỳ liên tiếp ($> 450\,\text{ms}$), hệ thống thiết lập trạng thái ngoại lệ \texttt{SENSOR\_FAULT}, phát cảnh báo âm thanh và mở van xả $50\%$ phòng ngừa sự cố. Đặc biệt, nếu khoảng cách đo được $< d_{\text{full}}$ ($< 5\,\text{cm}$ hoặc $< 6\,\text{cm}$ trên mica), hệ thống nhận diện đây là sự cố nước dâng tràn bờ khẩn cấp và kích hoạt ngay trạng thái \texttt{CRITICAL} (bật bơm và mở van $100\%$) thay vì báo lỗi cảm biến; nếu khoảng cách $> d_{\text{empty}}$, kẹp về $0\%$ để bảo vệ chống chạy khô.
 
 \begin{figure}[H]
     \centering
@@ -130,10 +130,10 @@ Ca sử dụng \texttt{UC01} được kích hoạt định kỳ mỗi $200\,\tex
 \end{figure}
 
 \subsubsection{UC02: Tự Động Đánh Giá Trạng Thái FSM \& Xử Lý Dải Trễ (Hysteresis)}
-Ca sử dụng \texttt{UC02} được kích hoạt bởi Timer chu kỳ logic. Dữ liệu đầu vào chính để đánh giá chuyển dịch trạng thái là phần trăm mực nước (\texttt{waterPercent}):
+Ca sử dụng \texttt{UC02} được kích hoạt bởi Timer chu kỳ logic $150\,\text{ms}$. Dữ liệu đầu vào chính để đánh giá chuyển dịch trạng thái là phần trăm mực nước (\texttt{waterPercent}):
 \begin{itemize}
-    \item \textit{Đánh giá 4 cấp độ trạng thái FSM:} Mực nước được so sánh với các ngưỡng $40\%$ (WARNING), $70\%$ (DANGER), và $80\%$ (CRITICAL). Dữ liệu cảm biến mưa được hiển thị hỗ trợ cảnh báo sớm trên Web Dashboard mà không làm sai lệch logic chuyển trạng thái cơ cấu chấp hành.
-    \item \textit{Áp dụng dải trễ Hysteresis chống rung:} Khi mực nước đang ở mức cao (ví dụ DANGER), nếu nước rút nhẹ quanh ngưỡng $70\%$, trạng thái xả vẫn được duy trì. Chỉ khi mực nước rút sâu xuống dưới $40\%$ kết hợp dải trễ $5\%$, hệ thống mới hạ trạng thái về NORMAL, triệt tiêu hoàn toàn hiện tượng rung giật đóng ngắt Relay liên tục.
+    \item \textit{Đánh giá 4 cấp độ trạng thái FSM:} Mực nước được so sánh với các cặp ngưỡng vào/thoát: $21\%/18\%$ (WARNING), $41\%/38\%$ (DANGER), và $71\%/68\%$ (CRITICAL). Dữ liệu cảm biến mưa vừa hiển thị hỗ trợ trên Web Dashboard, vừa đóng vai trò nâng cấp nguy cơ (Surge Anticipation) để chủ động mở van và bật bơm đón đầu lũ khi mưa to (ADC $< 1800$) hoặc ngập cảm biến (ADC $< 1100$).
+    \item \textit{Áp dụng dải trễ Hysteresis kết hợp Debounce chống rung:} Áp dụng dải trễ biên độ $3\%$ giữa ngưỡng vào và ngưỡng thoát; kết hợp bộ lọc thời gian duy trì $T_{\text{debounce}} = 1.0\,\text{s}$ và thời gian chạy tối thiểu của bơm $T_{\text{min\_run}} = 5.0\,\text{s}$, triệt tiêu hoàn toàn hiện tượng rung giật đóng ngắt Relay liên tục khi sóng nước dao động quanh biên ngưỡng.
 \end{itemize}
 
 \begin{figure}[H]
@@ -176,7 +176,7 @@ Cửa van thoát lũ được kéo bởi động cơ Servo SG90. Tùy thuộc v�
 Ca sử dụng \texttt{UC05} kích hoạt đồng bộ hai cơ cấu cảnh báo đa giác quan tại thực địa nhằm thông tin kịp thời cho người dân và kỹ thuật viên quanh trạm:
 \begin{itemize}
     \item \textit{Chỉ thị LED trực quan:} Đèn Xanh (GPIO 21) sáng ở mức NORMAL; Đèn Vàng (GPIO 19) sáng ở mức WARNING; Đèn Đỏ (GPIO 18) sáng ở mức DANGER và CRITICAL.
-    \item \textit{Kích âm còi báo động Non-blocking:} Sử dụng cơ chế đo thời gian \texttt{millis()} để băm xung còi Active Buzzer $5\,\text{V}$ (GPIO 4) mà không chặn luồng xử lý CPU: tắt còi khi an toàn, bíp thưa nhịp $1000\,\text{ms}$ khi WARNING, bíp nhanh dồn dập $200\,\text{ms}$ khi DANGER, và hú liên tục khi CRITICAL.
+    \item \textit{Kích âm còi báo động Non-blocking:} Sử dụng cơ chế đo thời gian \texttt{millis()} để băm xung còi Active Buzzer $5\,\text{V}$ (GPIO 4) mà không chặn luồng xử lý CPU: tắt còi khi NORMAL, bíp thưa nhịp $1500\,\text{ms}$ ($120\,\text{ms}$ on / $1380\,\text{ms}$ off) khi WARNING, bíp nhanh dồn dập chu kỳ $400\,\text{ms}$ ($150\,\text{ms}$ on / $250\,\text{ms}$ off) khi DANGER, và hú liên tục khi CRITICAL (tại tần số cộng hưởng nội $\approx 2.3\,\text{kHz}$ của Active Buzzer).
 \end{itemize}
 \textbf{Ràng buộc an toàn:} Khối cảnh báo thực địa (LED và còi) luôn hoạt động liên tục ở cả hai chế độ AUTO và MANUAL dựa theo mực nước thực tế, đảm bảo người dân quanh trạm luôn nhận được cảnh báo nguy hiểm độc lập với trạng thái can thiệp của người vận hành.
 
@@ -206,7 +206,7 @@ Khi mạng Wi-Fi kết nối lại hoặc trình duyệt của người vận h�
 Tác nhân chính tương tác với \texttt{UC07} là Người vận hành thông qua trình duyệt Web. Ca sử dụng bao gồm hai dịch vụ API độc lập kế thừa từ \texttt{UC07}:
 \begin{itemize}
     \item \textit{Yêu cầu dữ liệu trạng thái (\texttt{GET /api/status}):} Trình duyệt gửi yêu cầu định kỳ $1000\,\text{ms}$; vi điều khiển thu thập thông số đo hiện thời, đóng gói chuỗi JSON (chứa \% nước, khoảng cách cm, cấp độ mưa, trạng thái bơm, van, còi, chế độ AUTO/MANUAL) và phản hồi mã HTTP 200.
-    \item \textit{Tiếp nhận lệnh can thiệp (\texttt{GET /api/control}):} Trình duyệt gửi lệnh chứa các tham số hành động (\texttt{mode=auto}, \texttt{mode=manual}, \texttt{pump=on}, \texttt{valve=90}...); vi điều khiển bóc tách cú pháp và thực thi cập nhật trạng thái hệ thống.
+    \item \textit{Tiếp nhận lệnh can thiệp (\texttt{GET /api/control}):} Trình duyệt gửi lệnh chứa các tham số điều khiển tường minh (\texttt{mode=auto/manual}, \texttt{pump=1/0/toggle}, \texttt{valve=0/50/100}...); vi điều khiển bóc tách cú pháp và thực thi cập nhật trạng thái hệ thống.
 \end{itemize}
 
 \begin{figure}[H]
@@ -250,7 +250,7 @@ Ca sử dụng \texttt{UC10} chỉ được phép kích hoạt khi hệ thống 
     \item \textit{Bật / Tắt cưỡng chế máy bơm:} Người vận hành nhấp nút Bật/Tắt trên Web Dashboard để kích hoạt Relay đóng/ngắt máy bơm bất kể mực nước hiện tại.
     \item \textit{Điều khiển cưỡng chế góc van xả ($0^\circ / 90^\circ / 180^\circ$):} Người vận hành nhấp chọn góc mở để định vị góc Servo kéo cửa xả.
 \end{itemize}
-\textbf{Ràng buộc an toàn khẩn cấp:} Nếu trạm đang ở chế độ MANUAL và mực nước thực tế dâng tới mức nguy cấp CRITICAL ($\ge 80\%$), nếu sau $10\,\text{s}$ người vận hành không thực hiện bật bơm hoặc mở van, hệ thống sẽ tự động kích hoạt cơ chế bảo vệ khẩn cấp (\textit{Emergency Safety Override}): thu hồi quyền thủ công, chuyển về AUTO và kích hoạt toàn bộ bơm và van xả tối đa công suất để chống tràn bể.
+\textbf{Ràng buộc an toàn khẩn cấp:} Nếu trạm đang ở chế độ MANUAL và mực nước thực tế dâng tới mức nguy cấp CRITICAL ($\ge 71\%$), nếu sau $10\,\text{s}$ người vận hành không thực hiện bật bơm hoặc mở van, hệ thống sẽ tự động kích hoạt cơ chế bảo vệ khẩn cấp (\textit{Emergency Safety Override}): thu hồi quyền thủ công, chuyển về AUTO và kích hoạt toàn bộ bơm và van xả tối đa công suất để chống tràn bể.
 
 \begin{figure}[H]
     \centering
@@ -264,16 +264,16 @@ Ca sử dụng \texttt{UC10} chỉ được phép kích hoạt khi hệ thống 
 \subsection{Đặc Tính \& Ràng Buộc Thời Gian Thực (Real-Time Constraints)}
 Trong kỹ thuật lập trình hệ thống nhúng, FloodGuard được thiết kế theo mô hình hệ thống thời gian thực mềm (\textit{Soft Real-Time}) kết hợp với một số ràng buộc an toàn cứng (\textit{Firm Safety Constraints}):
 \begin{itemize}
-    \item \textbf{Chu kỳ trích mẫu cảm biến ($T_{\text{sample}} = 200\,\text{ms}$):} Cảm biến siêu âm HC-SR04 cần khoảng nghỉ tối thiểu $60\,\text{ms}$ giữa hai lần phát xung Trig để các sóng âm phản xạ trước đó triệt tiêu hoàn toàn, tránh gây hiện tượng dội âm giao thoa. Với chu kỳ lấy mẫu $200\,\text{ms}$, hệ thống đảm bảo giãn cách vật lý an toàn và cập nhật kịp thời tốc độ dâng nước.
+    \item \textbf{Chu kỳ trích mẫu cảm biến ($T_{\text{sample}} = 150\,\text{ms}$):} Vi điều khiển kích hoạt chu kỳ lấy mẫu định kỳ $150\,\text{ms}$. Trong các ứng dụng đo sâu công nghiệp, khoảng nghỉ khuyến cáo giữa các lần phát siêu âm thường $\ge 60\,\text{ms}$ để sóng dội tắt hẳn; tuy nhiên với mô hình sa bàn bể nông ($5 - 50\,\text{cm}$ hoặc mica $6 - 16\,\text{cm}$), hành trình khứ hồi của sóng âm chỉ mất dưới $3\,\text{ms}$, do đó việc đo 3 mẫu cách nhau $12\,\text{ms}$ trong chu kỳ quét $150\,\text{ms}$ hoàn toàn đảm bảo sóng âm tắt hẳn mà vẫn duy trì tính thời gian thực cao.
     \item \textbf{Bộ lọc cửa sổ trượt trung vị 3 mẫu (Median Filter):} Ba mẫu đo liên tiếp được lưu trong bộ đệm trượt để lọc bỏ các giá trị dị biệt (outliers) sinh ra do bọt khí, rung chấn cơ học hoặc bề mặt nước dập dềnh.
-    \item \textbf{Thời gian phản ứng tối đa từ cảm biến đến chấp hành (WCRT $\le 250\,\text{ms}$):} Kể từ thời điểm cảm biến thu nhận xung Echo phản ánh mực nước vượt ngưỡng nguy hiểm, tổng thời gian tính toán của thuật toán FSM, chuyển mạch GPIO và kích đóng tiếp điểm Relay máy bơm không vượt quá $250\,\text{ms}$.
+    \item \textbf{Thời gian phản ứng tối đa từ cảm biến đến chấp hành (WCRT $\le 250\,\text{ms}$):} Kể từ thời điểm cảm biến thu nhận xung Echo phản ánh mực nước vượt ngưỡng nguy cấp, thời gian phản ứng tức thời để thuật toán FSM ra quyết định và tiếp điểm Relay máy bơm đóng kín hoàn toàn ($T_{\text{WCRT\_urgent}}$) không vượt quá $250\,\text{ms}$ (tính toán đạt $203\,\text{ms}$). Đối với các chuyển trạng thái bậc thang thông thường, hệ thống áp dụng thêm bộ lọc chống rung thời gian Debounce $1.0\,\text{s}$ để đảm bảo độ tin cậy cơ cấu.
     \item \textbf{Chu kỳ làm mới giao diện Web ($T_{\text{refresh}} = 1000\,\text{ms}$):} Chu kỳ polling $1\,\text{s}$ từ Dashboard đảm bảo cân bằng tối ưu giữa độ tươi mới của dữ liệu hiển thị và tải bộ nhớ RAM/băng thông mạng của chip vi điều khiển ESP32.
 \end{itemize}
 
 \subsection{Độ Tin Cậy, Watchdog \& An Toàn Vận Hành (Safety \& Reliability)}
 \begin{itemize}
-    \item \textbf{Phần cứng Watchdog Timer (WDT):} Hệ thống tích hợp bộ định thời giám sát WDT với chu kỳ timeout $3000\,\text{ms}$. Nếu vòng lặp chính của chương trình bị treo (deadlock hoặc vòng lặp vô tận), bộ WDT phần cứng sẽ tự động Reset vi điều khiển để khôi phục hoạt động bình thường.
-    \item \textbf{Cơ chế Failsafe mất mạng ($30\,\text{s}$):} Ngăn chặn hoàn toàn rủi ro người vận hành bỏ quên trạm ở chế độ thủ công hoặc bị mất kết nối thiết bị điều khiển.
+    \item \textbf{Bộ giám sát tác vụ Task Watchdog Timer (TWDT):} Hệ thống cấu hình bộ định thời giám sát tác vụ phần mềm thuộc hệ điều hành ESP-IDF FreeRTOS (thông qua hàm \lstinline|esp_task_wdt_add(NULL)| gán trực tiếp cho \texttt{loopTask}) với chu kỳ timeout $3000\,\text{ms}$ ($3\,\text{s}$). Nếu vòng lặp chính của chương trình bị treo (do bẫy lỗi hoặc vòng lặp vô hạn), cơ chế TWDT sẽ tự động kích hoạt ngắt Reset vi điều khiển để khôi phục trạm về trạng thái an toàn ban đầu.
+    \item \textbf{Cơ chế Failsafe mạng ($30\,\text{s}$):} Bộ đếm thời gian tầng ứng dụng đo khoảng cách giữa các gói tin điều khiển Web, tự động chuyển về AUTO nếu mất kết nối quá $30\,\text{s}$, ngăn ngừa rủi ro bỏ quên trạm ở chế độ thủ công.
 \end{itemize}
 
 \subsection{Phân Tích An Ninh \& Giới Hạn Bảo Mật (Security Analysis)}

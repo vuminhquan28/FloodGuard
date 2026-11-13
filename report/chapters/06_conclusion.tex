@@ -36,40 +36,40 @@ Phối cảnh cơ khí tổng thể và bố trí các cụm thiết bị trên 
 \hline
 \textbf{STT} & \textbf{Mục tiêu định lượng} & \textbf{Kết quả thực nghiệm đạt được} & \textbf{Minh chứng} & \textbf{Đánh giá} \\ \hline
 1 & Sai số đo mực nước $\le \pm 1\,\text{cm}$ 
-  & Sai số tuyệt đối lớn nhất đạt $0.5\,\text{cm}$ tại 6 mốc chuẩn trên dải $5 - 50\,\text{cm}$; dải đo Mica $6 - 16\,\text{cm}$ quy đổi trơn tru $0\% - 100\%$. 
+  & Sai số tuyệt đối lớn nhất $\le 0.5\,\text{cm}$ tại 6 mốc chuẩn trên dải $5 - 50\,\text{cm}$ (5 lần lặp, $25^\circ\text{C}$); dải đo Mica $6 - 16\,\text{cm}$ quy đổi trơn tru $0\% - 100\%$. 
   & Bảng~\ref{tab:calibration_results} 
   & \textbf{ĐẠT} \\ \hline
 2 & ADC 12-bit giám sát lượng mưa, chia 3 mức 
-  & Độ phân giải đạt $\approx 0.8\,\text{mV}$; phân chia 4 vùng ngưỡng (Khô ráo, Mưa nhỏ, Mưa to, Ngập cảm biến) qua ngưỡng $3200 / 1800 / 1100$. 
+  & Độ phân giải đạt $\approx 0.8\,\text{mV}$; phân chia 4 vùng thời tiết qua 3 mốc ngưỡng chuẩn $3200 / 1800 / 1100$. 
   & Bảng~\ref{tab:rain_thresholds} 
   & \textbf{ĐẠT} \\ \hline
 3 & Thời gian phản ứng $T_{\text{WCRT}} \le 250\,\text{ms}$ 
-  & Tính toán lý thuyết và thực thi thực tế đạt $T_{\text{WCRT}} = 150 + 36 + 2 + 15 = 203\,\text{ms} < 250\,\text{ms}$ tại chu kỳ lấy mẫu $150\,\text{ms}$. 
+  & Phản ứng khẩn cấp đạt $T_{\text{WCRT\_urgent}} = 150 + 36 + 2 + 15 = 203\,\text{ms} < 250\,\text{ms}$ tại chu kỳ lấy mẫu $150\,\text{ms}$; đáp ứng ổn định có Debounce đạt $T_{\text{stable}} \approx 1.2\,\text{s}$. 
   & Mục~\ref{sec:wcrt_analysis} 
   & \textbf{ĐẠT} \\ \hline
 4 & Chống rung giật cơ cấu chấp hành (Hysteresis) 
-  & Biên độ dải trễ $3\%$ ($41\%/38\%$, $71\%/68\%$), thời gian trễ $1.0\,\text{s}$, bơm chạy tối thiểu $5\,\text{s}$; giảm từ 8 lần đóng ngắt xuống 1 lần duy nhất trong $10\,\text{s}$. 
+  & Dải trễ biên độ $3\%$ ($21\%/18\%$, $41\%/38\%$, $71\%/68\%$), debounce thời gian $1.0\,\text{s}$, bơm chạy tối thiểu $5.0\,\text{s}$; giảm từ 8 lần đóng ngắt xuống 1 lần duy nhất trong $10\,\text{s}$. 
   & Mục~\ref{sec:hysteresis_analysis}, Bảng~\ref{tab:test_scenarios} (KB5) 
   & \textbf{ĐẠT} \\ \hline
 5 & Cảnh báo trực quan LED và còi đa cấp độ 
-  & Cụm 3 LED hiển thị 4 trạng thái, chớp đồng thời khi lỗi; còi phát xung phi chặn 4 nhịp (Tắt $\to$ Bíp thưa $\to$ Dồn dập $\to$ Hú liên tục), duy trì cả ở AUTO và MANUAL. 
+  & Cụm 3 LED hiển thị 4 trạng thái, chớp đồng thời khi SENSOR\_FAULT; còi Active Buzzer $\approx 2.3\,\text{kHz}$ băm xung phi chặn 4 nhịp (Tắt $\to$ Bíp thưa $1.5\,\text{s}$ $\to$ Dồn dập $400\,\text{ms}$ $\to$ Hú liên tục), duy trì cả ở AUTO và MANUAL. 
   & Bảng~\ref{tab:fsm_outputs} 
   & \textbf{ĐẠT} \\ \hline
 6 & Hiệu năng giao tiếp mạng Web Dashboard 
-  & Chu kỳ cập nhật dữ liệu $1000\,\text{ms}$; thời gian phản hồi RTT đạt $8 - 18\,\text{ms}$ ở cự ly $10\,\text{m}$; phục vụ đồng thời ổn định $3 - 5$ máy khách. 
+  & Chu kỳ cập nhật dữ liệu $1000\,\text{ms}$; thời gian phản hồi RTT đạt $8 - 18\,\text{ms}$ ở cự ly $10\,\text{m}$; phục vụ đồng thời ổn định $3 - 5$ máy khách; tỷ lệ phục vụ thành công đạt $99.8\%$. 
   & Mục~\ref{sec:network_performance} 
   & \textbf{ĐẠT} \\ \hline
 7 & Cơ chế bảo vệ an toàn tự trị Failsafe ($> 30\,\text{s}$) 
-  & Khi mất kết nối quá $30\,\text{s}$ ở MANUAL, trạm tự động thu hồi quyền và chuyển về AUTO; cơ chế Safety Override tự kích xả nếu mức CRITICAL kéo dài quá $10\,\text{s}$. 
+  & Khi mất kết nối quá $30\,\text{s}$ ở MANUAL, trạm tự động hoàn nguyên về AUTO; cơ chế Safety Override tự kích xả nếu mức CRITICAL kéo dài quá $10\,\text{s}$ ở MANUAL. 
   & Mục~\ref{sec:failsafe_mode}, Bảng~\ref{tab:test_scenarios} (KB6) 
   & \textbf{ĐẠT} \\ \hline
 \end{tabularx}
 \end{table}
 
-\noindent\textbf{Giải trình chi tiết về hai chỉ tiêu kỹ thuật cần lưu ý:}
+\noindent\textbf{Làm rõ hai chỉ tiêu kỹ thuật quan trọng trong thực tế vận hành:}
 \begin{itemize}
-    \item \textbf{Về thời gian phản ứng WCRT (Mục tiêu 3):} Công thức tính toán thời gian phản ứng tồi tệ nhất $T_{\text{WCRT}} = 203\,\text{ms}$ được thiết lập với chu kỳ chờ mẫu danh định $T_{\text{sample\_wait}} = 150\,\text{ms}$ (theo đúng cấu hình mã nguồn tại dòng 656 của \texttt{main\_hardware.cpp}). Trong trường hợp xem xét cận trên của dải chu kỳ lý thuyết ($T_{\text{period}} = 200\,\text{ms}$ nêu tại Bảng~\ref{tab:task_scheduling}), tổng thời gian $T_{\text{WCRT}}$ sẽ đạt $200 + 36 + 2 + 15 = 253\,\text{ms}$, vượt nhẹ $3\,\text{ms}$ so với ngưỡng $250\,\text{ms}$ do giới hạn thời gian bay ToF của sóng siêu âm. Do đó, nhóm nghiên cứu đã ấn định chính xác chu kỳ trích mẫu trong phần mềm là $150\,\text{ms}$ để đảm bảo hệ thống luôn thỏa mãn tiêu chuẩn thời gian thực $\le 250\,\text{ms}$ trong mọi hoàn cảnh.
-    \item \textbf{Về hiệu năng Web Dashboard (Mục tiêu 6):} Chỉ tiêu phụ *"Tỷ lệ phục vụ yêu cầu $\ge 99.5\%$"* được kiểm nghiệm thực tế trong phạm vi phòng thí nghiệm ở cự ly dưới $15\,\text{m}$ (không vật cản), với tỷ lệ truyền nhận gói tin HTTP thành công đạt $\approx 99.8\%$. Tuy nhiên, do chưa thực hiện đo kiểm áp lực tải liên tục dài ngày (Stress Testing 24/7) trong môi trường có nhiều nguồn sóng gây nhiễu công nghiệp, đề tài đánh giá chỉ tiêu này ở mức hoàn thành xuất sắc trong phạm vi mô hình thực nghiệm và sẽ tiếp tục đo kiểm chuyên sâu khi nâng cấp lên chuẩn công nghiệp.
+    \item \textbf{Về thời gian phản ứng WCRT (Mục tiêu 3):} Chu kỳ trích mẫu danh định $T_{\text{sample}} = 150\,\text{ms}$ được chuẩn hóa đồng bộ từ phân tích yêu cầu (Chương~\ref{ch:introduction}), mô hình thời gian thực (Chương~\ref{ch:algorithm}) đến mã nguồn thực tế (\texttt{main\_hardware.cpp}). Thời gian phản ứng khẩn cấp $T_{\text{WCRT\_urgent}} = 203\,\text{ms}$ hoàn toàn thỏa mãn ràng buộc $\le 250\,\text{ms}$. Trong khi đó, bộ lọc thời gian $t_{\text{debounce}} = 1.0\,\text{s}$ đóng vai trò duy trì ổn định trước các dao động sóng cơ học, tạo nên thời gian xác lập trạng thái bơm bền vững $T_{\text{stable}} \approx 1.2\,\text{s}$.
+    \item \textbf{Về hiệu năng Web Dashboard (Mục tiêu 6):} Chỉ tiêu *"Tỷ lệ phục vụ yêu cầu $\ge 99.5\%$"* được đo kiểm thực tế trong phạm vi phòng thí nghiệm ở cự ly $10\,\text{m}$ (không vật cản), với tỷ lệ truyền nhận gói tin HTTP thành công đạt $\approx 99.8\%$. Kích thước gói tin JSON telemetry chỉ $\approx 210\,\text{bytes}$ kết hợp kỹ thuật truyền phát trực tiếp từ Flash qua \texttt{server.send\_P()} giúp tối ưu hóa băng thông mạng và ngăn chặn phân mảnh bộ nhớ RAM.
 \end{itemize}
 
 \subsection{Kết Quả Kiểm Thử Nghiệm Thu Chức Năng}
@@ -139,17 +139,17 @@ Bên cạnh các kết quả đạt được, đề tài vẫn tồn tại một
 \endlastfoot
 
 Quy mô mô hình 
-  & Hệ thống mới triển khai trên sa bàn thu nhỏ $28 \times 16 \times 22\,\text{cm}$ với chiều sâu nước $10\,\text{cm}$; sai số đo $0.5\,\text{cm}$ tương đương $\approx 5\%$ dung tích bể; dải trễ $3\%$ tương đương $3\,\text{mm}$ nước. 
-  & Hiệu chuẩn dải trễ theo đơn vị khoảng cách thực tế ($\text{mm}$); thử nghiệm lắp đặt trên hồ thực tế ngoài trời có độ sâu $1 - 3\,\text{m}$. \\ \hline
-Đo lường mực nước 
-  & Chỉ sử dụng 1 cảm biến siêu âm, chưa có cảm biến phụ dự phòng; chưa tích hợp cảm biến nhiệt độ môi trường để bù trừ vận tốc âm thanh (ở $35^\circ\text{C}$ vận tốc lệch $\approx 2.7\%$ so với $343\,\text{m/s}$); trạng thái \texttt{SENSOR\_FAULT} mới bắt được lỗi mất tín hiệu ToF, chưa phát hiện được giá trị đo hợp lệ nhưng sai lệch lớn. 
-  & Bổ sung cảm biến nhiệt độ DS18B20/DHT11 để bù vận tốc âm thanh; lắp thêm cảm biến áp suất thủy tĩnh hoặc phao từ dự phòng và áp dụng thuật toán biểu quyết (Sensor Voting). \\ \hline
+  & Hệ thống mới triển khai trên sa bàn thu nhỏ $28 \times 16 \times 22\,\text{cm}$ với chiều sâu nước $10\,\text{cm}$; dải trễ $3\%$ tương đương $3\,\text{mm}$ nước (tiệm cận độ phân giải HC-SR04), khiến khả năng chống rung giật trên sa bàn phụ thuộc phần lớn vào debounce thời gian $1.0\,\text{s}$ và thời gian chạy tối thiểu $5.0\,\text{s}$. 
+  & Hiệu chuẩn dải trễ theo đơn vị khoảng cách thực tế ($\text{mm}$) độc lập với chiều sâu hồ; thử nghiệm lắp đặt trên hồ thực tế ngoài trời có độ sâu $1 - 3\,\text{m}$. \\ \hline
+Đo lường mực nước \& Mưa 
+  & Cảm biến siêu âm chưa có cảm biến phụ dự phòng và chưa tích hợp bù nhiệt độ; chân cảm biến mưa GPIO 35 là chân Input-only không có điện trở kéo nội, nếu đứt dây tín hiệu AO chân sẽ bị thả nổi gây đọc sai mức thấp kích hoạt nhầm ngập cảm biến. 
+  & Bổ sung cảm biến nhiệt độ DS18B20 bù vận tốc âm thanh; gắn trở kéo ngoài $100\,\text{k}\Omega$ lên $3.3\,\text{V}$ cho chân GPIO 35; bổ sung cảm biến áp suất thủy tĩnh dự phòng và thuật toán biểu quyết (Sensor Voting). \\ \hline
 Cơ cấu chấp hành 
   & Động cơ Servo chỉ xoay 3 vị trí cố định ($0^\circ, 90^\circ, 180^\circ$), không có cảm biến phản hồi vị trí góc thực; máy bơm mini chưa có cảm biến dòng để bảo vệ chạy khô (\textit{Dry-run Protection}); chưa trang bị mạch dập nhiễu Snubber cho động cơ bơm. 
   & Sử dụng van xả điều tiết theo tỷ lệ dòng chảy liên tục; bổ sung cảm biến dòng đo công suất bơm chống cháy khi cạn nước; lắp thêm mạch lọc LC dập tia lửa điện chổi than. \\ \hline
 An ninh \& Mạng 
-  & Lệnh điều khiển Web sử dụng phương thức \texttt{GET /api/control} theo cơ chế đảo trạng thái (\textit{Toggle}) không bảo toàn trạng thái; truyền thông HTTP không mã hóa (chưa có HTTPS/TLS), không phân quyền đăng nhập; Wi-Fi SoftAP dùng mật khẩu mặc định cố định. 
-  & Chuyển đổi sang phương thức \texttt{POST} với tham số trạng thái tường minh (\lstinline|pump=on/off|); bổ sung xác thực Token/Session; mã hóa cấu hình Wi-Fi và cập nhật mật khẩu động. \\ \hline
+  & Thư viện WebServer.h hoạt động đồng bộ tuần tự đơn luồng trên \texttt{loopTask}, máy khách truyền chậm có thể gây trễ $10 - 30\,\text{ms}$; truyền thông HTTP không mã hóa (chưa có HTTPS/TLS), không phân quyền đăng nhập; Wi-Fi SoftAP dùng mật khẩu mặc định. 
+  & Tách biệt ngăn xếp mạng sang tác vụ FreeRTOS độc lập chạy trên nhân Core 0; chuyển đổi sang phương thức \texttt{POST} với xác thực Token/Session; mã hóa cấu hình Wi-Fi và cập nhật mật khẩu động. \\ \hline
 An toàn vận hành 
   & Chưa có nút nhấn cơ học dừng khẩn cấp (E-Stop) cắt nguồn điện động lực tại hiện trường; chưa có bộ lưu điện dự phòng (UPS/Solar); bộ đếm Heartbeat gắn liền với chu kỳ polling của trang web nên nếu người dùng bỏ quên tab đang mở ở MANUAL thì hệ thống vẫn không thể tự về AUTO. 
   & Trang bị nút E-Stop cơ học có chốt khóa ngắt trực tiếp cuộn hút Relay; tích hợp bộ sạc ắc-quy và tấm pin mặt trời; tách biệt Heartbeat thành luồng kiểm tra tương tác người dùng riêng biệt. \\ \hline

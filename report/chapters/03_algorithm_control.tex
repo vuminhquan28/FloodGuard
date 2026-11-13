@@ -186,18 +186,31 @@ Mô hình FSM của FloodGuard gồm 4 trạng thái vận hành cốt lõi và 
     \label{fig:fsm_diagram}
 \end{figure}
 
-\subsection{Bảng Ma Trận Chuyển Trạng Thái (State Transition Table)}
+\subsection{Bảng Ma Trận Chuyển Trạng Thái (State Transition~Table)}
 Ma trận chuyển dịch giữa các trạng thái được xác định chặt chẽ dựa trên các biểu thức điều kiện bảo vệ (\textit{Guard Conditions}) kết hợp thông số mực nước và lượng mưa (Bảng~\ref{tab:fsm_transitions}).
 
-\begin{table}[H]
-\centering
-\caption{Bảng ma trận chuyển trạng thái của thuật toán FSM kết hợp dải trễ Hysteresis}
-\label{tab:fsm_transitions}
+\begingroup
+\setlength{\tabcolsep}{4.5pt}
 \small
-\renewcommand{\arraystretch}{1.3}
-\begin{tabularx}{\textwidth}{|l|X|l|X|}
+\renewcommand{\arraystretch}{1.25}
+\begin{longtable}{|>{\raggedright\arraybackslash}p{2.8cm}|>{\raggedright\arraybackslash}p{4.35cm}|>{\raggedright\arraybackslash}p{2.9cm}|>{\raggedright\arraybackslash}p{4.45cm}|}
+\caption{Bảng ma trận chuyển trạng thái của thuật toán FSM kết hợp dải trễ Hysteresis} \label{tab:fsm_transitions} \\
 \hline
 \textbf{Trạng thái hiện tại} & \textbf{Điều kiện kích hoạt chuyển dịch (Guards)} & \textbf{Trạng thái kế tiếp} & \textbf{Hành động thực thi khi vào trạng thái} \\ \hline
+\endfirsthead
+
+\multicolumn{4}{c}%
+{{\bfseries Bảng \thetable{} -- Tiếp theo từ trang trước}} \\
+\hline
+\textbf{Trạng thái hiện tại} & \textbf{Điều kiện kích hoạt chuyển dịch (Guards)} & \textbf{Trạng thái kế tiếp} & \textbf{Hành động thực thi khi vào trạng thái} \\ \hline
+\endhead
+
+\hline \multicolumn{4}{|r|}{{\footnotesize\textit{(Còn tiếp ở trang sau)}}} \\ \hline
+\endfoot
+
+\hline
+\endlastfoot
+
 \texttt{STATE\_NORMAL} & $P_{\text{water}} \ge 71\%$ hoặc \texttt{isSubmerged} & \texttt{STATE\_CRITICAL} & Bật bơm, mở van $100\%$, LED đỏ chớp, còi hú liên tục. \\
  & $P_{\text{water}} \ge 41\%$ hoặc \texttt{isHeavyRain} & \texttt{STATE\_DANGER} & Bật bơm (nếu $P \ge 20\%$), mở van $50\%$, LED đỏ sáng, còi dồn dập $400\,\text{ms}$. \\
  & $P_{\text{water}} \ge 21\%$ hoặc \texttt{isLightRain} & \texttt{STATE\_WARNING} & Tắt bơm, đóng van $0^\circ$, LED vàng sáng, còi bíp thưa $1.5\,\text{s}$. \\ \hline
@@ -209,8 +222,8 @@ Ma trận chuyển dịch giữa các trạng thái được xác định chặt
 \texttt{STATE\_CRITICAL} & $P_{\text{water}} < 68\%$ và không ngập sensor & \texttt{STATE\_DANGER} & Giảm van về $50\%$, chuyển còi về nhịp dồn dập $400\,\text{ms}$. \\ \hline
 \textbf{Mọi trạng thái} & Mất xung Echo liên tiếp $> 450\,\text{ms}$ (3 chu kỳ) & \texttt{SENSOR\_FAULT} & Tắt bơm (chống cháy bơm), mở van $50\%$ xả an toàn, 3 LED chớp, còi ngắt quãng báo sự cố. \\ \hline
 \texttt{SENSOR\_FAULT} & Nhận lại $\ge 5$ mẫu đo ToF hợp lệ liên tiếp & \texttt{STATE\_NORMAL} hoặc cấp tương ứng & Phục hồi vận hành tự động bình thường. \\ \hline
-\end{tabularx}
-\end{table}
+\end{longtable}
+\endgroup
 
 \subsection{Bảng Tín Hiệu Đầu Ra Chi Tiết Theo Từng Trạng Thái}
 Tương ứng với mỗi trạng thái FSM, hệ thống thiết lập đồng bộ tín hiệu điều khiển trên toàn bộ cơ cấu chấp hành và thiết bị chỉ thị (Bảng~\ref{tab:fsm_outputs}).

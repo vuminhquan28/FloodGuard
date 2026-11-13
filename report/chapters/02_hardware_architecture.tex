@@ -49,16 +49,16 @@ Trong thiết kế trạm FloodGuard, giao diện giám sát và điều khiển
 
 \section{Sơ Đồ Nguyên Lý Mạch Điện \& Kết Nối Ngoại Vi}
 
-Sơ đồ nguyên lý mạch điện chi tiết kết nối giữa vi điều khiển ESP32 với toàn bộ cảm biến, cơ cấu chấp hành và thiết bị chỉ thị được minh họa trong Hình~\ref{fig:circuit_diagram}.
+Sơ đồ nguyên lý mạch điện chi tiết kết nối giữa vi điều khiển ESP32 với toàn bộ cảm biến, cơ cấu chấp hành, thiết bị chỉ thị và máy tính vận hành được minh họa trong Hình~\ref{fig:circuit_diagram}.
 
 \begin{figure}[H]
     \centering
     \includegraphics[width=\textwidth]{figures/circuit_diagram.png}
-    \caption{Sơ đồ nguyên lý nối dây phần cứng và mạch điện GPIO trạm FloodGuard}
+    \caption{Sơ đồ nguyên lý mạch điện chuẩn IEC và phân vùng các khối chấp hành trạm FloodGuard}
     \label{fig:circuit_diagram}
 \end{figure}
 
-Dựa trên sơ đồ nguyên lý nối dây, các nguyên lý phối ghép phần cứng và giải pháp bảo vệ mạch điện được phân tích chi tiết:
+Dựa trên sơ đồ nguyên lý nối dây và phân vùng các khối chấp hành, các nguyên lý phối ghép phần cứng và giải pháp bảo vệ mạch điện được phân tích chi tiết:
 
 \subsection{Khối Chấp Hành Công Suất: Relay 5V, Diode Flyback \& Nguồn Cấp Máy Bơm}
 Máy bơm nước mini $5\,\text{V}$ sử dụng động cơ DC có chổi than, tiêu thụ dòng điện làm việc định mức khoảng $0.5 - 0.8\,\text{A}$ và có thể lên tới $1.5\,\text{A}$ khi khởi động (\textit{Inrush current}). Để vận hành an toàn:

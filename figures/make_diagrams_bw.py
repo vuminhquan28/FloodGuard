@@ -196,79 +196,135 @@ def draw_generalization(ax, e_from, e_to, label=""):
 # UC10 connects directly to Pump & Servo actuators (No phantom actor).
 # =============================================================
 def make_overall_uml_bw():
-    fig, ax = plt.subplots(figsize=(16.8, 15.2), dpi=300)
+    fig, ax = plt.subplots(figsize=(16.8, 14.0), dpi=300)
     ax.set_xlim(0, 16.8)
-    ax.set_ylim(0, 15.2)
+    ax.set_ylim(0, 14.0)
     ax.axis('off')
     fig.patch.set_facecolor('#ffffff')
 
-    sys_x = 3.6
-    sys_y = 0.6
-    sys_w = 9.4
-    sys_h = 14.0
-    draw_subsystem_box(ax, sys_x, sys_y, sys_w, sys_h, 
-                       "Hệ Thống Trạm FloodGuard (FloodGuard System)")
+    # System Boundary Box
+    rect = patches.FancyBboxPatch((3.4, 0.4), 9.9, 13.2, boxstyle='round,pad=0.0,rounding_size=0.18',
+                                  linewidth=1.8, edgecolor='#000000', facecolor='#ffffff', zorder=1)
+    ax.add_patch(rect)
+    ax.text(3.7, 13.35, '«system boundary»', fontsize=9.5, style='italic', color='#555555', zorder=5)
+    ax.text(3.7, 12.95, 'Hệ Thống Trạm FloodGuard (FloodGuard System)', fontsize=12.5, fontweight='bold', color='#000000', zorder=5)
 
-    uc_center_x = 8.3
+    # Subsystem 1 Box: Autonomous Core
+    box1 = patches.FancyBboxPatch((3.7, 5.3), 9.3, 7.35, boxstyle='round,pad=0.0,rounding_size=0.12',
+                                  linewidth=1.2, linestyle='--', edgecolor='#555555', facecolor='#fafafa', zorder=2)
+    ax.add_patch(box1)
+    ax.text(4.0, 12.4, '«subsystem» Phân Hệ Giám Sát & Điều Khiển Tự Động Tại Chỗ', fontsize=10.0, fontweight='bold', color='#222222', zorder=5)
+
+    # Subsystem 2 Box: Remote Telemetry & Web
+    box2 = patches.FancyBboxPatch((3.7, 0.6), 9.3, 4.45, boxstyle='round,pad=0.0,rounding_size=0.12',
+                                  linewidth=1.2, linestyle='--', edgecolor='#555555', facecolor='#fafafa', zorder=2)
+    ax.add_patch(box2)
+    ax.text(4.0, 4.8, '«subsystem» Phân Hệ Giám Sát & Điều Khiển Từ Xa Qua Web', fontsize=10.0, fontweight='bold', color='#222222', zorder=5)
+
     uc_list = [
-        ("UC01: Đọc & Tiền Xử Lý Dữ Liệu Cảm Biến", 12.6),
-        ("UC02: Tự Động Đánh Giá FSM & Dải Trễ", 11.4),
-        ("UC03: Tự Động Điều Khiển Máy Bơm", 10.2),
-        ("UC04: Tự Động Điều Khiển Van Thoát Lũ", 9.0),
-        ("UC05: Phát Tín Hiệu Cảnh Báo Tại Trạm", 7.8),
-        ("UC06: Tự Động Chuyển An Toàn (Failsafe)", 6.6),
-        ("UC07: Truyền Nhận Dữ Liệu Web API", 5.4),
-        ("UC08: Giám Sát Trạng Thái Trạm Qua Web", 4.2),
-        ("UC09: Chuyển Đổi Chế Độ (AUTO / MANUAL)", 3.0),
-        ("UC10: Can Thiệp Điều Khiển Thiết Bị Từ Web", 1.8)
+        ('UC01: Đọc & Tiền Xử Lý Dữ Liệu Cảm Biến', 11.6),
+        ('UC02: Tự Động Đánh Giá FSM & Dải Trễ', 10.4),
+        ('UC03: Tự Động Điều Khiển Máy Bơm Thoát Nước', 9.2),
+        ('UC04: Tự Động Điều Khiển Van Thoát Lũ', 8.0),
+        ('UC05: Phát Tín Hiệu Cảnh Báo Tại Trạm', 6.8),
+        ('UC06: Tự Động Chuyển An Toàn (Failsafe)', 5.7),
+        ('UC07: Truyền Nhận Dữ Liệu Qua Web API', 4.1),
+        ('UC08: Giám Sát Trạng Thái Trạm Qua Web', 3.0),
+        ('UC09: Chuyển Đổi Chế Độ (AUTO / MANUAL)', 1.9),
+        ('UC10: Can Thiệp Điều Khiển Thiết Bị Từ Web', 0.9)
     ]
 
-    uc_tuples = {}
-    ew = 6.6
-    eh = 0.90
+    ew = 6.4
+    eh = 0.82
+    cx = 8.35
+    uc_pos = {}
+
     for name, cy in uc_list:
-        e = draw_ellipse(ax, uc_center_x, cy, ew, eh, name, fontsize=10.5)
-        uc_tuples[name[:4]] = e
+        e = patches.Ellipse((cx, cy), ew, eh, facecolor='#ffffff', edgecolor='#000000', lw=1.4, zorder=3)
+        ax.add_patch(e)
+        ax.text(cx, cy, name, fontsize=10.0, fontweight='bold', ha='center', va='center', color='#000000', zorder=4)
+        uc_pos[name[:4]] = cy
 
-    # PRIMARY ACTORS (LEFT)
-    # 1. Internal Timer / Watchdog
-    draw_timer_actor(ax, 1.4, 11.8, "Bộ Định Thời\nTimer / Watchdog", "«internal timer»", w=2.6, h=1.2)
-    draw_assoc_line(ax, (2.7, 12.2), uc_tuples['UC01'])
-    draw_assoc_line(ax, (2.7, 11.8), uc_tuples['UC02'])
-    draw_assoc_line(ax, (2.7, 11.4), uc_tuples['UC03'])
-    draw_assoc_line(ax, (2.7, 11.0), uc_tuples['UC04'])
-    draw_assoc_line(ax, (2.7, 10.6), uc_tuples['UC05'])
-    draw_assoc_line(ax, (2.7, 10.2), uc_tuples['UC06'])
+    # ACTORS
+    # 1. Timer Actor (Top Left)
+    rect_t = patches.Rectangle((0.3, 8.8), 2.5, 1.25, linewidth=1.4, edgecolor='#000000', facecolor='#ffffff', zorder=6)
+    ax.add_patch(rect_t)
+    ax.text(1.55, 9.65, '«internal timer»', fontsize=8.5, style='italic', ha='center', va='center', zorder=7)
+    ax.text(1.55, 9.25, 'Bộ Định Thời\nTimer / Watchdog', fontsize=9.5, fontweight='bold', ha='center', va='center', zorder=7)
 
-    # 2. Human Operator via Browser
-    draw_human_actor(ax, 1.4, 3.8, "Người Vận Hành\n(Trình Duyệt Web)", "«human actor»", scale=0.95)
-    draw_assoc_line(ax, (2.4, 4.4), uc_tuples['UC07'])
-    draw_assoc_line(ax, (2.4, 3.8), uc_tuples['UC08'])
-    draw_assoc_line(ax, (2.4, 3.2), uc_tuples['UC09'])
-    draw_assoc_line(ax, (2.4, 2.6), uc_tuples['UC10'])
+    # Timer Bus: spine at x=4.2
+    ax.plot([2.8, 4.2], [9.4, 9.4], color='#000000', lw=1.3, zorder=2)
+    ax.plot([4.2, 4.2], [5.7, 11.6], color='#000000', lw=1.3, zorder=2)
+    for ucid in ['UC01', 'UC02', 'UC03', 'UC04', 'UC05', 'UC06']:
+        y = uc_pos[ucid]
+        ax.plot([4.2, cx - ew/2], [y, y], color='#000000', lw=1.3, zorder=2)
 
-    # SECONDARY ACTORS (RIGHT)
-    # 3. Sensors
-    draw_device_actor(ax, 15.2, 12.6, "Cảm Biến Siêu Âm\n& Cảm Biến Mưa", "«device»", w=2.7, h=1.2)
-    draw_assoc_line(ax, (13.85, 12.6), uc_tuples['UC01'])
+    # 2. Operator Actor (Bottom Left)
+    scale = 0.85
+    oy = 2.5
+    ox = 1.55
+    r = 0.24 * scale
+    head = plt.Circle((ox, oy + 0.44 * scale), r, facecolor='#ffffff', edgecolor='#000000', lw=1.5, zorder=6)
+    ax.add_patch(head)
+    ax.plot([ox, ox], [oy + 0.18 * scale, oy - 0.38 * scale], color='#000000', lw=1.6, zorder=6)
+    ax.plot([ox - 0.32 * scale, ox + 0.32 * scale], [oy - 0.02 * scale, oy - 0.02 * scale], color='#000000', lw=1.6, zorder=6)
+    ax.plot([ox, ox - 0.26 * scale], [oy - 0.38 * scale, oy - 0.82 * scale], color='#000000', lw=1.6, zorder=6)
+    ax.plot([ox, ox + 0.26 * scale], [oy - 0.38 * scale, oy - 0.82 * scale], color='#000000', lw=1.6, zorder=6)
+    ax.text(ox, oy - 1.0 * scale, 'Người Vận Hành\n(Trình Duyệt Web)', fontsize=9.5, fontweight='bold', ha='center', va='top', zorder=7)
+    ax.text(ox, oy - 1.45 * scale, '«human actor»', fontsize=8.5, style='italic', ha='center', va='top', color='#333333', zorder=7)
 
-    # 4. Pump Relay
-    draw_device_actor(ax, 15.2, 10.2, "Module Relay 5V\n& Máy Bơm Mini", "«device»", w=2.7, h=1.2)
-    draw_assoc_line(ax, (13.85, 10.2), uc_tuples['UC03'])
-    draw_assoc_line(ax, (13.85, 9.8), uc_tuples['UC10'])
+    # Operator direct lines
+    for ucid in ['UC07', 'UC08', 'UC09', 'UC10']:
+        y = uc_pos[ucid]
+        ax.plot([2.55, cx - ew/2], [oy, y], color='#000000', lw=1.3, zorder=2)
 
-    # 5. Servo Gate
-    draw_device_actor(ax, 15.2, 8.8, "Động Cơ Servo\nSG90 (Cửa Van)", "«device»", w=2.7, h=1.2)
-    draw_assoc_line(ax, (13.85, 9.0), uc_tuples['UC04'])
-    draw_assoc_line(ax, (13.85, 8.4), uc_tuples['UC10'])
+    # RIGHT ACTORS
+    # 3. Sensors (y=11.6)
+    rect_s = patches.Rectangle((13.9, 11.0), 2.6, 1.2, linewidth=1.4, edgecolor='#000000', facecolor='#ffffff', zorder=6)
+    ax.add_patch(rect_s)
+    ax.text(15.2, 11.75, '«device»', fontsize=8.5, style='italic', ha='center', va='center', zorder=7)
+    ax.text(15.2, 11.35, 'Cảm Biến Siêu Âm\n& Cảm Biến Mưa', fontsize=9.5, fontweight='bold', ha='center', va='center', zorder=7)
+    ax.plot([cx + ew/2, 13.9], [11.6, 11.6], color='#000000', lw=1.3, zorder=2)
 
-    # 6. Signaling LEDs & Buzzer
-    draw_device_actor(ax, 15.2, 7.4, "Cụm 3 Đèn LED\n& Còi Buzzer 5V", "«device»", w=2.7, h=1.2)
-    draw_assoc_line(ax, (13.85, 7.6), uc_tuples['UC05'])
+    # 4. Pump Relay (y=9.8)
+    rect_p = patches.Rectangle((13.9, 9.25), 2.6, 1.15, linewidth=1.4, edgecolor='#000000', facecolor='#ffffff', zorder=6)
+    ax.add_patch(rect_p)
+    ax.text(15.2, 9.95, '«device»', fontsize=8.5, style='italic', ha='center', va='center', zorder=7)
+    ax.text(15.2, 9.6, 'Module Relay 5V\n& Máy Bơm Mini', fontsize=9.5, fontweight='bold', ha='center', va='center', zorder=7)
+    ax.plot([cx + ew/2, 13.9], [9.2, 9.5], color='#000000', lw=1.3, zorder=2)
 
-    # 7. Local Residents
-    draw_human_actor(ax, 15.2, 5.0, "Người Dân\nQuanh Trạm", "«human actor»", scale=0.9)
-    draw_assoc_line(ax, (14.2, 5.6), uc_tuples['UC05'])
+    # 5. Servo Gate (y=8.3)
+    rect_v = patches.Rectangle((13.9, 7.95), 2.6, 1.15, linewidth=1.4, edgecolor='#000000', facecolor='#ffffff', zorder=6)
+    ax.add_patch(rect_v)
+    ax.text(15.2, 8.65, '«device»', fontsize=8.5, style='italic', ha='center', va='center', zorder=7)
+    ax.text(15.2, 8.3, 'Động Cơ Servo\nSG90 (Cửa Van)', fontsize=9.5, fontweight='bold', ha='center', va='center', zorder=7)
+    ax.plot([cx + ew/2, 13.9], [8.0, 8.2], color='#000000', lw=1.3, zorder=2)
+
+    # 6. LED & Buzzer (y=6.9)
+    rect_l = patches.Rectangle((13.9, 6.65), 2.6, 1.15, linewidth=1.4, edgecolor='#000000', facecolor='#ffffff', zorder=6)
+    ax.add_patch(rect_l)
+    ax.text(15.2, 7.35, '«device»', fontsize=8.5, style='italic', ha='center', va='center', zorder=7)
+    ax.text(15.2, 7.0, 'Cụm 3 Đèn LED\n& Còi Buzzer 5V', fontsize=9.5, fontweight='bold', ha='center', va='center', zorder=7)
+    ax.plot([cx + ew/2, 13.9], [6.8, 6.95], color='#000000', lw=1.3, zorder=2)
+
+    # 7. Residents (y=5.5)
+    ry = 5.45
+    rx = 15.2
+    head2 = plt.Circle((rx, ry + 0.44 * scale), r, facecolor='#ffffff', edgecolor='#000000', lw=1.5, zorder=6)
+    ax.add_patch(head2)
+    ax.plot([rx, rx], [ry + 0.18 * scale, ry - 0.38 * scale], color='#000000', lw=1.6, zorder=6)
+    ax.plot([rx - 0.32 * scale, rx + 0.32 * scale], [ry - 0.02 * scale, ry - 0.02 * scale], color='#000000', lw=1.6, zorder=6)
+    ax.plot([rx, rx - 0.26 * scale], [ry - 0.38 * scale, ry - 0.82 * scale], color='#000000', lw=1.6, zorder=6)
+    ax.plot([rx, rx + 0.26 * scale], [ry - 0.38 * scale, ry - 0.82 * scale], color='#000000', lw=1.6, zorder=6)
+    ax.text(rx, ry - 1.0 * scale, 'Người Dân\nQuanh Trạm', fontsize=9.5, fontweight='bold', ha='center', va='top', zorder=7)
+    ax.text(rx, ry - 1.45 * scale, '«human actor»', fontsize=8.5, style='italic', ha='center', va='top', color='#333333', zorder=7)
+    ax.plot([cx + ew/2, 14.3], [6.8, ry + 0.2], color='#000000', lw=1.3, zorder=2)
+
+    # Bus from UC10 to Pump and Servo in right channel at x=12.4
+    ax.plot([cx + ew/2, 12.4], [0.9, 0.9], color='#000000', lw=1.3, zorder=2)
+    ax.plot([12.4, 12.4], [0.9, 9.5], color='#000000', lw=1.3, zorder=2)
+    ax.plot([12.4, 13.9], [9.5, 9.5], color='#000000', lw=1.3, zorder=2) # to pump
+    ax.plot([12.4, 13.9], [8.2, 8.2], color='#000000', lw=1.3, zorder=2) # to servo
 
     save_fig(fig, "uc_overall_diagram.png")
 

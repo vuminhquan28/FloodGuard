@@ -4,7 +4,11 @@ from PIL import Image, ImageDraw, ImageFont
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 
-def generate_state_html(state_name, water, dist, rain_text, rain_color, adc_val, badge_cls, badge_text, pump_text, pump_col, valve_text, valve_col, buzzer_text, buzzer_col, bar_color):
+def generate_state_html(state_name, water, dist, height, rain_text, rain_color, adc_val, badge_cls, badge_text, pump_text, pump_col, valve_text, valve_col, buzzer_text, buzzer_col, bar_color, active_v):
+    v0_cls = "btn-valve-active" if active_v == 0 else ""
+    v50_cls = "btn-valve-active" if active_v == 50 else ""
+    v100_cls = "btn-valve-active" if active_v == 100 else ""
+    pump_btn_bg = "#059669" if "BẬT" in pump_text else "#1e293b"
     return f"""<!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -20,7 +24,7 @@ def generate_state_html(state_name, water, dist, rain_text, rain_color, adc_val,
     .card {{ background: rgba(22, 33, 62, 0.75); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 10px; padding: 10px 12px; }}
     .card-title {{ font-size: 0.72rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-bottom: 6px; }}
     .card-val {{ font-size: 1.6rem; font-weight: 800; line-height: 1.1; margin-bottom: 4px; }}
-    .sub-text {{ font-size: 0.74rem; color: #cbd5e1; }}
+    .sub-text {{ font-size: 0.72rem; color: #cbd5e1; }}
     
     .bar-bg {{ width: 100%; height: 9px; background: rgba(255,255,255,0.08); border-radius: 5px; overflow: hidden; margin-top: 6px; }}
     .bar-fill {{ height: 100%; width: {water}%; background: {bar_color}; border-radius: 5px; }}
@@ -37,6 +41,7 @@ def generate_state_html(state_name, water, dist, rain_text, rain_color, adc_val,
     .btn-row {{ display: flex; gap: 6px; margin-top: 6px; }}
     .btn {{ background: #1e293b; color: #cbd5e1; border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; padding: 4px 6px; font-size: 0.68rem; text-align: center; flex: 1; }}
     .btn-active {{ background: #2563eb; color: white; font-weight: 700; }}
+    .btn-valve-active {{ border: 2px solid #38bdf8 !important; background: #0284c7 !important; color: white !important; font-weight: 700; box-shadow: 0 0 6px rgba(56, 189, 248, 0.5); }}
   </style>
 </head>
 <body>
@@ -48,7 +53,7 @@ def generate_state_html(state_name, water, dist, rain_text, rain_color, adc_val,
     <div class="card">
       <div class="card-title">🌊 MỰC NƯỚC HỒ THU</div>
       <div class="card-val" style="color: {bar_color};">{water}%</div>
-      <div class="sub-text">Cách mặt nước: <b>{dist} cm</b></div>
+      <div class="sub-text">Cột nước đáy: <b style="color: #38bdf8;">{height} cm</b> (Cách SB: <b>{dist} cm</b>)</div>
       <div class="bar-bg"><div class="bar-fill"></div></div>
     </div>
     <div class="card">
@@ -57,7 +62,7 @@ def generate_state_html(state_name, water, dist, rain_text, rain_color, adc_val,
         <span class="badge {badge_cls}">{badge_text}</span>
       </div>
       <div class="sub-text" style="line-height: 1.4;">
-        <div>Mưa: <b style="color: {rain_color};">{rain_text}</b></div>
+        <div>Thời tiết: <b style="color: {rain_color};">{rain_text}</b></div>
         <div>ADC: {adc_val} / 4095</div>
       </div>
     </div>
@@ -78,13 +83,13 @@ def generate_state_html(state_name, water, dist, rain_text, rain_color, adc_val,
     </div>
   </div>
   <div class="ctrl-box">
-    <div style="color: #94a3b8; font-weight: 700; margin-bottom: 2px;">🎮 ĐIỀU KHIỂN CAN THIỆP TỪ XA</div>
+    <div style="color: #94a3b8; font-weight: 700; margin-bottom: 2px;">🎮 ĐIỀU KHIỂN CAN THIỆP (MANUAL / AUTO)</div>
     <div class="btn-row">
       <div class="btn btn-active">Chế Độ AUTO</div>
-      <div class="btn">Bơm (Khóa)</div>
-      <div class="btn">Van 0%</div>
-      <div class="btn">Van 50%</div>
-      <div class="btn">Van 100%</div>
+      <div class="btn" style="background: {pump_btn_bg};">Bật/Tắt Bơm</div>
+      <div class="btn {v0_cls}">Van 0%</div>
+      <div class="btn {v50_cls}">Van 50%</div>
+      <div class="btn {v100_cls}">Van 100%</div>
     </div>
   </div>
 </body>
@@ -93,15 +98,15 @@ def generate_state_html(state_name, water, dist, rain_text, rain_color, adc_val,
 def make_dashboard_4states():
     chrome = r"C:\Program Files\Google\Chrome\Application\chrome.exe"
     states_meta = [
-        ("state_a", "NORMAL", 15, "43.3", "KHÔNG MƯA", "#94a3b8", 3800, "badge-norm", "FSM: NORMAL", "ĐÃ TẮT (OFF)", "#94a3b8", "0% (ĐÓNG)", "#94a3b8", "YÊN LẶNG", "#94a3b8", "#10b981"),
-        ("state_b", "WARNING", 35, "34.2", "MƯA NHỎ", "#38bdf8", 2550, "badge-warn", "FSM: WARNING", "ĐÃ TẮT (OFF)", "#94a3b8", "0% (ĐÓNG)", "#94a3b8", "BÍP THƯA", "#f59e0b", "#f59e0b"),
-        ("state_c", "DANGER", 65, "20.8", "MƯA TO", "#f59e0b", 1420, "badge-dang", "FSM: DANGER", "ĐANG BẬT (ON)", "#10b981", "50% (MỞ NỬA)", "#38bdf8", "BÁO DỒN DẬP", "#f97316", "#f97316"),
-        ("state_d", "CRITICAL", 85, "11.8", "MƯA CỰC TO / NGẬP", "#ef4444", 750, "badge-crit", "FSM: CRITICAL", "ĐANG BẬT (ON)", "#10b981", "100% (MỞ HẾT)", "#ef4444", "HÚ LIÊN TỤC", "#ef4444", "#ef4444")
+        ("state_a", "NORMAL", 10, "9.2", "0.8", "KHÔNG MƯA", "#94a3b8", 4095, "badge-norm", "FSM: NORMAL", "ĐÃ TẮT (OFF)", "#94a3b8", "0% (ĐÓNG)", "#94a3b8", "YÊN LẶNG", "#94a3b8", "#10b981", 0),
+        ("state_b", "WARNING", 25, "8.0", "2.0", "MƯA NHỎ", "#38bdf8", 2550, "badge-warn", "FSM: WARNING", "ĐÃ TẮT (OFF)", "#94a3b8", "0% (ĐÓNG)", "#94a3b8", "BÍP THƯA", "#f59e0b", "#f59e0b", 0),
+        ("state_c", "DANGER", 45, "6.4", "3.6", "MƯA TO !", "#f59e0b", 1520, "badge-dang", "FSM: DANGER", "ĐANG BẬT (ON)", "#10b981", "50% (MỞ NỬA)", "#38bdf8", "BÁO DỒN DẬP", "#f97316", "#f97316", 50),
+        ("state_d", "CRITICAL", 75, "4.0", "6.0", "NGẬP / MƯA CỰC TO !", "#ef4444", 650, "badge-crit", "FSM: CRITICAL", "ĐANG BẬT (ON)", "#10b981", "100% (MỞ HẾT)", "#ef4444", "HÚ LIÊN TỤC", "#ef4444", "#ef4444", 100)
     ]
 
     rendered_imgs = []
-    for idx, (fn, st, w, d, rt, rc, adc, bc, bt, pt, pc, vt, vc, bzt, bzc, bar_c) in enumerate(states_meta):
-        h = generate_state_html(st, w, d, rt, rc, adc, bc, bt, pt, pc, vt, vc, bzt, bzc, bar_c)
+    for idx, (fn, st, w, d, h_cm, rt, rc, adc, bc, bt, pt, pc, vt, vc, bzt, bzc, bar_c, act_v) in enumerate(states_meta):
+        h = generate_state_html(st, w, d, h_cm, rt, rc, adc, bc, bt, pt, pc, vt, vc, bzt, bzc, bar_c, act_v)
         tmp_h = os.path.abspath(f"figures/tmp_{fn}.html")
         tmp_p = os.path.abspath(f"figures/tmp_{fn}.png")
         with open(tmp_h, "w", encoding="utf-8") as f:
@@ -140,10 +145,10 @@ def make_dashboard_4states():
     except:
         font_label = ImageFont.load_default()
 
-    draw.text((25, 12), "(a) Cấp 1: NORMAL (Bình thường - Mực nước 15%, Bơm TẮT, Van 0°)", fill="#10b981", font=font_label)
-    draw.text((w + 35, 12), "(b) Cấp 2: WARNING (Cảnh báo - Mực nước 35%, Bơm TẮT, Còi bíp thưa)", fill="#f59e0b", font=font_label)
-    draw.text((25, h + 52), "(c) Cấp 3: DANGER (Nguy cơ - Mực nước 65%, Bơm BẬT, Van mở 50%)", fill="#f97316", font=font_label)
-    draw.text((w + 35, h + 52), "(d) Cấp 4: CRITICAL (Nguy cấp - Mực nước 85%, Bơm BẬT, Van mở 100%)", fill="#ef4444", font=font_label)
+    draw.text((25, 12), "(a) Cấp 1: NORMAL (Bình thường - Cột nước 0.8cm, Bơm TẮT, Van 0°)", fill="#10b981", font=font_label)
+    draw.text((w + 35, 12), "(b) Cấp 2: WARNING (Cảnh báo - Cột nước 2.0cm, Bơm TẮT, Còi bíp thưa)", fill="#f59e0b", font=font_label)
+    draw.text((25, h + 52), "(c) Cấp 3: DANGER (Nguy hiểm - Cột nước 3.6cm, Bơm BẬT, Van mở 50%)", fill="#f97316", font=font_label)
+    draw.text((w + 35, h + 52), "(d) Cấp 4: CRITICAL (Báo động - Cột nước 6.0cm, Bơm BẬT, Van mở 100%)", fill="#ef4444", font=font_label)
 
     out_p = "figures/dashboard_4states.png"
     rep_p = "report/figures/dashboard_4states.png"

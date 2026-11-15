@@ -25,19 +25,19 @@
 // THÔNG SỐ ĐO VÀ NGƯỠNG MỰC NƯỚC
 // ==========================================
 // Chiều sâu đo cảm biến siêu âm (cm):
-// 50cm = Đáy bể / Cạn hoàn toàn (0%)
-// 5cm  = Đỉnh bể / Tràn đầy (100%)
-const float DISTANCE_EMPTY = 50.0;
-const float DISTANCE_FULL  = 5.0;
+// 10cm = Đáy bể / Cạn hoàn toàn (0%)
+// 2cm  = Đỉnh bể / Tràn đầy (100%)
+const float DISTANCE_EMPTY = 10.0;
+const float DISTANCE_FULL  = 2.0;
 
 // Dải trễ (Hysteresis) FSM
-const int THRESHOLD_WARN_ENTER   = 21;
-const int THRESHOLD_DANGER_ENTER = 41;
-const int THRESHOLD_CRIT_ENTER   = 71;
+const int THRESHOLD_WARN_ENTER   = 19;
+const int THRESHOLD_DANGER_ENTER = 38;
+const int THRESHOLD_CRIT_ENTER   = 56;
 
-const int THRESHOLD_CRIT_EXIT    = 68;
-const int THRESHOLD_DANGER_EXIT  = 38;
-const int THRESHOLD_WARN_EXIT    = 18;
+const int THRESHOLD_CRIT_EXIT    = 53;
+const int THRESHOLD_DANGER_EXIT  = 35;
+const int THRESHOLD_WARN_EXIT    = 16;
 
 // Ngưỡng cảm biến mưa (Chiết áp / ADC 12-bit: 0 - 4095)
 const int RAIN_ADC_LIGHT      = 2800; // Mưa nhỏ / ẩm ướt
@@ -61,7 +61,7 @@ WebServer server(80);
 // ==========================================
 // BIẾN TRẠNG THÁI TOÀN CỤC
 // ==========================================
-float currentDistance = 50.0;
+float currentDistance = 10.0;
 int   waterPercent    = 0;
 bool  isRaining       = false;
 int   rainRawADC      = 0;
@@ -139,7 +139,7 @@ void evaluateSystemStateAuto() {
     case STATE_WARNING:
       if (waterPercent >= THRESHOLD_CRIT_ENTER || isSubmerged) {
         sysState = STATE_CRITICAL;
-      } else if (waterPercent >= THRESHOLD_DANGER_ENTER || isHeavyRain || (isLightRain && waterPercent >= 30)) {
+      } else if (waterPercent >= THRESHOLD_DANGER_ENTER || isHeavyRain || (isLightRain && waterPercent >= THRESHOLD_DANGER_ENTER)) {
         sysState = STATE_DANGER;
       } else if (waterPercent < THRESHOLD_WARN_EXIT && !isLightRain) {
         sysState = STATE_NORMAL;
@@ -147,7 +147,7 @@ void evaluateSystemStateAuto() {
       break;
 
     case STATE_DANGER:
-      if (waterPercent >= THRESHOLD_CRIT_ENTER || isSubmerged || (isHeavyRain && waterPercent >= 30)) {
+      if (waterPercent >= THRESHOLD_CRIT_ENTER || isSubmerged || (isHeavyRain && waterPercent >= THRESHOLD_DANGER_ENTER)) {
         sysState = STATE_CRITICAL;
       } else if (waterPercent < THRESHOLD_DANGER_EXIT && !isHeavyRain) {
         sysState = STATE_WARNING;
@@ -214,8 +214,13 @@ void applyOutputs() {
   digitalWrite(PIN_RELAY, pumpState ? RELAY_ON : RELAY_OFF);
 
   // 2. Điều khiển Van xả (Servo SG90: 0% -> 0 độ, 50% -> 90 độ, 100% -> 180 độ)
+  static int currentServoAngle = -1;
   int servoAngle = map(valvePercent, 0, 100, 0, 180);
-  valveServo.write(servoAngle);
+  servoAngle = constrain(servoAngle, 0, 180);
+  if (servoAngle != currentServoAngle) {
+    valveServo.write(servoAngle);
+    currentServoAngle = servoAngle;
+  }
 
   // 3. Điều khiển LED & Còi Buzzer đa cấp độ
   unsigned long now = millis();
@@ -320,7 +325,7 @@ const char HTML_DASHBOARD[] PROGMEM = R"rawliteral(
 
   <div class="container">
     <div class="card">
-      <h2>Muc Nuoc Ho Thu <span id="distVal">-- cm</span> <small style="font-size:12px;color:#94a3b8;font-weight:normal;">(50cm - 5cm)</small></h2>
+      <h2>Muc Nuoc Ho Thu <span id="distVal">-- cm</span> <small style="font-size:12px;color:#94a3b8;font-weight:normal;">(10cm - 2cm)</small></h2>
       <div class="metric-val" id="waterVal">0%</div>
       <div class="progress-bar">
         <div class="progress-fill" id="waterBar"></div>
@@ -389,9 +394,9 @@ const char HTML_DASHBOARD[] PROGMEM = R"rawliteral(
         
         const bar = document.getElementById('waterBar');
         bar.style.width = data.water + '%';
-        if (data.water < 21) bar.style.backgroundColor = 'var(--normal)';
-        else if (data.water < 41) bar.style.backgroundColor = 'var(--warning)';
-        else if (data.water < 71) bar.style.backgroundColor = 'var(--danger)';
+        if (data.water < 13) bar.style.backgroundColor = 'var(--normal)';
+        else if (data.water < 31) bar.style.backgroundColor = 'var(--warning)';
+        else if (data.water < 50) bar.style.backgroundColor = 'var(--danger)';
         else bar.style.backgroundColor = 'var(--critical)';
 
         const badge = document.getElementById('stateBadge');
@@ -482,20 +487,31 @@ void handleStatusApi() {
 }
 
 void handleControlApi() {
-  // 1. Tiếp nhận tham số điều khiển tường minh (Explicit State Parameters)
   if (server.hasArg("mode")) {
     String m = server.arg("mode");
     if (m == "auto") isAutoMode = true;
     else if (m == "manual") isAutoMode = false;
   }
-  if (server.hasArg("pump") && !isAutoMode) {
+  if (server.hasArg("pump")) {
     String p = server.arg("pump");
+    isAutoMode = false;
     if (p == "1" || p == "on") pumpState = true;
     else if (p == "0" || p == "off") pumpState = false;
     else if (p == "toggle") pumpState = !pumpState;
   }
-  if (server.hasArg("valve") && !isAutoMode) {
-    valvePercent = constrain(server.arg("valve").toInt(), 0, 100);
+  if (server.hasArg("valve")) {
+    String v = server.arg("valve");
+    isAutoMode = false;
+    if (v == "toggle" || v == "cycle") {
+      if (valvePercent == 0) valvePercent = 50;
+      else if (valvePercent == 50) valvePercent = 100;
+      else valvePercent = 0;
+    } else {
+      int val = v.toInt();
+      if (val == 90) val = 50;
+      else if (val == 180) val = 100;
+      valvePercent = constrain(val, 0, 100);
+    }
   }
 
   // 2. Tiếp nhận tham số hành động (Web Dashboard UI Buttons)
@@ -503,16 +519,30 @@ void handleControlApi() {
     String act = server.arg("action");
     if (act == "mode_toggle") {
       isAutoMode = !isAutoMode;
-    } else if (act == "pump_toggle" && !isAutoMode) {
+    } else if (act == "mode_auto") {
+      isAutoMode = true;
+    } else if (act == "mode_manual") {
+      isAutoMode = false;
+    } else if (act == "pump_toggle") {
+      isAutoMode = false;
       pumpState = !pumpState;
-    } else if (act == "valve_0" && !isAutoMode) {
+    } else if (act == "valve_cycle" || act == "valve_toggle" || act == "valve_mode") {
+      isAutoMode = false;
+      if (valvePercent == 0) valvePercent = 50;
+      else if (valvePercent == 50) valvePercent = 100;
+      else valvePercent = 0;
+    } else if (act == "valve_0") {
+      isAutoMode = false;
       valvePercent = 0;
-    } else if (act == "valve_50" && !isAutoMode) {
+    } else if (act == "valve_50") {
+      isAutoMode = false;
       valvePercent = 50;
-    } else if (act == "valve_100" && !isAutoMode) {
+    } else if (act == "valve_100") {
+      isAutoMode = false;
       valvePercent = 100;
     }
   }
+  applyOutputs();
   server.send(200, "text/plain", "OK");
 }
 

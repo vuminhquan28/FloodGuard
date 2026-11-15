@@ -46,6 +46,11 @@
     .control-btn-primary:hover { background: #1d4ed8; }
     .control-btn-danger  { background: #dc2626; border-color: #ef4444; }
     .control-btn-danger:hover  { background: #b91c1c; }
+    .control-btn-valve { background: #0f766e; border-color: #14b8a6; }
+    .control-btn-valve:hover { background: #0d9488; }
+    .btn-valve-active { border: 2px solid #38bdf8 !important; background: #0284c7 !important; box-shadow: 0 0 10px rgba(56, 189, 248, 0.5); }
+    .control-btn.disabled-btn { opacity: 0.45; cursor: not-allowed; filter: grayscale(40%); }
+    .control-btn.disabled-btn:hover { transform: none; }
 
     /* Thanh công cụ giả lập thử nghiệm giao diện (Chỉ xuất hiện khi Preview trên máy tính) */
     .preview-toolbar {
@@ -86,7 +91,8 @@
       <div class="card">
         <div class="card-title">Mực Nước Hồ Thu</div>
         <div class="card-value" id="waterVal">0%</div>
-        <div style="font-size: 0.85rem; color: var(--text-muted);">Khoảng cách: <span id="distVal">--</span> cm <span style="font-size: 0.75rem; color: #64748b;">(50cm - 5cm)</span></div>
+        <div style="font-size: 0.85rem; color: var(--text-muted);">Khoảng cách: <span id="distVal">--</span> cm <span style="font-size: 0.75rem; color: #64748b;">(Đáy: 10cm | Đỉnh: 2cm)</span></div>
+        <div style="font-size: 0.85rem; color: #38bdf8; margin-top: 4px;">Cột nước từ đáy: <span id="heightVal" style="font-weight: 700;">--</span> cm</div>
         <div class="progress-bar-bg">
           <div class="progress-bar" id="waterBar"></div>
         </div>
@@ -120,11 +126,18 @@
         Chuyển sang chế độ MANUAL để tự do bật/tắt bơm và xoay góc mở van xả.
       </p>
       <div>
-        <button class="control-btn control-btn-primary" onclick="sendCommand('mode_toggle')">Đổi Chế Độ (AUTO / MANUAL)</button>
-        <button class="control-btn" id="btnWebPump" onclick="sendCommand('pump_toggle')">Bật/Tắt Bơm (Manual)</button>
-        <button class="control-btn" onclick="sendCommand('valve_0')">Van 0% (Đóng)</button>
-        <button class="control-btn" onclick="sendCommand('valve_50')">Van 50% (Mở Nửa)</button>
-        <button class="control-btn control-btn-danger" onclick="sendCommand('valve_100')">Van 100% (Mở Hết)</button>
+        <button class="control-btn control-btn-primary" id="btnMode" onclick="sendCommand('mode_toggle')">🔄 Đổi Chế Độ: <span id="btnModeText">AUTO</span></button>
+        <button class="control-btn manual-btn" id="btnWebPump" onclick="sendCommand('pump_toggle')">⚡ Bật/Tắt Bơm (Manual)</button>
+        <button class="control-btn control-btn-valve manual-btn" id="btnValveCycle" onclick="sendCommand('valve_cycle')">🎛️ Đổi Chế Độ Van Xả (0% ➔ 50% ➔ 100%)</button>
+      </div>
+      <div style="margin-top: 10px; display: flex; align-items: center; flex-wrap: wrap;">
+        <span style="font-size: 0.8rem; color: var(--text-muted); margin-right: 8px;">Góc mở trực tiếp:</span>
+        <button class="control-btn manual-btn" id="btnValve0" onclick="sendCommand('valve_0')">Van 0% (Đóng)</button>
+        <button class="control-btn manual-btn" id="btnValve50" onclick="sendCommand('valve_50')">Van 50% (Mở Nửa)</button>
+        <button class="control-btn control-btn-danger manual-btn" id="btnValve100" onclick="sendCommand('valve_100')">Van 100% (Mở Hết)</button>
+      </div>
+      <div id="manualWarning" style="margin-top: 10px; font-size: 0.8rem; color: #f59e0b; display: block;">
+        ⚠️ Hệ thống đang ở chế độ <b>AUTO</b>. Vui lòng bấm <b>"Đổi Chế Độ"</b> sang <b>MANUAL</b> trước khi can thiệp van xả và máy bơm.
       </div>
     </div>
   </div>
@@ -171,11 +184,15 @@
     function renderUI(data) {
       document.getElementById('waterVal').innerText = data.water + '%';
       document.getElementById('distVal').innerText = data.distance;
+      let h = (10.0 - data.distance).toFixed(1);
+      if (h < 0) h = '0.0';
+      const hElem = document.getElementById('heightVal');
+      if (hElem) hElem.innerText = h;
       
       const bar = document.getElementById('waterBar');
       bar.style.width = data.water + '%';
-      bar.style.background = data.water < 21 ? 'var(--green)' :
-                             data.water < 41 ? 'var(--yellow)' : 'var(--red)';
+      bar.style.background = data.water < 19 ? 'var(--green)' :
+                             data.water < 38 ? 'var(--yellow)' : 'var(--red)';
 
       const sBadge = document.getElementById('stateBadge');
       sBadge.innerText = data.state;
@@ -210,6 +227,63 @@
       pVal.style.color = data.pump ? '#10b981' : '#f87171';
 
       document.getElementById('valveVal').innerText = data.valve + '%';
+      
+      const isManual = (data.mode === 'MANUAL');
+      const btnModeText = document.getElementById('btnModeText');
+      if (btnModeText) btnModeText.innerText = data.mode;
+
+      const manualWarning = document.getElementById('manualWarning');
+      if (manualWarning) {
+        manualWarning.style.display = isManual ? 'none' : 'block';
+      }
+
+      // Nút điều khiển thủ công (bật/tắt trạng thái disabled)
+      document.querySelectorAll('.manual-btn').forEach(btn => {
+        if (isManual) {
+          btn.classList.remove('disabled-btn');
+          btn.removeAttribute('disabled');
+        } else {
+          btn.classList.add('disabled-btn');
+          btn.setAttribute('disabled', 'true');
+        }
+      });
+
+      // Nhãn nút Bật/Tắt Bơm
+      const btnPump = document.getElementById('btnWebPump');
+      if (btnPump) {
+        if (data.pump) {
+          btnPump.innerText = '⚡ Tắt Máy Bơm (ĐANG BẬT)';
+          btnPump.style.background = '#059669';
+          btnPump.style.borderColor = '#10b981';
+        } else {
+          btnPump.innerText = '⚡ Bật Máy Bơm (ĐÃ TẮT)';
+          btnPump.style.background = '#1e293b';
+          btnPump.style.borderColor = 'var(--border)';
+        }
+      }
+
+      // Nhãn nút Đổi Chế Độ Van Xả
+      const btnValveCycle = document.getElementById('btnValveCycle');
+      if (btnValveCycle) {
+        if (data.valve === 0) {
+          btnValveCycle.innerText = '🎛️ Đổi Chế Độ Van: ĐANG ĐÓNG 0° (Bấm mở 50%)';
+        } else if (data.valve === 50) {
+          btnValveCycle.innerText = '🎛️ Đổi Chế Độ Van: ĐANG MỞ 90° (Bấm mở 100%)';
+        } else {
+          btnValveCycle.innerText = '🎛️ Đổi Chế Độ Van: ĐANG MỞ 180° (Bấm đóng 0%)';
+        }
+      }
+
+      // Highlight nút chọn góc trực tiếp
+      const v0 = document.getElementById('btnValve0');
+      const v50 = document.getElementById('btnValve50');
+      const v100 = document.getElementById('btnValve100');
+      if (v0 && v50 && v100) {
+        v0.classList.toggle('btn-valve-active', data.valve === 0);
+        v50.classList.toggle('btn-valve-active', data.valve === 50);
+        v100.classList.toggle('btn-valve-active', data.valve === 100);
+      }
+
       const bVal = document.getElementById('buzzerVal');
       if (data.state === 'CRITICAL' || data.buzzer === 'CONTINUOUS') {
         bVal.innerText = 'HÚ LIÊN TỤC (KHẨN CẤP)';
@@ -226,94 +300,183 @@
       }
     }
 
-    // Các hàm tương tác với thanh trượt xem trước
-    function onWaterSlider(val) {
+    // Các hàm tương tác với thanh trượt xem trước và REST API
+    let isServerConnected = false;
+
+    async function fetchServerStatus() {
+      try {
+        const res = await fetch('/api/status');
+        if (res.ok) {
+          const data = await res.json();
+          isServerConnected = true;
+          mockData.water = data.water;
+          mockData.distance = data.distance;
+          mockData.rain = data.rain;
+          mockData.rain_adc = data.rain_adc;
+          mockData.state = data.state;
+          mockData.mode = data.mode;
+          mockData.pump = (data.pump === 1 || data.pump === true);
+          mockData.valve = data.valve;
+          mockData.buzzer = data.buzzer;
+
+          document.getElementById('sliderVal').innerText = data.water + '%';
+          document.getElementById('waterSlider').value = data.water;
+          renderUI(mockData);
+        }
+      } catch (e) {
+        // Fallback local mode
+        isServerConnected = false;
+      }
+    }
+
+    async function onWaterSlider(val) {
       mockData.water = parseInt(val);
-      mockData.distance = (50 - (val / 100 * 45)).toFixed(1);
+      mockData.distance = (10.0 - (val / 100 * 8.0)).toFixed(1);
       document.getElementById('sliderVal').innerText = val + '%';
+      
+      if (isServerConnected) {
+        try {
+          await fetch('/api/simulate?water=' + val);
+          fetchServerStatus();
+          return;
+        } catch(e) {}
+      }
       evaluateMockFSM();
       renderUI(mockData);
     }
 
-    function onRainSelect(level) {
+    async function onRainSelect(level) {
+      let adc = 3850;
       if (level === 'submerged') {
         mockData.rain = true;
-        mockData.rain_adc = 650;
+        adc = 650;
       } else if (level === 'heavy') {
         mockData.rain = true;
-        mockData.rain_adc = 1450;
+        adc = 1450;
       } else if (level === 'light') {
         mockData.rain = true;
-        mockData.rain_adc = 2300;
+        adc = 2300;
       } else {
         mockData.rain = false;
-        mockData.rain_adc = 3850;
+        adc = 3850;
+      }
+      mockData.rain_adc = adc;
+
+      if (isServerConnected) {
+        try {
+          await fetch('/api/simulate?rain_adc=' + adc);
+          fetchServerStatus();
+          return;
+        } catch(e) {}
       }
       evaluateMockFSM();
       renderUI(mockData);
     }
 
     function evaluateMockFSM() {
-      if (mockData.mode === 'AUTO') {
-        const isSubmerged = mockData.rain_adc < 1100;
-        const isHeavy = mockData.rain_adc < 1800;
-        const isLight = mockData.rain;
+      const isSubmerged = mockData.rain_adc < 1100;
+      const isHeavy = mockData.rain_adc < 1800;
+      const isLight = mockData.rain;
 
-        if (mockData.water >= 71 || isSubmerged) {
-          mockData.state = "CRITICAL";
+      // Đánh giá trạng thái cảnh báo (LED & Còi) ở CẢ 2 CHẾ ĐỘ
+      if (mockData.water >= 56 || isSubmerged) {
+        mockData.state = "CRITICAL";
+        mockData.buzzer = "CONTINUOUS";
+      } else if (mockData.water >= 38 || isHeavy || (isLight && mockData.water >= 25)) {
+        mockData.state = "DANGER";
+        mockData.buzzer = "FAST";
+      } else if (mockData.water >= 19 || isLight) {
+        mockData.state = "WARNING";
+        mockData.buzzer = "SLOW";
+      } else {
+        mockData.state = "NORMAL";
+        mockData.buzzer = "OFF";
+      }
+
+      // Chỉ gán tự động Bơm & Van khi ở chế độ AUTO
+      if (mockData.mode === 'AUTO') {
+        if (mockData.state === "CRITICAL") {
           mockData.pump = true;
           mockData.valve = 100;
-          mockData.buzzer = "CONTINUOUS";
-        } else if (mockData.water >= 41 || isHeavy || (isLight && mockData.water >= 21)) {
-          mockData.state = "DANGER";
+        } else if (mockData.state === "DANGER") {
           mockData.pump = true;
           mockData.valve = 50;
-          mockData.buzzer = "FAST";
-        } else if (mockData.water >= 21 || isLight) {
-          mockData.state = "WARNING";
-          mockData.pump = false;
-          mockData.valve = 0;
-          mockData.buzzer = "SLOW";
         } else {
-          mockData.state = "NORMAL";
           mockData.pump = false;
           mockData.valve = 0;
-          mockData.buzzer = "OFF";
         }
       }
     }
 
-    function sendCommand(cmd) {
+    function mockAutoState() {
+      mockData.mode = 'AUTO';
+      if (isServerConnected) {
+        fetch('/api/control?mode=auto').then(() => fetchServerStatus());
+      } else {
+        evaluateMockFSM();
+        renderUI(mockData);
+      }
+    }
+
+    async function sendCommand(cmd) {
+      if (cmd !== 'mode_toggle') {
+        mockData.mode = 'MANUAL';
+      }
+
+      if (isServerConnected) {
+        try {
+          await fetch('/api/control?action=' + cmd);
+          await fetchServerStatus();
+          return;
+        } catch (e) {}
+      }
+
+      // Local fallback
       if (cmd === 'mode_toggle') {
         mockData.mode = (mockData.mode === 'AUTO') ? 'MANUAL' : 'AUTO';
         if (mockData.mode === 'AUTO') evaluateMockFSM();
       } else if (cmd === 'pump_toggle') {
         if (mockData.mode === 'MANUAL') {
           mockData.pump = !mockData.pump;
-        } else {
-          alert('Hãy bấm Đổi Chế Độ sang MANUAL trước khi can thiệp thủ công!');
+        }
+      } else if (cmd === 'valve_cycle' || cmd === 'valve_toggle') {
+        if (mockData.mode === 'MANUAL') {
+          if (mockData.valve === 0) mockData.valve = 50;
+          else if (mockData.valve === 50) mockData.valve = 100;
+          else mockData.valve = 0;
         }
       } else if (cmd.startsWith('valve_')) {
         if (mockData.mode === 'MANUAL') {
           mockData.valve = parseInt(cmd.replace('valve_', ''));
-        } else {
-          alert('Hãy bấm Đổi Chế Độ sang MANUAL trước khi can thiệp van xả!');
         }
       }
       renderUI(mockData);
     }
 
-    function resetMock() {
+    async function resetMock() {
       mockData.water = 15;
       mockData.mode = "AUTO";
+      mockData.rain = false;
+      mockData.rain_adc = 3850;
       document.getElementById('waterSlider').value = 15;
       document.getElementById('sliderVal').innerText = "15%";
-      document.getElementById('rainCheckbox').checked = false;
+      document.getElementById('rainSelect').value = "none";
+      
+      if (isServerConnected) {
+        try {
+          await fetch('/api/simulate?water=15&rain_adc=3850');
+          await fetch('/api/control?mode=auto');
+          fetchServerStatus();
+          return;
+        } catch (e) {}
+      }
       evaluateMockFSM();
       renderUI(mockData);
     }
 
-    // Khởi chạy hiển thị lần đầu
+    // Khởi chạy vòng lặp cập nhật định kỳ 1s (giống ESP32)
+    setInterval(fetchServerStatus, 1000);
+    fetchServerStatus();
     evaluateMockFSM();
     renderUI(mockData);
   </script>

@@ -11,7 +11,7 @@ Sau quá trình nghiên cứu, mô hình hóa và triển khai thực nghiệm, 
     \item \textbf{Kiến trúc phần mềm nhúng thời gian thực:} Xây dựng mô hình lập lịch Super-Loop phi chặn (\textit{Non-blocking}) dựa trên bộ đếm vi điều khiển \texttt{millis()}, phân chia tối ưu 7 phân hệ chức năng và 8 tác vụ có chu kỳ xác định ($150\,\text{ms} - 1000\,\text{ms}$), loại bỏ triệt để hàm chờ bận \texttt{delay()} (Mục~\ref{sec:firmware_architecture}).
     \item \textbf{Thuật toán điều khiển thông minh:} Áp dụng bộ lọc trung vị 3 mẫu (\textit{Median-of-3}) khử nhiễu dập dềnh sóng nước; vận hành máy trạng thái hữu hạn FSM gồm 4 trạng thái chức năng (\texttt{NORMAL}, \texttt{WARNING}, \texttt{DANGER}, \texttt{CRITICAL}) và trạng thái bắt lỗi \texttt{SENSOR\_FAULT}; kết hợp kỹ thuật dải trễ Hysteresis biên độ ($3\%$) với bộ lọc chống rung thời gian ($1.0\,\text{s}$); kiểm soát vận tốc mượt cho Servo; tích hợp cơ chế bảo vệ Failsafe tự động chuyển về \texttt{AUTO} khi mất kết nối mạng quá $30\,\text{s}$ (Chương~\ref{ch:algorithm}).
     \item \textbf{Giao diện Web Dashboard \& Giao thức REST API:} Thiết kế giao diện Dark Glassmorphism hiện đại nhúng trực tiếp trong bộ nhớ Flash PROGMEM dung lượng nhỏ gọn ($\approx 14.2\,\text{KB}$); hệ thống tự phát sóng Wi-Fi SoftAP độc lập mang tên \texttt{FloodGuard\_AP} (bảo mật WPA2-PSK), hỗ trợ định danh qua tên miền cục bộ \url{http://floodguard.local} hoặc IP \texttt{192.168.4.1}; chuẩn hóa 3 endpoint REST API trao đổi gói tin JSON thời gian thực chỉ $\approx 210\,\text{bytes}$ (Chương~\ref{ch:web_dashboard}).
-    \item \textbf{Triển khai thực nghiệm \& Mô hình sa bàn Mica:} Đóng gói dự án theo chuẩn PlatformIO đa môi trường (\texttt{esp32dev} phục vụ giả lập Wokwi và \texttt{hardware} phục vụ nạp chip thật); chế tạo sa bàn mô hình thu nhỏ 2 bể bằng Mica trong suốt $3\,\text{mm}$ kích thước $28 \times 16 \times 22\,\text{cm}$ với dải đo hiệu chỉnh $6.0 - 16.0\,\text{cm}$; nghiệm thu thành công 6 kịch bản kiểm thử thực tế (Chương~\ref{ch:deployment_guide}).
+    \item \textbf{Triển khai thực nghiệm \& Mô hình sa bàn Mica:} Đóng gói dự án theo chuẩn PlatformIO đa môi trường (\texttt{esp32dev} phục vụ giả lập Wokwi và \texttt{hardware} phục vụ nạp chip thật); chế tạo sa bàn mô hình thu nhỏ 2 bể bằng Mica trong suốt $3\,\text{mm}$ kích thước $28 \times 16 \times 22\,\text{cm}$ với dải đo hiệu chỉnh $2.0 - 10.0\,\text{cm}$ ($d_{\text{empty}} = 10.0\,\text{cm}, d_{\text{full}} = 2.0\,\text{cm}$); nghiệm thu thành công 6 kịch bản kiểm thử thực tế (Chương~\ref{ch:deployment_guide}).
 \end{enumerate}
 
 Phối cảnh cơ khí tổng thể và bố trí các cụm thiết bị trên mô hình sa bàn Mica hoàn chỉnh được minh họa trong Hình~\ref{fig:mica_perspective}.
@@ -26,17 +26,29 @@ Phối cảnh cơ khí tổng thể và bố trí các cụm thiết bị trên 
 \subsection{Đối Chiếu Với Các Mục Tiêu Kỹ Thuật Định Lượng}
 Để đánh giá mức độ hoàn thiện của đề tài một cách khoa học, Bảng~\ref{tab:target_evaluation} tổng hợp đối chiếu toàn bộ các chỉ tiêu kỹ thuật định lượng đã đề ra tại Mục~\ref{sec:quantitative_goals} với kết quả đo đạc thực nghiệm và phân tích lý thuyết:
 
-\begin{table}[H]
-\centering
-\caption{Bảng đối chiếu kết quả thực nghiệm với mục tiêu định lượng ban đầu}
-\label{tab:target_evaluation}
+\begingroup
 \small
 \renewcommand{\arraystretch}{1.2}
-\begin{tabularx}{\textwidth}{|c|>{\raggedright\arraybackslash}p{3.2cm}|>{\raggedright\arraybackslash}X|>{\centering\arraybackslash}p{2.3cm}|c|}
+\begin{xltabular}{\textwidth}{|c|>{\raggedright\arraybackslash}p{3.2cm}|>{\raggedright\arraybackslash}X|>{\centering\arraybackslash}p{2.3cm}|c|}
+\caption{Bảng đối chiếu kết quả thực nghiệm với mục tiêu định lượng ban đầu} \label{tab:target_evaluation} \\
 \hline
 \textbf{STT} & \textbf{Mục tiêu định lượng} & \textbf{Kết quả thực nghiệm đạt được} & \textbf{Minh chứng} & \textbf{Đánh giá} \\ \hline
+\endfirsthead
+
+\multicolumn{5}{c}%
+{{\bfseries Bảng \thetable{} -- Tiếp theo từ trang trước}} \\
+\hline
+\textbf{STT} & \textbf{Mục tiêu định lượng} & \textbf{Kết quả thực nghiệm đạt được} & \textbf{Minh chứng} & \textbf{Đánh giá} \\ \hline
+\endhead
+
+\hline \multicolumn{5}{|r|}{{\footnotesize\textit{(Còn tiếp ở trang sau)}}} \\ \hline
+\endfoot
+
+\hline
+\endlastfoot
+
 1 & Sai số đo mực nước $\le \pm 1\,\text{cm}$ 
-  & Sai số tuyệt đối lớn nhất $\le 0.5\,\text{cm}$ tại 6 mốc chuẩn trên dải $5 - 50\,\text{cm}$ (5 lần lặp, $25^\circ\text{C}$); dải đo Mica $6 - 16\,\text{cm}$ quy đổi trơn tru $0\% - 100\%$. 
+  & Sai số tuyệt đối lớn nhất $\le 0.15\,\text{cm}$ tại 6 mốc chuẩn trên dải demo $2.0 - 10.0\,\text{cm}$ (5 lần lặp, $25^\circ\text{C}$); quy đổi trơn tru $0\% - 100\%$. 
   & Bảng~\ref{tab:calibration_results} 
   & \textbf{ĐẠT} \\ \hline
 2 & ADC 12-bit giám sát lượng mưa, chia 3 mức 
@@ -48,7 +60,7 @@ Phối cảnh cơ khí tổng thể và bố trí các cụm thiết bị trên 
   & Mục~\ref{sec:wcrt_analysis} 
   & \textbf{ĐẠT} \\ \hline
 4 & Chống rung giật cơ cấu chấp hành (Hysteresis) 
-  & Dải trễ biên độ $3\%$ ($21\%/18\%$, $41\%/38\%$, $71\%/68\%$), debounce thời gian $1.0\,\text{s}$, bơm chạy tối thiểu $5.0\,\text{s}$; giảm từ 8 lần đóng ngắt xuống 1 lần duy nhất trong $10\,\text{s}$. 
+  & Dải trễ biên độ $3\%$ ($21\%/18\%$, $44\%/41\%$, $63\%/60\%$), debounce thời gian $1.0\,\text{s}$, bơm chạy tối thiểu $5.0\,\text{s}$; giảm từ 8 lần đóng ngắt xuống 1 lần duy nhất trong $10\,\text{s}$. 
   & Mục~\ref{sec:hysteresis_analysis}, Bảng~\ref{tab:test_scenarios} (KB5) 
   & \textbf{ĐẠT} \\ \hline
 5 & Cảnh báo trực quan LED và còi đa cấp độ 
@@ -63,14 +75,14 @@ Phối cảnh cơ khí tổng thể và bố trí các cụm thiết bị trên 
   & Khi mất kết nối quá $30\,\text{s}$ ở MANUAL, trạm tự động hoàn nguyên về AUTO; cơ chế Safety Override tự kích xả nếu mức CRITICAL kéo dài quá $10\,\text{s}$ ở MANUAL. 
   & Mục~\ref{sec:failsafe_mode}, Bảng~\ref{tab:test_scenarios} (KB6) 
   & \textbf{ĐẠT} \\ \hline
-\end{tabularx}
-\end{table}
+\end{xltabular}
+\endgroup
 
 \noindent\textbf{Làm rõ hai chỉ tiêu kỹ thuật quan trọng trong thực tế vận hành:}
-\begin{itemize}
+\begin{enumerate}
     \item \textbf{Về thời gian phản ứng WCRT (Mục tiêu 3):} Chu kỳ trích mẫu danh định $T_{\text{sample}} = 150\,\text{ms}$ được chuẩn hóa đồng bộ từ phân tích yêu cầu (Chương~\ref{ch:introduction}), mô hình thời gian thực (Chương~\ref{ch:algorithm}) đến mã nguồn thực tế (\texttt{main\_hardware.cpp}). Thời gian phản ứng khẩn cấp $T_{\text{WCRT\_urgent}} = 203\,\text{ms}$ hoàn toàn thỏa mãn ràng buộc $\le 250\,\text{ms}$. Trong khi đó, bộ lọc thời gian $t_{\text{debounce}} = 1.0\,\text{s}$ đóng vai trò duy trì ổn định trước các dao động sóng cơ học, tạo nên thời gian xác lập trạng thái bơm bền vững $T_{\text{stable}} \approx 1.2\,\text{s}$.
     \item \textbf{Về hiệu năng Web Dashboard (Mục tiêu 6):} Chỉ tiêu *"Tỷ lệ phục vụ yêu cầu $\ge 99.5\%$"* được đo kiểm thực tế trong phạm vi phòng thí nghiệm ở cự ly $10\,\text{m}$ (không vật cản), với tỷ lệ truyền nhận gói tin HTTP thành công đạt $\approx 99.8\%$. Kích thước gói tin JSON telemetry chỉ $\approx 210\,\text{bytes}$ kết hợp kỹ thuật truyền phát trực tiếp từ Flash qua \texttt{server.send\_P()} giúp tối ưu hóa băng thông mạng và ngăn chặn phân mảnh bộ nhớ RAM.
-\end{itemize}
+\end{enumerate}
 
 \subsection{Kết Quả Kiểm Thử Nghiệm Thu Chức Năng}
 Quá trình kiểm thử nghiệm thu hệ thống đã được tiến hành độc lập và đồng bộ trên cả hai môi trường:
@@ -80,20 +92,13 @@ Quá trình kiểm thử nghiệm thu hệ thống đã được tiến hành đ
 \end{enumerate}
 
 Toàn bộ 6 kịch bản kiểm thử nghiệm thu (Bảng~\ref{tab:test_scenarios}) đều đạt kết quả kỳ vọng $100\%$:
-\begin{itemize}
+\begin{enumerate}
     \item Bốn cấp độ trạng thái FSM chuyển dịch chính xác theo các mốc mực nước thiết kế; màu sắc LED chỉ thị, âm lượng còi báo động, trạng thái tiếp điểm rơ-le bơm và góc mở van xả ($0^\circ, 90^\circ, 180^\circ$) đáp ứng đồng bộ tuyệt đối với Bảng~\ref{tab:fsm_outputs}.
-    \item Khi mực nước tạo sóng dập dềnh quanh biên ngưỡng ($39\% \leftrightarrow 41\%$), thuật toán Hysteresis giữ nguyên trạng thái làm việc, triệt tiêu hoàn toàn hiện tượng đóng/ngắt rơ-le liên tục, bảo vệ tuổi thọ cơ học của máy bơm và tiếp điểm điện.
+    \item Khi mực nước tạo sóng dập dềnh quanh biên ngưỡng ($41\% \leftrightarrow 44\%$, tương ứng $d \approx 6.5\,\text{cm}$), thuật toán Hysteresis giữ nguyên trạng thái làm việc, triệt tiêu hoàn toàn hiện tượng đóng/ngắt rơ-le liên tục, bảo vệ tuổi thọ cơ học của máy bơm và tiếp điểm điện.
     \item Khi mất kết nối trình duyệt quá $30\,\text{s}$ ở chế độ MANUAL, bộ đếm Heartbeat lập tức kích hoạt cơ chế Failsafe, tự động thu hồi quyền điều khiển và hoàn nguyên hệ thống về chế độ AUTO, ngăn chặn nguy cơ ngập tràn công trình do sự cố bỏ quên phiên làm việc.
-\end{itemize}
+\end{enumerate}
 
-Hình~\ref{fig:dashboard_4states} minh họa giao diện Web Dashboard thực tế của hệ thống tương ứng với 4 cấp độ trạng thái FSM thu được trong quá trình nghiệm thu thực nghiệm.
-
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=0.98\textwidth]{figures/dashboard_4states.png}
-    \caption{Giao diện Web Dashboard trạm FloodGuard thực tế tại 4 cấp độ cảnh báo FSM}
-    \label{fig:dashboard_4states}
-\end{figure}
+Giao diện Web Dashboard thời gian thực của trạm FloodGuard tại 4 cấp độ cảnh báo FSM (đã được trình bày và phân tích chi tiết tại Hình~\ref{fig:dashboard_4states} thuộc Chương~\ref{ch:web_dashboard}) đã chứng minh tính phản hồi chuẩn xác, trực quan và ổn định trong suốt quá trình nghiệm thu thực nghiệm.
 
 \subsection{Điểm Nổi Bật Kỹ Thuật Của Hệ Thống}
 Trong quá trình thiết kế và tối ưu, nhóm nghiên cứu đã áp dụng 5 giải pháp kỹ thuật mang tính đột phá và an toàn cao:
@@ -102,7 +107,7 @@ Trong quá trình thiết kế và tối ưu, nhóm nghiên cứu đã áp dụn
     \item \textbf{Cơ chế chống rung đa tầng (Multi-tier Debounce):} Kết hợp ba lớp bảo vệ độc lập gồm: (1) Bộ lọc trung vị Median-of-3 khử nhiễu gai đo; (2) Dải trễ biên độ Hysteresis $3\%$; (3) Bộ định thời chống rung trễ $1.0\,\text{s}$ kết hợp quy tắc thời gian chạy tối thiểu ($5.0\,\text{s}$) cho máy bơm, loại bỏ rung giật cơ khí khi nước dao động.
     \item \textbf{Kiến trúc Super-Loop phối hợp phi chặn:} Triển khai toàn bộ tác vụ đo lường, FSM, Web Server và băm xung còi trên vòng lặp hướng sự kiện phi chặn với hàm \texttt{millis()}, đạt thời gian phản ứng $T_{\text{WCRT}} = 203\,\text{ms}$ mà không cần sử dụng cơ chế khóa đồng bộ phức tạp (Mutex/Semaphore), giảm thiểu rủi ro nghẽn luồng (\textit{Deadlock}) và tiết kiệm tối đa bộ nhớ RAM.
     \item \textbf{An toàn vận hành nhiều tầng (Multi-layered Safety):} Thiết lập cơ chế tự trị khép kín gồm: Failsafe Timeout $30\,\text{s}$, quy tắc ghi đè an toàn tối cao (\textit{Safety Override}) cưỡng chế xả lũ sau $10\,\text{s}$ ở mức CRITICAL, bẫy lỗi hỏng cảm biến \texttt{SENSOR\_FAULT}, bộ định thời phần cứng Task Watchdog Timer ($3\,\text{s}$) chống treo chip và mạch phát hiện sụt áp Brown-out Reset.
-    \item \textbf{Khả năng thích ứng dải đo linh hoạt:} Toàn bộ thuật toán FSM và phân cấp cảnh báo hoạt động theo tỷ lệ phần trăm chuẩn hóa ($0\% - 100\%$). Khi chuyển đổi giữa quy mô mô phỏng/bể lớn ($5 - 50\,\text{cm}$) và mô hình sa bàn Mica ($6 - 16\,\text{cm}$), kỹ thuật viên chỉ cần thay đổi 2 hằng số cấu hình \lstinline|DISTANCE_EMPTY| và \lstinline|DISTANCE_FULL| mà không phải can thiệp vào logic điều khiển lõi.
+    \item \textbf{Khả năng thích ứng dải đo linh hoạt:} Toàn bộ thuật toán FSM và phân cấp cảnh báo hoạt động theo tỷ lệ phần trăm chuẩn hóa ($0\% - 100\%$). Khi chuyển đổi giữa quy mô mô phỏng/bể lớn ($5 - 50\,\text{cm}$) và mô hình sa bàn demo thu nhỏ ($2 - 10\,\text{cm}$), kỹ thuật viên chỉ cần thay đổi 2 hằng số cấu hình \lstinline|DISTANCE_EMPTY| và \lstinline|DISTANCE_FULL| mà không phải can thiệp vào logic điều khiển lõi.
 \end{enumerate}
 
 \subsection{Bài Học Kinh Nghiệm Thực Tiễn}
@@ -111,7 +116,7 @@ Quá trình hiện thực hóa mô hình vật lý đã đem lại 5 bài học 
     \item \textbf{Dòng khởi động đỉnh và hiện tượng sụt áp nguồn:} Động cơ Servo và máy bơm mini khi khởi động có thể tiêu thụ dòng đỉnh tức thời vượt $1.0\,\text{A}$, gây sụt áp kích hoạt mạch bảo vệ Brown-out Reset làm ESP32 bị khởi động lại ngắt quãng. Bắt buộc phải sử dụng nguồn ngoài riêng biệt $5\,\text{V} - 2\,\text{A}$, nối chung Mass (GND) và mắc tụ hóa lọc nguồn $220\,\mu\text{F}$ song song với tải.
     \item \textbf{Rủi ro từ chân cấu hình khởi động (Strapping Pins):} Chân GPIO 12 của ESP32 là chân cấu hình điện áp Flash (\texttt{MTDI}). Nếu chân này bị kéo lên mức cao (\texttt{HIGH}) trong thời điểm cấp nguồn, vi điều khiển sẽ không thể khởi động bình thường. Mạch phân áp Echo của cảm biến HC-SR04 nối vào chân này phải đảm bảo luôn giữ chân ở mức \texttt{LOW} khi khởi động.
     \item \textbf{Vùng mù và góc mở chùm tia của cảm biến siêu âm:} Cảm biến HC-SR04 có vùng mù vật lý $< 3\,\text{cm}$ và góc mở chùm tia $\pm 15^\circ$. Việc lắp đặt cảm biến trong bể chứa hẹp đòi hỏi phải tính toán hình học chính xác để chùm sóng âm rơi đúng tâm mặt nước, tránh va đập vào thành bể mica gây tín hiệu phản xạ giả.
-    \item \textbf{Độ nhạy của dải trễ theo quy mô hình học:} Biên độ dải trễ $3\%$ tương ứng với khoảng dịch chuyển $13.5\,\text{mm}$ trên dải đo chuẩn $45\,\text{cm}$, nhưng chỉ tương đương $3.0\,\text{mm}$ trên sa bàn Mica $10\,\text{cm}$. Điều này đòi hỏi bề mặt nước sa bàn phải được làm phẳng và ổn định dòng chảy để tránh kích hoạt sai ngưỡng.
+    \item \textbf{Độ nhạy của dải trễ theo quy mô hình học:} Biên độ dải trễ $3\%$ tương ứng với khoảng dịch chuyển $13.5\,\text{mm}$ trên dải đo chuẩn $45\,\text{cm}$, nhưng chỉ tương đương $2.4\,\text{mm}$ trên sa bàn demo thu nhỏ (cột nước làm việc $8.0\,\text{cm}$). Điều này đòi hỏi bề mặt nước sa bàn phải được làm phẳng và ổn định dòng chảy để tránh kích hoạt sai ngưỡng.
     \item \textbf{Khoảng cách giữa mô phỏng và hiện trường:} Công cụ mô phỏng Wokwi hỗ trợ kiểm tra logic mã nguồn và FSM rất tốt nhưng không thể tái hiện các yếu tố vật lý thực tế như: nhiễu điện từ do cuộn cảm động cơ phát ra, sóng phản xạ dội âm, độ nhớt và quán tính của dòng nước chảy. Do đó, việc chế tạo mô hình thực nghiệm là bước kiểm chứng bắt buộc.
 \end{enumerate}
 
@@ -139,7 +144,7 @@ Bên cạnh các kết quả đạt được, đề tài vẫn tồn tại một
 \endlastfoot
 
 Quy mô mô hình 
-  & Hệ thống mới triển khai trên sa bàn thu nhỏ $28 \times 16 \times 22\,\text{cm}$ với chiều sâu nước $10\,\text{cm}$; dải trễ $3\%$ tương đương $3\,\text{mm}$ nước (tiệm cận độ phân giải HC-SR04), khiến khả năng chống rung giật trên sa bàn phụ thuộc phần lớn vào debounce thời gian $1.0\,\text{s}$ và thời gian chạy tối thiểu $5.0\,\text{s}$. 
+  & Hệ thống mới triển khai trên sa bàn thu nhỏ với khoảng cách đáy $10\,\text{cm}$ (cột nước làm việc $8.0\,\text{cm}$); dải trễ $3\%$ tương đương $2.4\,\text{mm}$ nước (tiệm cận độ phân giải HC-SR04), khiến khả năng chống rung giật trên sa bàn phụ thuộc phần lớn vào debounce thời gian $1.0\,\text{s}$ và thời gian chạy tối thiểu $5.0\,\text{s}$. 
   & Hiệu chuẩn dải trễ theo đơn vị khoảng cách thực tế ($\text{mm}$) độc lập với chiều sâu hồ; thử nghiệm lắp đặt trên hồ thực tế ngoài trời có độ sâu $1 - 3\,\text{m}$. \\ \hline
 Đo lường mực nước \& Mưa 
   & Cảm biến siêu âm chưa có cảm biến phụ dự phòng và chưa tích hợp bù nhiệt độ; chân cảm biến mưa GPIO 35 là chân Input-only không có điện trở kéo nội, nếu đứt dây tín hiệu AO chân sẽ bị thả nổi gây đọc sai mức thấp kích hoạt nhầm ngập cảm biến. 
@@ -157,7 +162,7 @@ Phạm vi kiểm thử
   & Chưa kiểm thử độ bền tải liên tục nhiều ngày (Stress Testing); chưa thử nghiệm đồng thời số lượng lớn máy khách truy cập mạng; thời gian $T_{\text{WCRT}}$ mới được xác lập qua tính toán lý thuyết và đo xung logic nội bộ, chưa đo đạc bằng máy phân tích logic ngoài (\textit{Logic Analyzer}). 
   & Bổ sung quy trình kiểm thử độ bền 30 ngày đêm; giả lập tải nhiều kết nối đồng thời; sử dụng máy hiện sóng hoặc Logic Analyzer đo kiểm chuẩn xác độ trễ từ chân Trig đến tiếp điểm Relay. \\ \hline
 Mô hình sa bàn Mica 
-  & Thể tích chứa hữu ích của bể phụ xả lũ ($\approx 0.74\,\text{L}$, kích thước lòng $11.4 \times 11.4 \times 5.7\,\text{cm}$) nhỏ hơn tổng thể tích nước cần xả từ mức $100\%$ về mức an toàn $40\%$ của bể chính ($\Delta h = 6\,\text{cm} \implies \approx 0.92\,\text{L}$). 
+  & Thể tích chứa hữu ích của bể phụ xả lũ ($\approx 0.74\,\text{L}$, kích thước lòng $11.4 \times 11.4 \times 5.7\,\text{cm}$) cần được cân đối với thể tích nước cần xả từ mức $100\%$ về mức an toàn $40\%$ của bể chính ($\Delta h = 4.8\,\text{cm} \implies \approx 0.74\,\text{L}$). 
   & Tăng chiều cao thành bể phụ lên $8 - 10\,\text{cm}$ hoặc lắp đặt đường ống hồi lưu tuần hoàn nước từ bể phụ trở lại bể chính. \\ \hline
 Quản trị dữ liệu 
   & Chưa lưu trữ lịch sử vận hành, nhật ký cảnh báo và dữ liệu đo đạc (Telemetry Data) dài hạn vào bộ nhớ không bay màu; chưa hỗ trợ tính năng cập nhật phần mềm không dây từ xa qua mạng (OTA). 

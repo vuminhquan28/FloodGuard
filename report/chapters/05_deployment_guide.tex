@@ -26,11 +26,11 @@ Dự án \textbf{FloodGuard} được xây dựng trên nền tảng vi điều 
 
 \subsection{Cài Đặt Trình Điều Khiển Giao Tiếp Nạp Chip (USB-to-UART Driver)}
 Khi kết nối bo mạch phần cứng ESP32 DevKit V1 với máy tính qua cổng USB, hệ điều hành cần trình điều khiển cầu chuyển đổi tín hiệu USB sang UART tương ứng với chip giao tiếp trên bo:
-\begin{itemize}
+\begin{enumerate}
     \item \textbf{Chip Silicon Labs CP2102 / CP2104:} Tải driver \textit{CP210x USB to UART Bridge VCP Drivers} từ trang chủ Silicon Labs.
     \item \textbf{Chip WCH CH340G / CH340C:} Tải driver \textit{CH341SER.EXE} từ nhà sản xuất WCH.
     \item \textbf{Kiểm tra cổng COM:} Mở \textit{Device Manager} trên Windows $\rightarrow$ mục \textit{Ports (COM \& LPT)}, đảm bảo cổng kết nối hiển thị rõ ràng (ví dụ: \texttt{Silicon Labs CP210x USB to UART Bridge (COM3)}).
-\end{itemize}
+\end{enumerate}
 
 \subsection{Cấu Hình Thư Viện Phụ Thuộc trong \texttt{platformio.ini}}
 Hệ thống sử dụng các thư viện chuẩn cho vi điều khiển ESP32, được khai báo tự động trong tệp cấu hình \texttt{platformio.ini}:
@@ -60,10 +60,10 @@ lib_deps =
 \end{lstlisting}
 
 Trong đó:
-\begin{itemize}
+\begin{enumerate}
     \item \textbf{\texttt{WiFi.h}} và \textbf{\texttt{WebServer.h}:} Thư viện mạng tích hợp sẵn trong bộ framework Arduino Core của ESP32, dùng để khởi tạo mạng phát SoftAP và máy chủ HTTP Web Server.
     \item \textbf{\texttt{ESP32Servo}:} Thư viện tạo xung PWM chính xác dựa trên bộ định thời phần cứng (\textit{LEDC / Hardware Timers}) của ESP32, đảm bảo góc quay Servo SG90 mượt mà không bị xung đột bộ ngắt với sóng Wi-Fi.
-\end{itemize}
+\end{enumerate}
 
 % -----------------------------------------------------------------------------
 \section{Hướng Dẫn Triển Khai Mô Phỏng Trên Wokwi}
@@ -71,7 +71,7 @@ Trong đó:
 Giải pháp mô phỏng trên Wokwi cho phép sinh viên và nhóm nghiên cứu kiểm thử logic trạng thái FSM, dải trễ Hysteresis và các kịch bản báo động khẩn cấp mà không cần linh kiện vật lý.
 
 \subsection{Cấu Trúc Tệp Mô Phỏng (\texttt{diagram.json} \& \texttt{wokwi.toml})}
-\begin{itemize}
+\begin{enumerate}
     \item \textbf{\texttt{wokwi.toml}:} Tệp chỉ thị đường dẫn file firmware nhị phân sau khi biên dịch cho máy ảo Wokwi:
     \begin{lstlisting}[caption={Nội dung tệp cấu hình wokwi.toml}]
 [wokwi]
@@ -80,7 +80,7 @@ firmware = '.pio/build/esp32dev/firmware.bin'
 elf = '.pio/build/esp32dev/firmware.elf'
     \end{lstlisting}
     \item \textbf{\texttt{diagram.json}:} Sơ đồ đấu nối ảo định nghĩa tọa độ linh kiện và nối dây giữa các chân GPIO của ESP32 với cảm biến HC-SR04, cảm biến mưa (chiết áp xoay), động cơ Servo SG90, Relay đóng cắt và cụm LED/Buzzer.
-\end{itemize}
+\end{enumerate}
 
 \subsection{Quy Trình Biên Dịch và Khởi Chạy Mô Phỏng}
 \begin{enumerate}
@@ -112,24 +112,36 @@ pio run -e esp32dev
 Toàn bộ sơ đồ nguyên lý kết nối mạch điện và bảng phân công chân GPIO chi tiết của trạm FloodGuard đã được đặc tả đầy đủ tại \textbf{Bảng~\ref{tab:gpio_mapping}} và \textbf{Hình~\ref{fig:circuit_diagram}} thuộc Chương~\ref{ch:hardware_architecture}. Khi triển khai lắp ráp ngoài thực tế trên breadboard hoặc mạch in PCB, kỹ thuật viên đối chiếu trực tiếp theo các chân tín hiệu đã định nghĩa (HC-SR04 tại \texttt{GPIO 13/12}, cảm biến mưa FC-37 tại \texttt{GPIO 34/35}, Servo SG90 tại \texttt{GPIO 27}, Relay máy bơm tại \texttt{GPIO 23}, cụm LED tại \texttt{GPIO 18/19/21} và còi Buzzer tại \texttt{GPIO 4}).
 
 Đặc biệt, trong quá trình lắp ráp phần cứng thực nghiệm, cần tuân thủ nghiêm ngặt 3 quy chuẩn an toàn điện sau:
-\begin{itemize}
+\begin{enumerate}
     \item \textbf{Cấp nguồn độc lập cho Servo và Máy bơm:} Động cơ Servo SG90 và máy bơm mini khi khởi động hoặc đảo chiều quay có thể hút dòng đỉnh tức thời (\textit{Stall Current}) từ $500\,\text{mA} - 1.2\,\text{A}$. Tuyệt đối không lấy nguồn từ chân $3.3\,\text{V}$ hoặc chân $5\,\text{V}$ của cổng USB máy tính để nuôi trực tiếp hai thiết bị này, tránh gây sụt áp kích hoạt mạch bảo vệ (\textit{Brownout Detector}) làm ESP32 bị reset ngắt quãng. Bắt buộc sử dụng adapter nguồn ngoài DC $5\,\text{V} - 2\,\text{A}$ riêng biệt.
     \item \textbf{Đồng nhất mức điện áp tham chiếu (Common GND):} Nối chung chân cực âm (GND) của bộ nguồn ngoài với chân GND của bo mạch ESP32 để đảm bảo xung điều khiển PWM cho Servo và mức kích logic cho Relay (\textbf{Active LOW}) hoạt động chuẩn xác, không bị sai lệch áp.
     \item \textbf{Bảo vệ xung quá độ \& Hạn dòng:} Mắc thêm một tụ hóa $100\,\mu\text{F} - 470\,\mu\text{F}$ song song tại hai cực nguồn cấp cho Servo để dập xung nhiễu quá độ, đồng thời đảm bảo các đèn LED chỉ thị luôn nối tiếp qua điện trở hạn dòng $R = 220\,\Omega$.
-\end{itemize}
+\end{enumerate}
 
 \subsection{Gia Công Mô Hình Mica Mini \& Hiệu Chỉnh Dải Đo Thực Tế}
 Để trình diễn trực quan tại phòng thí nghiệm, hệ thống được đóng gói thành mô hình sa bàn hai bể (Bể ngập lụt chính và Bể xả lũ phụ) sử dụng vật liệu \textbf{Mica trong suốt dày $3\,\text{mm}$} với kích thước tổng thể $28 \times 16 \times 22\,\text{cm}$ (Bảng~\ref{tab:mica_cutting}).
 
-\begin{table}[htbp]
-\centering
-\caption{Bảng quy cách cắt lắp mô hình sa bàn Mica $3\,\text{mm}$ tối ưu cho cảm biến HC-SR04}
-\label{tab:mica_cutting}
+\begingroup
 \footnotesize
 \renewcommand{\arraystretch}{1.15}
-\begin{tabularx}{\textwidth}{|c|>{\raggedright\arraybackslash}p{3.6cm}|>{\centering\arraybackslash}p{2.3cm}|c|>{\raggedright\arraybackslash}X|}
+\begin{xltabular}{\textwidth}{|c|>{\raggedright\arraybackslash}p{3.6cm}|>{\centering\arraybackslash}p{2.3cm}|c|>{\raggedright\arraybackslash}X|}
+\caption{Bảng quy cách cắt lắp mô hình sa bàn Mica $3\,\text{mm}$ tối ưu cho cảm biến HC-SR04} \label{tab:mica_cutting} \\
 \hline
 \textbf{STT} & \textbf{Hạng mục / Bộ phận} & \textbf{Kích thước (cm)} & \textbf{SL} & \textbf{Yêu cầu gia công / Lỗ khoét} \\ \hline
+\endfirsthead
+
+\multicolumn{5}{c}%
+{{\bfseries Bảng \thetable{} -- Tiếp theo từ trang trước}} \\
+\hline
+\textbf{STT} & \textbf{Hạng mục / Bộ phận} & \textbf{Kích thước (cm)} & \textbf{SL} & \textbf{Yêu cầu gia công / Lỗ khoét} \\ \hline
+\endhead
+
+\hline \multicolumn{5}{|r|}{{\footnotesize\textit{(Còn tiếp ở trang sau)}}} \\ \hline
+\endfoot
+
+\hline
+\endlastfoot
+
 1 & Sàn đế chung & $28 \times 16$ & 1 & Tấm đế phẳng chịu lực chính đỡ 2 bể và vách đứng \\ \hline
 2 & Vách đứng (Backboard) & $28 \times 22$ & 1 & Khoan 3 lỗ $\varnothing 5\,\text{mm}$ (LED), 1 lỗ $\varnothing 9\,\text{mm}$ (Buzzer); gắn bo mạch và giá cảm biến ở cao độ $19.3\,\text{cm}$ \\ \hline
 3 & Mặt đáy bể chính & $14 \times 12$ & 1 & Khoang chứa nước ngập lụt chính \\ \hline
@@ -142,19 +154,19 @@ Toàn bộ sơ đồ nguyên lý kết nối mạch điện và bảng phân cô
 10 & Giá treo cảm biến mưa & $6 \times 5$ & 1 & Uốn gập nghiêng góc $45^\circ$ giúp thoát nước đọng \\ \hline
 11 & Cánh sập cửa van (Servo) & $3.5 \times 3$ & 1 & Gắn vào tay đòn Servo SG90 để đóng/mở cửa xả \\ \hline
 12 & Chân kê nâng bể chính & $12 \times 3$ & 2--3 & Kê nâng bể chính cao thêm $3\,\text{cm}$ tạo độ dốc chảy tự do sang bể phụ \\ \hline
-\end{tabularx}
-\end{table}
+\end{xltabular}
+\endgroup
 
 \noindent\textbf{Căn chỉnh hình học cho cảm biến HC-SR04:}
-\begin{itemize}
-    \item \textbf{Loại bỏ vùng mù ($< 3\,\text{cm}$):} Lòng đáy bể chính nằm ở cao độ $3.3\,\text{cm}$ (chân kê $3\,\text{cm}$ + đáy $0.3\,\text{cm}$). Giá treo HC-SR04 gắn tại cao độ $19.3\,\text{cm}$ cho khoảng cách tới đáy cạn là $16.0\,\text{cm}$ ($0\%$). Khi nước dâng đầy quy ước $10.0\,\text{cm}$ ($100\%$), khoảng cách tới mặt loa vẫn còn $6.0\,\text{cm}$, hoàn toàn nằm ngoài vùng mù vật lý của cảm biến.
-    \item \textbf{Chống dội âm thành bể:} Tại khoảng cách đáy $H = 16\,\text{cm}$, đường kính nón chùm tia siêu âm ($\pm 15^\circ$) là $D = 2 \times 16 \times \tan 15^\circ \approx 8.57\,\text{cm} < 11.4\,\text{cm}$ (chiều rộng lọt lòng bể), đảm bảo sóng âm không va đập vào thành mica.
-    \item \textbf{Hiệu chỉnh hằng số Firmware:} Trước khi nạp mã nguồn lên bo mạch cho mô hình Mica mini (\texttt{main/main\_hardware.cpp}), cập nhật 2 tham số giới hạn dải đo tương ứng:
-    \begin{lstlisting}[language=C++, caption={Cấu hình hằng số dải đo cho mô hình Mica mini trong main\_hardware.cpp}]
-const float DISTANCE_EMPTY = 16.0; // Khoang cach day be can (cm) - 0%
-const float DISTANCE_FULL  = 6.0;  // Khoang cach muc nuoc day 10cm - 100%
+\begin{enumerate}
+    \item \textbf{Loại bỏ vùng mù ($< 2\,\text{cm}$):} Trong mô hình demo thu nhỏ, cảm biến HC-SR04 được căn chỉnh ở khoảng cách tới đáy bể cạn là $d_{\text{empty}} = 10.0\,\text{cm}$ ($0\%$). Khi nước dâng đầy tối đa quy ước đạt cột nước $8.0\,\text{cm}$ ($100\%$), khoảng cách từ mặt nước tới mặt loa cảm biến là $d_{\text{full}} = 2.0\,\text{cm}$, hoàn toàn nằm ngoài vùng mù vật lý ($< 2.0\,\text{cm}$) của cảm biến HC-SR04.
+    \item \textbf{Chống dội âm thành bể:} Tại khoảng cách đáy $H = 10.0\,\text{cm}$, đường kính nón chùm tia siêu âm ($\pm 15^\circ$) là $D = 2 \times 10.0 \times \tan 15^\circ \approx 5.36\,\text{cm} < 11.4\,\text{cm}$ (chiều rộng lọt lòng bể), đảm bảo sóng âm lan truyền thẳng và không va đập vào thành mica.
+    \item \textbf{Hiệu chỉnh hằng số Firmware:} Trước khi nạp mã nguồn lên bo mạch cho mô hình demo thực nghiệm (\texttt{main/main\_hardware.cpp} và \texttt{main/main/main.ino}), cập nhật 2 tham số giới hạn dải đo tương ứng:
+    \begin{lstlisting}[language=C++, caption={Cấu hình hằng số dải đo cho mô hình demo thực nghiệm trong main\_hardware.cpp}]
+const float DISTANCE_EMPTY = 10.0; // Khoang cach day be can (cm) - 0%
+const float DISTANCE_FULL  = 2.0;  // Khoang cach muc nuoc day toi da (cm) - 100%
     \end{lstlisting}
-\end{itemize}
+\end{enumerate}
 
 \subsection{Quy Trình Nạp Firmware Lên ESP32}
 \begin{enumerate}
@@ -203,7 +215,7 @@ Khi trạm phần cứng ESP32 đã nạp firmware và cấp nguồn hoạt đ�
 
 \subsection{Thao Tác Giám Sát và Điều Khiển Cưỡng Chế}
 Giao diện Dark Glassmorphism sẽ hiển thị trực quan toàn bộ trạng thái vận hành:
-\begin{itemize}
+\begin{enumerate}
     \item \textbf{Cơ chế cập nhật tự động:} Trình duyệt gửi định kỳ yêu cầu AJAX \texttt{/api/status} mỗi $1000\,\text{ms}$, các thông số phần trăm nước, khoảng cách $\text{cm}$, cấp độ mưa và trạng thái FSM được tự động làm mới mà không gây nhấp nháy toàn trang web.
     \item \textbf{Chuyển chế độ vận hành (Mode Toggle):}
     \begin{itemize}
@@ -215,67 +227,89 @@ Giao diện Dark Glassmorphism sẽ hiển thị trực quan toàn bộ trạng 
         \item Nhấn nút \textbf{BẬT / TẮT MÁY BƠM}: ESP32 nhận lệnh API \texttt{/api/control?pump=1} (hoặc \texttt{pump=0}, hoặc \texttt{action=pump\_toggle}) và kích đóng rơ-le ngay lập tức.
         \item Thao tác van xả lũ: Nhấn các nút chọn góc van (\textbf{0\%}, \textbf{50\%}, hoặc \textbf{100\%}), ESP32 nhận lệnh API (\texttt{valve=0}, \texttt{valve=50}, hoặc \texttt{valve=100}) và điều chế xung PWM xoay góc Servo tương ứng ($0^\circ, 90^\circ, 180^\circ$).
     \end{itemize}
-\end{itemize}
+\end{enumerate}
 
 % -----------------------------------------------------------------------------
 \section{Kịch Bản Kiểm Thử và Đánh Giá Thực Nghiệm}
 
 Để phục vụ công tác nghiệm thu hệ thống, nhóm nghiên cứu đã xây dựng ma trận kiểm thử toàn diện gồm 6 kịch bản vận hành thực tế được tổng kết trong Bảng~\ref{tab:test_scenarios}.
 
-\begin{table}[H]
-\centering
-\caption{Ma trận kịch bản kiểm thử nghiệm thu chức năng hệ thống FloodGuard (Thực hiện 10 lần lặp trên cả Wokwi và mô hình Mica thực tế)}
-\label{tab:test_scenarios}
+\begingroup
 \small
 \renewcommand{\arraystretch}{1.2}
-\begin{tabularx}{\textwidth}{|c|>{\raggedright\arraybackslash}p{2.3cm}|>{\raggedright\arraybackslash}X|>{\raggedright\arraybackslash}X|>{\centering\arraybackslash}p{1.4cm}|c|}
+\begin{xltabular}{\textwidth}{|c|>{\raggedright\arraybackslash}p{2.3cm}|>{\raggedright\arraybackslash}X|>{\raggedright\arraybackslash}X|>{\centering\arraybackslash}p{1.4cm}|c|}
+\caption{Ma trận kịch bản kiểm thử nghiệm thu chức năng hệ thống FloodGuard (Thực hiện 10 lần lặp trên cả Wokwi và mô hình Mica thực tế)} \label{tab:test_scenarios} \\
 \hline
 \textbf{STT} & \textbf{Kịch bản kiểm thử} & \textbf{Điều kiện kích hoạt đầu vào} & \textbf{Phản hồi kỳ vọng của hệ thống} & \textbf{Môi trường} & \textbf{Đánh giá} \\ \hline
+\endfirsthead
+
+\multicolumn{6}{c}%
+{{\bfseries Bảng \thetable{} -- Tiếp theo từ trang trước}} \\
+\hline
+\textbf{STT} & \textbf{Kịch bản kiểm thử} & \textbf{Điều kiện kích hoạt đầu vào} & \textbf{Phản hồi kỳ vọng của hệ thống} & \textbf{Môi trường} & \textbf{Đánh giá} \\ \hline
+\endhead
+
+\hline \multicolumn{6}{|r|}{{\footnotesize\textit{(Còn tiếp ở trang sau)}}} \\ \hline
+\endfoot
+
+\hline
+\endlastfoot
+
 1 & Mực nước An toàn (\texttt{NORMAL}) 
-  & Mực nước $< 18\%$ (Mica: $d > 14.2\,\text{cm}$; Wokwi: $d > 41.9\,\text{cm}$), không mưa ($\text{ADC} \ge 3200$). 
+  & Mực nước $< 18\%$ (Demo 10cm: $d > 8.56\,\text{cm}$; Wokwi: $d > 41.9\,\text{cm}$), không mưa ($\text{ADC} \ge 3200$). 
   & LED Xanh sáng; Còi tắt; Bơm tắt; Cửa van đóng $0^\circ$; Web hiển thị NORMAL xanh lá. 
-  & Wokwi, Mica & ĐẠT \\ \hline
+  & Wokwi, Mô hình thật & ĐẠT \\ \hline
 2 & Cảnh báo Dâng nước (\texttt{WARNING}) 
-  & Mực nước $21\% - 40\%$ (Mica: $12.0 - 13.9\,\text{cm}$; Wokwi: $32.0 - 40.5\,\text{cm}$) hoặc mưa nhỏ ($1800 \le \text{ADC} < 3200$). 
+  & Mực nước $21\% - 43\%$ (Demo 10cm: $6.5 - 8.32\,\text{cm}$; Wokwi: $32.0 - 40.5\,\text{cm}$) hoặc mưa nhỏ ($1800 \le \text{ADC} < 3200$). 
   & LED Vàng sáng; Còi bíp ngắt quãng thưa ($1.5\,\text{s}$); Bơm tắt; Van đóng $0^\circ$; Web đổi màu vàng. 
-  & Wokwi, Mica & ĐẠT \\ \hline
+  & Wokwi, Mô hình thật & ĐẠT \\ \hline
 3 & Cảnh báo Nguy cơ (\texttt{DANGER}) 
-  & Mực nước $41\% - 70\%$ (Mica: $9.0 - 11.9\,\text{cm}$; Wokwi: $18.5 - 31.5\,\text{cm}$) hoặc mưa lớn ($\text{ADC} < 1800$). 
+  & Mực nước $44\% - 62\%$ (Demo 10cm: $5.0 - 6.5\,\text{cm}$; Wokwi: $18.5 - 31.5\,\text{cm}$) hoặc mưa lớn ($\text{ADC} < 1800$). 
   & LED Đỏ sáng; Còi bíp dồn dập ($400\,\text{ms}$); Bơm tự BẬT (kèm khóa chống cháy cạn $P \ge 20\%$); Van xả mở $90^\circ$ ($50\%$); Web báo động đỏ. 
-  & Wokwi, Mica & ĐẠT \\ \hline
+  & Wokwi, Mô hình thật & ĐẠT \\ \hline
 4 & Báo động Nguy cấp (\texttt{CRITICAL}) 
-  & Mực nước $\ge 71\%$ (Mica: $d \le 8.9\,\text{cm}$; Wokwi: $d \le 18.0\,\text{cm}$), hoặc ngập cảm biến mưa ($\text{ADC} < 1100$), hoặc tràn mép ($d < d_{\text{full}}$). 
+  & Mực nước $\ge 63\%$ (Demo 10cm: $d \le 5.0\,\text{cm}$; Wokwi: $d \le 18.0\,\text{cm}$), hoặc ngập cảm biến mưa ($\text{ADC} < 1100$), hoặc tràn mép ($d < d_{\text{full}}$). 
   & LED Đỏ nháy; Còi hú liên tục không ngắt; Bơm chạy toàn tải; Van mở tối đa $180^\circ$ ($100\%$). 
-  & Wokwi, Mica & ĐẠT \\ \hline
+  & Wokwi, Mô hình thật & ĐẠT \\ \hline
 5 & Kiểm thử Vùng trễ (Hysteresis \& Debounce) 
-  & Mực nước dao động dập dềnh quanh biên ngưỡng $38\% \leftrightarrow 41\%$. 
+  & Mực nước dao động dập dềnh quanh biên ngưỡng $41\% \leftrightarrow 44\%$ ($d \approx 6.5\,\text{cm}$). 
   & Dải trễ $3\%$ kết hợp Debounce $1.0\,\text{s}$ và thời gian bơm chạy tối thiểu $5.0\,\text{s}$ giữ FSM ổn định; rơ-le chỉ đóng $1$ lần dứt khoát, loại bỏ rung giật relay. 
-  & Wokwi, Mica & ĐẠT \\ \hline
+  & Wokwi, Mô hình thật & ĐẠT \\ \hline
 6 & Kiểm thử Failsafe \& Safety Override 
   & (a) Ở \texttt{MANUAL}, ngắt Wi-Fi quá $30\,\text{s}$.\newline
-    (b) Ở \texttt{MANUAL}, nước đạt $\ge 71\%$ quá $10\,\text{s}$ không xử lý. 
+    (b) Ở \texttt{MANUAL}, nước đạt $\ge 63\%$ ($d \le 5.0\,\text{cm}$) quá $10\,\text{s}$ không xử lý. 
   & (a) Tự động hoàn nguyên về \texttt{AUTO}, hiện thông báo Failsafe trên Web.\newline
     (b) Safety Override cưỡng chế bật bơm và mở van $100\%$ chống tràn. 
-  & Wokwi, Mica & ĐẠT \\ \hline
-\end{tabularx}
-\end{table}
-
-\clearpage
+  & Wokwi, Mô hình thật & ĐẠT \\ \hline
+\end{xltabular}
+\endgroup
 
 % -----------------------------------------------------------------------------
 \section{Chẩn Đoán và Xử Lý Sự Cố Thường Gặp (Troubleshooting)}
 
 Trong quá trình lắp ráp phần cứng và vận hành tại hiện trường, một số sự cố kỹ thuật có thể phát sinh. Bảng~\ref{tab:troubleshooting} tổng hợp các hiện tượng lỗi và quy trình khắc phục tương ứng:
 
-\begin{table}[H]
-\centering
-\caption{Cẩm nang chẩn đoán và khắc phục sự cố kỹ thuật thường gặp}
-\label{tab:troubleshooting}
+\begingroup
 \small
 \renewcommand{\arraystretch}{1.2}
-\begin{tabularx}{\textwidth}{|>{\raggedright\arraybackslash\bfseries}p{3.2cm}|>{\raggedright\arraybackslash}X|>{\raggedright\arraybackslash}X|}
+\begin{xltabular}{\textwidth}{|>{\raggedright\arraybackslash\bfseries}p{3.2cm}|>{\raggedright\arraybackslash}X|>{\raggedright\arraybackslash}X|}
+\caption{Cẩm nang chẩn đoán và khắc phục sự cố kỹ thuật thường gặp} \label{tab:troubleshooting} \\
 \hline
 \textbf{Hiện tượng lỗi} & \textbf{Nguyên nhân cốt lõi} & \textbf{Giải pháp khắc phục} \\ \hline
+\endfirsthead
+
+\multicolumn{3}{c}%
+{{\bfseries Bảng \thetable{} -- Tiếp theo từ trang trước}} \\
+\hline
+\textbf{Hiện tượng lỗi} & \textbf{Nguyên nhân cốt lõi} & \textbf{Giải pháp khắc phục} \\ \hline
+\endhead
+
+\hline \multicolumn{3}{|r|}{{\footnotesize\textit{(Còn tiếp ở trang sau)}}} \\ \hline
+\endfoot
+
+\hline
+\endlastfoot
+
 Lỗi nạp mã nguồn UART (\texttt{Failed to connect}) 
 & Máy tính không mở được kết nối nạp vào Bootloader của ESP32 do thiếu chân tự kích hoặc trễ tụ nạp. 
 & $\bullet$ Kiểm tra driver nạp CP2102/CH340.\newline
@@ -298,6 +332,6 @@ $\bullet$ Đặt mặt cảm biến vuông góc với mặt nước.\newline
 $\bullet$ Kiểm tra điện áp cấp cho HC-SR04 đủ $5\,\text{V}$. \\ \hline
 Web Dashboard không nhận lệnh điều khiển 
 & Hệ thống đang vận hành ở chế độ bảo vệ tự trị \texttt{AUTO}, các nút bấm can thiệp bị khóa an toàn. 
-& $\bullet$ Nhấn nút \textbf{ĐỔI CHẾ ĐỘ} trên Dashboard để chuyển sang \texttt{MANUAL} (huy hiệu màu cam) trước khi ra lệnh đóng mở van hoặc bật bơm. \\ \hline
-\end{tabularx}
-\end{table}
+& $\bullet$ Nhấn nút \textbf{ĐỔI CHẾ ĐỘ} hoặc nhấp trực tiếp nút Bơm / Van để chuyển sang \texttt{MANUAL} và thực thi lệnh can thiệp. \\ \hline
+\end{xltabular}
+\endgroup

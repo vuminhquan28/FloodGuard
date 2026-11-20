@@ -21,6 +21,7 @@
 \usepackage{float}
 \usepackage{caption}
 \usepackage{subcaption}
+\usepackage{pdflscape}
 
 % --- Định dạng code mã nguồn ---
 \usepackage{listings}
@@ -137,7 +138,7 @@
     \end{minipage}
     
     \vfill
-    {\large Hà Nội, Tháng 10 Năm 2026}\par
+    {\large Hà Nội, Tháng 11 Năm 2026}\par
     \vspace*{0.3cm}
 \end{titlepage}
 
@@ -148,38 +149,42 @@
 \addcontentsline{toc}{chapter}{Bảng Phân Chia Công Việc \& Tỷ Lệ Đóng Góp}
 
 \begin{center}
-    \vspace*{0.5cm}
-    {\fontsize{14pt}{18pt}\selectfont\bfseries BẢNG PHÂN CHIA CÔNG VIỆC VÀ TỶ LỆ ĐÓNG GÓP}\par
-    \vspace{0.8cm}
+    \vspace*{-0.2cm}
+    {\fontsize{14pt}{17pt}\selectfont\bfseries BẢNG PHÂN CHIA CÔNG VIỆC VÀ TỶ LỆ ĐÓNG GÓP}\par
+    \vspace{0.35cm}
 \end{center}
 
 \noindent
-Dự án \textbf{FloodGuard: Hệ thống giám sát và chống ngập tự động thông minh} được nghiên cứu và phát triển bởi nhóm gồm 03 sinh viên. Khối lượng công việc bao gồm thiết kế kiến trúc phần cứng, sơ đồ nguyên lý mạch điện, lập trình firmware vi điều khiển ESP32, xây dựng thuật toán điều khiển FSM, thiết kế giao diện Web Dashboard và biên soạn báo cáo kỹ thuật được phân chia đồng đều và bình đẳng giữa các thành viên:
+Dự án \textbf{FloodGuard: Hệ thống giám sát và chống ngập tự động thông minh} được nghiên cứu, thiết kế và phát triển toàn diện bởi nhóm gồm 03 sinh viên. Nhằm phát huy tối đa năng lực chuyên môn và đảm bảo tính hệ thống của đề tài, các mảng nhiệm vụ chính được phân công cụ thể và bình đẳng như sau:
 
-\vspace{0.6cm}
+\vspace{0.25cm}
 
 \begin{center}
-\renewcommand{\arraystretch}{1.5}
-\begin{tabular}{|c|l|c|}
+\renewcommand{\arraystretch}{1.25}
+\begin{tabularx}{\textwidth}{|c|l|X|c|}
 \hline
-\textbf{STT} & \textbf{Tên sinh viên} & \textbf{Tỷ lệ đóng góp / Hoàn thành} \\ \hline
-1 & Vũ Minh Quân (23020142) & 100\% \\ \hline
-2 & Nguyễn Đức Huy (24020161) & 100\% \\ \hline
-3 & Phạm Đức Mạnh (24020222) & 100\% \\ \hline
-\multicolumn{2}{|c|}{\textbf{Đánh giá chung}} & \textbf{100\%} \\ \hline
-\end{tabular}
+\textbf{STT} & \textbf{Họ và tên (MSSV)} & \textbf{Nhiệm vụ đảm nhận chính} & \textbf{Đóng góp} \\ \hline
+1 & \begin{tabular}[t]{@{}l@{}}\textbf{Vũ Minh Quân}\\23020142\end{tabular} & Lập trình firmware vi điều khiển ESP32, thiết kế và tối ưu thuật toán điều khiển máy trạng thái hữu hạn (FSM), tích hợp cơ chế an toàn Watchdog, thiết kế mô hình demo nhựa Mica. & 100\% \\ \hline
+2 & \begin{tabular}[t]{@{}l@{}}\textbf{Nguyễn Đức Huy}\\24020161\end{tabular} & Thiết kế kiến trúc phần cứng trạm quan trắc, xây dựng sơ đồ nguyên lý mạch điện chuẩn IEC, phân bổ chân GPIO và bảo vệ ghép nối ngoại vi. & 100\% \\ \hline
+3 & \begin{tabular}[t]{@{}l@{}}\textbf{Phạm Đức Mạnh}\\24020222\end{tabular} & Thiết kế giao diện Web Dashboard giám sát và điều khiển thời gian thực, lập trình luồng REST API và biên soạn hoàn thiện báo cáo kỹ thuật. & 100\% \\ \hline
+\end{tabularx}
 \end{center}
 
-\vspace{0.6cm}
+\vspace{0.25cm}
 \noindent
-\textbf{Cam kết trách nhiệm:} Tất cả 03 thành viên trong nhóm đều tham gia chủ động, đóng góp bình đẳng và phối hợp chặt chẽ trong tất cả các giai đoạn triển khai đề tài, đảm bảo hoàn thành $100\%$ khối lượng công việc được giao với chất lượng cao nhất.
+\textbf{Sự phối hợp, hỗ trợ và đồng bộ kỹ thuật:} Trong suốt quá trình thực hiện đề tài, các thành viên không làm việc tách rời mà luôn duy trì cơ chế phối hợp liên ngành chặt chẽ và tương hỗ lẫn nhau. Khối phần cứng và firmware được đồng bộ liên tục trong việc phân định mức logic GPIO, hiệu chuẩn dải đo ADC cảm biến và thiết kế mạch bảo vệ chống xung ngược cuộn hút Relay. Đồng thời, khối firmware và giao diện Web được tích hợp đồng bộ qua giao thức REST API phi chặn, đảm bảo độ trễ thấp và phản hồi trạng thái thời gian thực tức thì.
 
-\vspace{1.8cm}
-\begin{flushright}
-    \textit{Hà Nội, ngày 25 tháng 10 năm 2026}\\[0.3cm]
-    \textbf{Đại diện nhóm sinh viên thực hiện}\\[2.5cm]
-    \textit{(Ký và ghi rõ họ tên)}\hspace{1.5cm}
-\end{flushright}
+\vspace{0.2cm}
+\noindent
+\textbf{Cam kết trách nhiệm:} Cả 03 thành viên đều chủ động tham gia đo kiểm mô hình thực nghiệm, thử nghiệm các kịch bản ngập giả lập, thẩm định chéo mã nguồn và hoàn thiện tài liệu kỹ thuật với tinh thần trách nhiệm cao nhất, đảm bảo tính đồng bộ hoàn chỉnh giữa các mảng công việc và đạt tỷ lệ hoàn thành 100\% mục tiêu đề ra.
+
+\vspace{0.7cm}
+\noindent\hfill
+\begin{tabular}{@{}c@{}}
+    \textit{Hà Nội, ngày 20 tháng 11 năm 2026}\\[0.25cm]
+    \textbf{Đại diện nhóm sinh viên thực hiện}\\[2.0cm]
+    \textit{(Ký và ghi rõ họ tên)}
+\end{tabular}
 
 \newpage
 

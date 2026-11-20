@@ -106,9 +106,9 @@ Toàn bộ đường truyền liên kết giữa các tác nhân và ca sử d�
 \end{xltabular}
 \endgroup
 
-\subsection{Sơ Đồ Phân Rã \& Đặc Tả Chi Tiết Từng Use Case}
+\subsection{Sơ Đồ Chi Tiết Use Case \& Đặc Tả Chi Tiết Từng Use Case}
 \label{sec:uc_detailed}
-Dưới đây là đặc tả chi tiết và sơ đồ phân rã theo chuẩn UML cho toàn bộ 10 ca sử dụng của hệ thống:
+Dưới đây là đặc tả chi tiết và sơ đồ chi tiết Use Case theo chuẩn UML cho toàn bộ 10 ca sử dụng của hệ thống:
 
 \subsubsection{UC01: Đọc và Tiền Xử Lý Dữ Liệu Cảm Biến}
 Ca sử dụng \texttt{UC01} chịu trách nhiệm thu thập tín hiệu vật lý từ môi trường và chuyển hóa thành dữ liệu số có độ tin cậy cao phục vụ thuật toán điều khiển (Bảng~\ref{tab:spec_uc01}).
@@ -155,12 +155,12 @@ Ràng buộc phi chức năng & Thời gian thực thi toàn chu kỳ đo $\le 3
 \end{xltabular}
 \endgroup
 
-Sơ đồ phân rã của ca sử dụng \texttt{UC01} được minh họa trong Hình~\ref{fig:uc01}. Trong mỗi chu kỳ, ca sử dụng luôn bao hàm ba tác vụ con thông qua quan hệ \texttt{«include»}: đo khoảng cách siêu âm, lọc trung vị 3 mẫu và phân cấp ngưỡng mưa ADC.
+Sơ đồ chi tiết Use Case \texttt{UC01} được minh họa trong Hình~\ref{fig:uc01}. Trong mỗi chu kỳ, ca sử dụng luôn bao hàm ba tác vụ con thông qua quan hệ \texttt{«include»}: đo khoảng cách siêu âm, lọc trung vị 3 mẫu và phân cấp ngưỡng mưa ADC.
 
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.92\textwidth]{figures/uc01_sensor_processing.png}
-    \caption{Sơ đồ phân rã Use Case UC01: Đọc và tiền xử lý dữ liệu cảm biến}
+    \caption{Sơ đồ chi tiết Use Case UC01: Đọc và tiền xử lý dữ liệu cảm biến}
     \label{fig:uc01}
 \end{figure}
 
@@ -206,12 +206,12 @@ Ràng buộc an toàn & Máy bơm chỉ được phép bật khi mực nước $
 \end{xltabular}
 \endgroup
 
-Sơ đồ phân rã của \texttt{UC02} thể hiện qua quan hệ bao gồm (\texttt{«include»}) giữa tác vụ đánh giá 4 trạng thái FSM và cơ chế dải trễ Hysteresis chống rung (Hình~\ref{fig:uc02}).
+Sơ đồ chi tiết Use Case \texttt{UC02} thể hiện qua quan hệ bao gồm (\texttt{«include»}) giữa tác vụ đánh giá 4 trạng thái FSM và cơ chế dải trễ Hysteresis chống rung (Hình~\ref{fig:uc02}).
 
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.92\textwidth]{figures/uc02_fsm_hysteresis.png}
-    \caption{Sơ đồ phân rã Use Case UC02: Tự động đánh giá FSM \& Dải trễ}
+    \caption{Sơ đồ chi tiết Use Case UC02: Tự động đánh giá FSM \& Dải trễ}
     \label{fig:uc02}
 \end{figure}
 
@@ -255,12 +255,12 @@ Ràng buộc cơ học & Bộ đếm thời gian kiểm tra thời gian hoạt �
 \end{xltabular}
 \endgroup
 
-Sơ đồ phân rã ca sử dụng \texttt{UC03} thể hiện cấu trúc chuyên biệt hóa (Hình~\ref{fig:uc03}).
+Sơ đồ chi tiết Use Case \texttt{UC03} thể hiện cấu trúc chuyên biệt hóa (Hình~\ref{fig:uc03}).
 
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.92\textwidth]{figures/uc03_pump_control.png}
-    \caption{Sơ đồ phân rã Use Case UC03: Tự động điều khiển máy bơm thoát nước}
+    \caption{Sơ đồ chi tiết Use Case UC03: Tự động điều khiển máy bơm thoát nước}
     \label{fig:uc03}
 \end{figure}
 
@@ -305,12 +305,12 @@ Ràng buộc kỹ thuật & Xung điều chế độ rộng PWM tần số $50\,
 \end{xltabular}
 \endgroup
 
-Sơ đồ phân rã Use Case \texttt{UC04} được thể hiện trong Hình~\ref{fig:uc04}.
+Sơ đồ chi tiết Use Case \texttt{UC04} được thể hiện trong Hình~\ref{fig:uc04}.
 
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.92\textwidth]{figures/uc04_valve_control.png}
-    \caption{Sơ đồ phân rã Use Case UC04: Tự động điều khiển van thoát lũ}
+    \caption{Sơ đồ chi tiết Use Case UC04: Tự động điều khiển van thoát lũ}
     \label{fig:uc04}
 \end{figure}
 
@@ -361,12 +361,12 @@ Ràng buộc an toàn & Khối cảnh báo thực địa (LED và còi) \textbf{
 \end{xltabular}
 \endgroup
 
-Sơ đồ phân rã ca sử dụng \texttt{UC05} được trình bày trong Hình~\ref{fig:uc05}.
+Sơ đồ chi tiết Use Case \texttt{UC05} được trình bày trong Hình~\ref{fig:uc05}.
 
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.92\textwidth]{figures/uc05_signaling_buzzer_led.png}
-    \caption{Sơ đồ phân rã Use Case UC05: Phát tín hiệu cảnh báo tại trạm}
+    \caption{Sơ đồ chi tiết Use Case UC05: Phát tín hiệu cảnh báo tại trạm}
     \label{fig:uc05}
 \end{figure}
 
@@ -411,12 +411,12 @@ Ràng buộc kỹ thuật & Bộ đếm thời gian thực hiện phi chặn, đ
 \end{xltabular}
 \endgroup
 
-Sơ đồ phân rã Use Case \texttt{UC06} được mô tả trong Hình~\ref{fig:uc06}.
+Sơ đồ chi tiết Use Case \texttt{UC06} được mô tả trong Hình~\ref{fig:uc06}.
 
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.92\textwidth]{figures/uc06_network_failsafe.png}
-    \caption{Sơ đồ phân rã Use Case UC06: Tự động chuyển an toàn khi mất mạng (Failsafe)}
+    \caption{Sơ đồ chi tiết Use Case UC06: Tự động chuyển an toàn khi mất mạng (Failsafe)}
     \label{fig:uc06}
 \end{figure}
 
@@ -459,12 +459,12 @@ Ràng buộc hiệu năng & Kích thước gói tin JSON nhỏ gọn; thời gia
 \end{xltabular}
 \endgroup
 
-Sơ đồ phân rã Use Case \texttt{UC07} được minh họa trong Hình~\ref{fig:uc07}.
+Sơ đồ chi tiết Use Case \texttt{UC07} được minh họa trong Hình~\ref{fig:uc07}.
 
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.92\textwidth]{figures/uc07_telemetry_api.png}
-    \caption{Sơ đồ phân rã Use Case UC07: Truyền nhận dữ liệu qua Web API}
+    \caption{Sơ đồ chi tiết Use Case UC07: Truyền nhận dữ liệu qua Web API}
     \label{fig:uc07}
 \end{figure}
 
@@ -509,12 +509,12 @@ Ràng buộc giao diện & Tương thích chuẩn Responsive Web Design trên c�
 \end{xltabular}
 \endgroup
 
-Sơ đồ phân rã Use Case \texttt{UC08} được trình bày trong Hình~\ref{fig:uc08}.
+Sơ đồ chi tiết Use Case \texttt{UC08} được trình bày trong Hình~\ref{fig:uc08}.
 
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.92\textwidth]{figures/uc08_web_dashboard.png}
-    \caption{Sơ đồ phân rã Use Case UC08: Giám sát trạng thái trạm qua Web Dashboard}
+    \caption{Sơ đồ chi tiết Use Case UC08: Giám sát trạng thái trạm qua Web Dashboard}
     \label{fig:uc08}
 \end{figure}
 
@@ -557,12 +557,12 @@ Ràng buộc an toàn & Khi chuyển từ MANUAL về AUTO, hệ thống lập t
 \end{xltabular}
 \endgroup
 
-Sơ đồ phân rã Use Case \texttt{UC09} được thể hiện trong Hình~\ref{fig:uc09}.
+Sơ đồ chi tiết Use Case \texttt{UC09} được thể hiện trong Hình~\ref{fig:uc09}.
 
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.92\textwidth]{figures/uc09_mode_switch.png}
-    \caption{Sơ đồ phân rã Use Case UC09: Chuyển đổi chế độ vận hành}
+    \caption{Sơ đồ chi tiết Use Case UC09: Chuyển đổi chế độ vận hành}
     \label{fig:uc09}
 \end{figure}
 
@@ -608,12 +608,12 @@ Ràng buộc an toàn & Mọi lệnh can thiệp thành công đều làm tươi
 \end{xltabular}
 \endgroup
 
-Sơ đồ phân rã Use Case \texttt{UC10} được thể hiện trong Hình~\ref{fig:uc10}.
+Sơ đồ chi tiết Use Case \texttt{UC10} được thể hiện trong Hình~\ref{fig:uc10}.
 
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.92\textwidth]{figures/uc10_manual_override.png}
-    \caption{Sơ đồ phân rã Use Case UC10: Can thiệp điều khiển thiết bị từ Web}
+    \caption{Sơ đồ chi tiết Use Case UC10: Can thiệp điều khiển thiết bị từ Web}
     \label{fig:uc10}
 \end{figure}
 
@@ -641,3 +641,48 @@ Trong phạm vi mô hình thực nghiệm:
     \item \textbf{Giới hạn hiện tại:} Máy chủ Web Server nhúng chạy trên giao thức HTTP cổng 80 không mã hóa (chưa hỗ trợ HTTPS/TLS) do chip ESP32 bị giới hạn về dung lượng RAM và mã hóa TLS tiêu tốn đáng kể chu kỳ xử lý CPU, gây ảnh hưởng đến tính thời gian thực của tác vụ điều khiển. Đồng thời, các endpoint API chưa áp dụng cơ chế xác thực Token hoặc OAuth2; các lệnh điều khiển hiện tại sử dụng phương thức \texttt{GET /api/control}.
     \item \textbf{Định hướng nâng cấp công nghiệp:} Đối với phiên bản triển khai thương mại diện rộng, hệ thống cần được nâng cấp: chuyển các lệnh thay đổi trạng thái sang phương thức chuẩn \texttt{POST /api/control} có kèm mã xác thực JSON Web Token (JWT), tích hợp vi mạch mã hóa bảo mật chuyên dụng (AtegCC608A) để xử lý HTTPS, và cấu hình danh sách trắng địa chỉ vật lý (MAC Address Whitelisting) chỉ cho phép các thiết bị chuyên trách được kết nối điều khiển trạm.
 \end{enumerate}
+
+\clearpage
+\section[Quy Trình Phát Triển Toàn Diện Hệ Thống FloodGuard]{Quy Trình Phát Triển Toàn Diện\\ Hệ Thống FloodGuard}
+\label{sec:development_process}
+
+Để bảo đảm tính liên kết kỹ thuật và tính hệ thống xuyên suốt toàn bộ dự án, quá trình hiện thực hóa trạm giám sát và chống ngập thông minh FloodGuard được tổ chức chặt chẽ theo phương pháp luận 5 bước kỹ thuật có tính kế thừa và tương hỗ đa ngành (Hình~\ref{fig:development_process}).
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth, height=0.74\textheight, keepaspectratio]{figures/project_development_process.png}
+    \caption{Sơ đồ quy trình phát triển toàn diện hệ thống FloodGuard qua 5 giai đoạn}
+    \label{fig:development_process}
+\end{figure}
+
+\clearpage
+Mỗi giai đoạn trong quy trình phát triển đóng vai trò là một mắt xích kỹ thuật nền tảng, kế thừa kết quả của giai đoạn trước và cung cấp đầu vào cho giai đoạn tiếp theo (Bảng~\ref{tab:development_process_mapping}).
+
+\begin{table}[H]
+\centering
+\small
+\renewcommand{\arraystretch}{1.15}
+\caption{Ma trận ánh xạ 5 bước phát triển hệ thống FloodGuard với cấu trúc báo cáo}
+\label{tab:development_process_mapping}
+\begin{tabularx}{\textwidth}{|c|>{\bfseries}p{2.6cm}|X|c|}
+\hline
+\textbf{Bước} & \textbf{Giai đoạn} & \textbf{Nội dung kỹ thuật trọng tâm \& Kết quả đầu ra} & \textbf{Chương ánh xạ} \\ \hline
+1 & Phân tích yêu cầu & Khảo sát hiện trạng ngập úng đô thị; xác lập các chỉ tiêu kỹ thuật định lượng; mô hình hóa 10 Use Case UML chi tiết; phân tích ràng buộc thời gian thực $\text{WCRT} \le 250\,\text{ms}$ và an toàn Failsafe. & Chương~\ref{ch:introduction} \\ \hline
+2 & Thiết kế hệ thống & Thiết kế kiến trúc trạm 5 khối chức năng; xây dựng sơ đồ nguyên lý mạch điện chuẩn IEC và ma trận GPIO; thiết kế máy trạng thái FSM 4 trạng thái, dải trễ Hysteresis, bộ lọc trung vị; thiết kế Web Dashboard và đặc tả REST API. & Chương~\ref{ch:hardware_architecture}, \ref{ch:algorithm}, \ref{ch:web_dashboard} \\ \hline
+3 & Cài đặt \& tích hợp & Đấu nối sa bàn phần cứng thực nghiệm; lập trình firmware ESP32 PlatformIO theo cơ chế \lstinline|millis()| phi chặn; tích hợp Task Watchdog TWDT ($3\,\text{s}$); nạp máy chủ Web Server nhúng và đồng bộ luồng dữ liệu hai chiều. & Chương~\ref{ch:hardware_architecture}, \ref{ch:algorithm}, \ref{ch:web_dashboard} \\ \hline
+4 & Chạy thử \& kiểm thử & Chạy thử mô phỏng toàn phần trên Wokwi; thử nghiệm sa bàn phần cứng với nước thật; đo kiểm thời gian đáp ứng tồi nhất ($T_{\text{WCRT}} = 203\,\text{ms}$); kiểm thử các kịch bản lỗi (mất mạng Wi-Fi $30\,\text{s}$, kẹt van, dâng nước khẩn cấp). & Chương~\ref{ch:deployment_guide} \\ \hline
+5 & Đánh giá \& hoàn thiện & Đối chiếu $100\%$ mục tiêu kỹ thuật định lượng; tổng kết ưu điểm vượt trội và chỉ rõ các hạn chế tồn tại của mô hình demo; đề xuất lộ trình nâng cấp cảm biến radar công nghiệp và bảo mật HTTPS diện rộng. & Chương~\ref{ch:conclusion} \\ \hline
+\end{tabularx}
+\end{table}
+
+\noindent
+\textbf{Tính liên kết và chu trình phản hồi kỹ thuật:} Điểm mấu chốt trong phương pháp luận phát triển của đề tài là \textbf{vòng lặp phản hồi và hiệu chuẩn liên tục} giữa các giai đoạn (nhánh hồi tiếp trên Hình~\ref{fig:development_process}):
+\begin{itemize}
+    \setlength{\itemsep}{0pt}
+    \setlength{\parskip}{0pt}
+    \setlength{\parsep}{0pt}
+    \item \textit{Phản hồi kiểm thử về thiết kế và cài đặt:} Khi tiến hành thử nghiệm thực tế ở Bước~4, các sai số đo đạc do sóng dập dềnh và hiện tượng sụt áp nguồn cuộn hút Relay đã lập tức được chuyển thành phản hồi để hiệu chuẩn dải trễ Hysteresis ở Bước~2 và bổ sung diode flyback bảo vệ ở Bước~3.
+    \item \textit{Đồng bộ dữ liệu giữa các mảng chuyên môn:} Giao diện Web Dashboard (Chương~4) không thể hoạt động độc lập mà phải bám sát cấu trúc thanh ghi và hàm định tuyến của firmware ESP32 (Chương~3), đồng thời phụ thuộc vào mức logic an toàn của phần cứng (Chương~2).
+\end{itemize}
+
+Sơ đồ quy trình và ma trận phân kỳ 5 giai đoạn trên đóng vai trò là kim chỉ nam phương pháp luận xuyên suốt, giúp người đọc nắm bắt được bức tranh tổng thể cũng như mối quan hệ hữu cơ mật thiết giữa các chương kỹ thuật trong toàn bộ tài liệu báo cáo.

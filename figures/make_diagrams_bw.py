@@ -196,42 +196,42 @@ def draw_generalization(ax, e_from, e_to, label=""):
 # UC10 connects directly to Pump & Servo actuators (No phantom actor).
 # =============================================================
 def make_overall_uml_bw():
-    fig, ax = plt.subplots(figsize=(16.8, 14.0), dpi=300)
+    fig, ax = plt.subplots(figsize=(16.8, 14.8), dpi=300)
     ax.set_xlim(0, 16.8)
-    ax.set_ylim(0, 14.0)
+    ax.set_ylim(0, 14.8)
     ax.axis('off')
     fig.patch.set_facecolor('#ffffff')
 
     # System Boundary Box
-    rect = patches.FancyBboxPatch((3.4, 0.4), 9.9, 13.2, boxstyle='round,pad=0.0,rounding_size=0.18',
+    rect = patches.FancyBboxPatch((3.4, 0.25), 9.9, 14.25, boxstyle='round,pad=0.0,rounding_size=0.18',
                                   linewidth=1.8, edgecolor='#000000', facecolor='#ffffff', zorder=1)
     ax.add_patch(rect)
-    ax.text(3.7, 13.35, '«system boundary»', fontsize=9.5, style='italic', color='#555555', zorder=5)
-    ax.text(3.7, 12.95, 'Hệ Thống Trạm FloodGuard (FloodGuard System)', fontsize=12.5, fontweight='bold', color='#000000', zorder=5)
+    ax.text(3.7, 14.20, '«system boundary»', fontsize=9.5, style='italic', color='#555555', zorder=5)
+    ax.text(3.7, 13.80, 'Hệ Thống Trạm FloodGuard (FloodGuard System)', fontsize=12.5, fontweight='bold', color='#000000', zorder=5)
 
     # Subsystem 1 Box: Autonomous Core
-    box1 = patches.FancyBboxPatch((3.7, 5.3), 9.3, 7.35, boxstyle='round,pad=0.0,rounding_size=0.12',
+    box1 = patches.FancyBboxPatch((3.7, 5.85), 9.3, 7.60, boxstyle='round,pad=0.0,rounding_size=0.12',
                                   linewidth=1.2, linestyle='--', edgecolor='#555555', facecolor='#fafafa', zorder=2)
     ax.add_patch(box1)
-    ax.text(4.0, 12.4, '«subsystem» Phân Hệ Giám Sát & Điều Khiển Tự Động Tại Chỗ', fontsize=10.0, fontweight='bold', color='#222222', zorder=5)
+    ax.text(4.0, 13.15, '«subsystem» Phân Hệ Giám Sát & Điều Khiển Tự Động Tại Chỗ', fontsize=10.0, fontweight='bold', color='#222222', zorder=5)
 
     # Subsystem 2 Box: Remote Telemetry & Web
-    box2 = patches.FancyBboxPatch((3.7, 0.6), 9.3, 4.45, boxstyle='round,pad=0.0,rounding_size=0.12',
+    box2 = patches.FancyBboxPatch((3.7, 0.45), 9.3, 5.00, boxstyle='round,pad=0.0,rounding_size=0.12',
                                   linewidth=1.2, linestyle='--', edgecolor='#555555', facecolor='#fafafa', zorder=2)
     ax.add_patch(box2)
-    ax.text(4.0, 4.8, '«subsystem» Phân Hệ Giám Sát & Điều Khiển Từ Xa Qua Web', fontsize=10.0, fontweight='bold', color='#222222', zorder=5)
+    ax.text(4.0, 5.15, '«subsystem» Phân Hệ Giám Sát & Điều Khiển Từ Xa Qua Web', fontsize=10.0, fontweight='bold', color='#222222', zorder=5)
 
     uc_list = [
-        ('UC01: Đọc & Tiền Xử Lý Dữ Liệu Cảm Biến', 11.6),
-        ('UC02: Tự Động Đánh Giá FSM & Dải Trễ', 10.4),
-        ('UC03: Tự Động Điều Khiển Máy Bơm Thoát Nước', 9.2),
-        ('UC04: Tự Động Điều Khiển Van Thoát Lũ', 8.0),
-        ('UC05: Phát Tín Hiệu Cảnh Báo Tại Trạm', 6.8),
-        ('UC06: Tự Động Chuyển An Toàn (Failsafe)', 5.7),
-        ('UC07: Truyền Nhận Dữ Liệu Qua Web API', 4.1),
-        ('UC08: Giám Sát Trạng Thái Trạm Qua Web', 3.0),
-        ('UC09: Chuyển Đổi Chế Độ (AUTO / MANUAL)', 1.9),
-        ('UC10: Can Thiệp Điều Khiển Thiết Bị Từ Web', 0.9)
+        ('UC01: Đọc & Tiền Xử Lý Dữ Liệu Cảm Biến', 12.40),
+        ('UC02: Tự Động Đánh Giá FSM & Dải Trễ', 11.25),
+        ('UC03: Tự Động Điều Khiển Máy Bơm Thoát Nước', 10.10),
+        ('UC04: Tự Động Điều Khiển Van Thoát Lũ', 8.95),
+        ('UC05: Phát Tín Hiệu Cảnh Báo Tại Trạm', 7.80),
+        ('UC06: Tự Động Chuyển An Toàn (Failsafe)', 6.65),
+        ('UC07: Truyền Nhận Dữ Liệu Qua Web API', 4.45),
+        ('UC08: Giám Sát Trạng Thái Trạm Qua Web', 3.35),
+        ('UC09: Chuyển Đổi Chế Độ (AUTO / MANUAL)', 2.25),
+        ('UC10: Can Thiệp Điều Khiển Thiết Bị Từ Web', 1.15)
     ]
 
     ew = 6.4
@@ -247,21 +247,22 @@ def make_overall_uml_bw():
 
     # ACTORS
     # 1. Timer Actor (Top Left)
-    rect_t = patches.Rectangle((0.3, 8.8), 2.5, 1.25, linewidth=1.4, edgecolor='#000000', facecolor='#ffffff', zorder=6)
+    rect_t = patches.Rectangle((0.3, 8.90), 2.5, 1.25, linewidth=1.4, edgecolor='#000000', facecolor='#ffffff', zorder=6)
     ax.add_patch(rect_t)
-    ax.text(1.55, 9.65, '«internal timer»', fontsize=8.5, style='italic', ha='center', va='center', zorder=7)
-    ax.text(1.55, 9.25, 'Bộ Định Thời\nTimer / Watchdog', fontsize=9.5, fontweight='bold', ha='center', va='center', zorder=7)
+    ax.text(1.55, 9.75, '«internal timer»', fontsize=8.5, style='italic', ha='center', va='center', zorder=7)
+    ax.text(1.55, 9.35, 'Bộ Định Thời\nTimer / Watchdog', fontsize=9.5, fontweight='bold', ha='center', va='center', zorder=7)
 
     # Timer Bus: spine at x=4.2
-    ax.plot([2.8, 4.2], [9.4, 9.4], color='#000000', lw=1.3, zorder=2)
-    ax.plot([4.2, 4.2], [5.7, 11.6], color='#000000', lw=1.3, zorder=2)
+    t_mid = (uc_pos['UC01'] + uc_pos['UC06']) / 2.0
+    ax.plot([2.8, 4.2], [t_mid, t_mid], color='#000000', lw=1.3, zorder=2)
+    ax.plot([4.2, 4.2], [uc_pos['UC06'], uc_pos['UC01']], color='#000000', lw=1.3, zorder=2)
     for ucid in ['UC01', 'UC02', 'UC03', 'UC04', 'UC05', 'UC06']:
         y = uc_pos[ucid]
         ax.plot([4.2, cx - ew/2], [y, y], color='#000000', lw=1.3, zorder=2)
 
     # 2. Operator Actor (Bottom Left)
     scale = 0.85
-    oy = 2.5
+    oy = (uc_pos['UC07'] + uc_pos['UC10']) / 2.0
     ox = 1.55
     r = 0.24 * scale
     head = plt.Circle((ox, oy + 0.44 * scale), r, facecolor='#ffffff', edgecolor='#000000', lw=1.5, zorder=6)
@@ -279,36 +280,36 @@ def make_overall_uml_bw():
         ax.plot([2.55, cx - ew/2], [oy, y], color='#000000', lw=1.3, zorder=2)
 
     # RIGHT ACTORS
-    # 3. Sensors (y=11.6)
-    rect_s = patches.Rectangle((13.9, 11.0), 2.6, 1.2, linewidth=1.4, edgecolor='#000000', facecolor='#ffffff', zorder=6)
+    # 3. Sensors (Top Right)
+    rect_s = patches.Rectangle((13.9, 11.80), 2.6, 1.2, linewidth=1.4, edgecolor='#000000', facecolor='#ffffff', zorder=6)
     ax.add_patch(rect_s)
-    ax.text(15.2, 11.75, '«device»', fontsize=8.5, style='italic', ha='center', va='center', zorder=7)
-    ax.text(15.2, 11.35, 'Cảm Biến Siêu Âm\n& Cảm Biến Mưa', fontsize=9.5, fontweight='bold', ha='center', va='center', zorder=7)
-    ax.plot([cx + ew/2, 13.9], [11.6, 11.6], color='#000000', lw=1.3, zorder=2)
+    ax.text(15.2, 12.55, '«device»', fontsize=8.5, style='italic', ha='center', va='center', zorder=7)
+    ax.text(15.2, 12.15, 'Cảm Biến Siêu Âm\n& Cảm Biến Mưa', fontsize=9.5, fontweight='bold', ha='center', va='center', zorder=7)
+    ax.plot([cx + ew/2, 13.9], [uc_pos['UC01'], 12.40], color='#000000', lw=1.3, zorder=2)
 
-    # 4. Pump Relay (y=9.8)
-    rect_p = patches.Rectangle((13.9, 9.25), 2.6, 1.15, linewidth=1.4, edgecolor='#000000', facecolor='#ffffff', zorder=6)
+    # 4. Pump Relay (y=10.10)
+    rect_p = patches.Rectangle((13.9, 9.55), 2.6, 1.15, linewidth=1.4, edgecolor='#000000', facecolor='#ffffff', zorder=6)
     ax.add_patch(rect_p)
-    ax.text(15.2, 9.95, '«device»', fontsize=8.5, style='italic', ha='center', va='center', zorder=7)
-    ax.text(15.2, 9.6, 'Module Relay 5V\n& Máy Bơm Mini', fontsize=9.5, fontweight='bold', ha='center', va='center', zorder=7)
-    ax.plot([cx + ew/2, 13.9], [9.2, 9.5], color='#000000', lw=1.3, zorder=2)
+    ax.text(15.2, 10.25, '«device»', fontsize=8.5, style='italic', ha='center', va='center', zorder=7)
+    ax.text(15.2, 9.90, 'Module Relay 5V\n& Máy Bơm Mini', fontsize=9.5, fontweight='bold', ha='center', va='center', zorder=7)
+    ax.plot([cx + ew/2, 13.9], [uc_pos['UC03'], 10.10], color='#000000', lw=1.3, zorder=2)
 
-    # 5. Servo Gate (y=8.3)
-    rect_v = patches.Rectangle((13.9, 7.95), 2.6, 1.15, linewidth=1.4, edgecolor='#000000', facecolor='#ffffff', zorder=6)
+    # 5. Servo Gate (y=8.75)
+    rect_v = patches.Rectangle((13.9, 8.20), 2.6, 1.15, linewidth=1.4, edgecolor='#000000', facecolor='#ffffff', zorder=6)
     ax.add_patch(rect_v)
-    ax.text(15.2, 8.65, '«device»', fontsize=8.5, style='italic', ha='center', va='center', zorder=7)
-    ax.text(15.2, 8.3, 'Động Cơ Servo\nSG90 (Cửa Van)', fontsize=9.5, fontweight='bold', ha='center', va='center', zorder=7)
-    ax.plot([cx + ew/2, 13.9], [8.0, 8.2], color='#000000', lw=1.3, zorder=2)
+    ax.text(15.2, 8.90, '«device»', fontsize=8.5, style='italic', ha='center', va='center', zorder=7)
+    ax.text(15.2, 8.55, 'Động Cơ Servo\nSG90 (Cửa Van)', fontsize=9.5, fontweight='bold', ha='center', va='center', zorder=7)
+    ax.plot([cx + ew/2, 13.9], [uc_pos['UC04'], 8.75], color='#000000', lw=1.3, zorder=2)
 
-    # 6. LED & Buzzer (y=6.9)
-    rect_l = patches.Rectangle((13.9, 6.65), 2.6, 1.15, linewidth=1.4, edgecolor='#000000', facecolor='#ffffff', zorder=6)
+    # 6. LED & Buzzer (y=7.40)
+    rect_l = patches.Rectangle((13.9, 6.85), 2.6, 1.15, linewidth=1.4, edgecolor='#000000', facecolor='#ffffff', zorder=6)
     ax.add_patch(rect_l)
-    ax.text(15.2, 7.35, '«device»', fontsize=8.5, style='italic', ha='center', va='center', zorder=7)
-    ax.text(15.2, 7.0, 'Cụm 3 Đèn LED\n& Còi Buzzer 5V', fontsize=9.5, fontweight='bold', ha='center', va='center', zorder=7)
-    ax.plot([cx + ew/2, 13.9], [6.8, 6.95], color='#000000', lw=1.3, zorder=2)
+    ax.text(15.2, 7.55, '«device»', fontsize=8.5, style='italic', ha='center', va='center', zorder=7)
+    ax.text(15.2, 7.20, 'Cụm 3 Đèn LED\n& Còi Buzzer 5V', fontsize=9.5, fontweight='bold', ha='center', va='center', zorder=7)
+    ax.plot([cx + ew/2, 13.9], [uc_pos['UC05'], 7.425], color='#000000', lw=1.3, zorder=2)
 
     # 7. Residents (y=5.5)
-    ry = 5.45
+    ry = 5.50
     rx = 15.2
     head2 = plt.Circle((rx, ry + 0.44 * scale), r, facecolor='#ffffff', edgecolor='#000000', lw=1.5, zorder=6)
     ax.add_patch(head2)
@@ -318,13 +319,13 @@ def make_overall_uml_bw():
     ax.plot([rx, rx + 0.26 * scale], [ry - 0.38 * scale, ry - 0.82 * scale], color='#000000', lw=1.6, zorder=6)
     ax.text(rx, ry - 1.0 * scale, 'Người Dân\nQuanh Trạm', fontsize=9.5, fontweight='bold', ha='center', va='top', zorder=7)
     ax.text(rx, ry - 1.45 * scale, '«human actor»', fontsize=8.5, style='italic', ha='center', va='top', color='#333333', zorder=7)
-    ax.plot([cx + ew/2, 14.3], [6.8, ry + 0.2], color='#000000', lw=1.3, zorder=2)
+    ax.plot([cx + ew/2, 14.3], [uc_pos['UC05'], ry + 0.2], color='#000000', lw=1.3, zorder=2)
 
     # Bus from UC10 to Pump and Servo in right channel at x=12.4
-    ax.plot([cx + ew/2, 12.4], [0.9, 0.9], color='#000000', lw=1.3, zorder=2)
-    ax.plot([12.4, 12.4], [0.9, 9.5], color='#000000', lw=1.3, zorder=2)
-    ax.plot([12.4, 13.9], [9.5, 9.5], color='#000000', lw=1.3, zorder=2) # to pump
-    ax.plot([12.4, 13.9], [8.2, 8.2], color='#000000', lw=1.3, zorder=2) # to servo
+    ax.plot([cx + ew/2, 12.4], [uc_pos['UC10'], uc_pos['UC10']], color='#000000', lw=1.3, zorder=2)
+    ax.plot([12.4, 12.4], [uc_pos['UC10'], 10.10], color='#000000', lw=1.3, zorder=2)
+    ax.plot([12.4, 13.9], [10.10, 10.10], color='#000000', lw=1.3, zorder=2) # to pump
+    ax.plot([12.4, 13.9], [8.75, 8.75], color='#000000', lw=1.3, zorder=2)   # to servo
 
     save_fig(fig, "uc_overall_diagram.png")
 

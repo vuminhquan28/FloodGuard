@@ -24,7 +24,7 @@ const char* AP_SSID = "FloodGuard_AP";
 const char* AP_PASS = "12345678"; // Tối thiểu 8 ký tự
 
 // ==========================================
-// THÔNG SỐ ĐO VÀ NGƯỠNG MỰC NƯỚC (DEMO TÍNH TỪ ĐÁY BỂ LÊN)
+// THÔNG SỐ ĐO VÀ NGƯỠNG MỰC NƯỚC (PHẦN CỨNG THẬT BỂ DEMO)
 // Khoảng cách đáy hồ khi cạn: DISTANCE_EMPTY = 10.0cm
 // Cột nước từ đáy bể lên: h = DISTANCE_EMPTY - d = 10.0cm - d
 // - An toàn (NORMAL)   : 0.0cm - 1.5cm  -> P < 19%   (d > 8.5cm)
@@ -48,13 +48,9 @@ const int THRESHOLD_WARN_EXIT    = 16; // h < 1.28cm (d > 8.72cm)
 // ==========================================
 // CẤP ĐỘ CẢM BIẾN MƯA (ESP32 ADC 12-bit: 0 - 4095)
 // ==========================================
-// - Khô ráo (Không mưa): ADC ~ 3200 - 4095
-// - Mưa nhỏ / Vài giọt (Light Rain): ADC < 2800 hoặc DO == LOW -> Mức WARNING
-// - Mưa to / Nhúng 1 phần (Heavy Rain): ADC < 1800 -> Mức DANGER (Bơm BẬT, Van 50%)
-// - Nhúng hết vào nước / Mưa bão cực to (Submerged): ADC < 1100 -> Mức CRITICAL (Bơm BẬT, Van 100%)
-const int RAIN_ADC_LIGHT       = 2800;
-const int RAIN_ADC_HEAVY       = 1800;
-const int RAIN_ADC_SUBMERGED   = 1100;
+const int RAIN_ADC_LIGHT       = 2800; // Mưa nhỏ / vài giọt
+const int RAIN_ADC_HEAVY       = 1800; // Mưa to / nhúng 1 phần
+const int RAIN_ADC_SUBMERGED   = 1100; // Ngập hoàn toàn trong nước
 
 // Các trạng thái của hệ thống (FSM)
 enum SystemState {
@@ -83,15 +79,33 @@ bool isAutoMode       = true;
 
 // Biến điều khiển thời gian non-blocking
 unsigned long lastSensorRead   = 0;
-unsigned long lastDebugPrint   = 0;  // Debug Serial mỗi 2 giây
-bool buzzerToggle              = false;
+unsigned long lastDebugPrint   = 0;
 
 // ==========================================
-// [KỸ THUẬT 2] ĐỌC CẢM BIẾN - MEDIAN FILTER 3 MẪU
-// Chống nhiễu EMI từ Relay/Motor bơm (xung gai điện từ làm pulseIn() timeout)
+// [THUẬT TOÁN CHỐNG RUNG GIẬT ĐA TẦNG]
+// 1. Debounce thời gian chuyển trạng thái FSM (1.0 giây)
+// 2. Thời gian chạy tối thiểu của máy bơm (5.0 giây)
+// 3. Slew-rate Limiter điều khiển góc Servo SG90 mượt mà (mỗi 20ms quay 5 độ)
+// 4. Failsafe Timeout (30s) & Safety Priority Override (10s ở CRITICAL)
 // ==========================================
+SystemState candidateState = STATE_NORMAL;
+unsigned long candidateStartTime = 0;
+const unsigned long DEBOUNCE_TIME_MS = 1000; // 1.0 giây
 
-// Đọc 1 mẫu khoảng cách từ HC-SR04 (trả về -1.0 nếu timeout hoặc ngoài dải)
+unsigned long pumpStartTime = 0;
+const unsigned long PUMP_MIN_RUN_MS  = 5000; // 5.0 giây
+
+unsigned long lastClientRequest      = 0;    // Heartbeat kết nối Web Dashboard
+unsigned long critManualStartTime    = 0;    // Đếm thời gian ở CRITICAL trong Manual mode
+
+// Biến quản lý góc xoay Servo mượt mà (Slew-rate Limiter)
+static int servoActualAngle          = 0;
+static unsigned long lastServoStepTime = 0;
+
+// ==========================================
+// [KỸ THUẬT 1] ĐỌC CẢM BIẾN - MEDIAN FILTER 3 MẪU
+// Chống nhiễu EMI từ Relay/Motor bơm
+// ==========================================
 float readUltrasonicSingleCM() {
   digitalWrite(PIN_TRIG, LOW);
   delayMicroseconds(2);
@@ -103,14 +117,10 @@ float readUltrasonicSingleCM() {
   if (duration <= 0) return -1.0f;
 
   float dist = (duration * 0.0343f) / 2.0f;
-  // Loại bỏ mẫu ngoài dải vật lý hợp lệ (2cm - 300cm)
   if (dist < 2.0f || dist > 300.0f) return -1.0f;
   return dist;
 }
 
-// Lấy trung vị (Median) của 3 mẫu cách nhau 12ms
-// - Loại bỏ mẫu đột biến do EMI (nhiễu đỉnh)
-// - Nếu cả 3 đều lỗi: giữ nguyên lastValidDistance
 float readUltrasonicCM() {
   float samples[3];
   int validCount = 0;
@@ -121,11 +131,9 @@ float readUltrasonicCM() {
     if (i < 2) delay(12); // Khoảng cách giữa các lần phát xung (10-15ms)
   }
 
-  // Nếu cả 3 mẫu đều lỗi (sụt áp thoáng qua khi relay đóng ngắt)
-  // -> giữ giá trị hợp lệ gần nhất tránh FSM nhảy lung tung
   if (validCount == 0) return lastValidDistance;
 
-  // Bubble sort 3 phần tử: đẩy các mẫu -1 (lỗi) lên đầu mảng
+  // Sắp xếp mẫu
   for (int i = 0; i < 2; i++) {
     for (int j = 0; j < 2 - i; j++) {
       if (samples[j] < 0 || (samples[j+1] > 0 && samples[j] > samples[j+1])) {
@@ -138,19 +146,16 @@ float readUltrasonicCM() {
 
   float result = lastValidDistance;
   if (validCount == 1) {
-    // Chỉ có 1 mẫu hợp lệ - dùng luôn
     for (int i = 0; i < 3; i++) { if (samples[i] > 0) { result = samples[i]; break; } }
   } else if (validCount == 2) {
-    // 2 mẫu hợp lệ - lấy trung bình
     float sum = 0; int cnt = 0;
     for (int i = 0; i < 3; i++) { if (samples[i] > 0) { sum += samples[i]; cnt++; } }
     result = sum / cnt;
   } else {
-    // 3 mẫu đều hợp lệ - lấy phần tử giữa (Median)
-    result = samples[1];
+    result = samples[1]; // Median
   }
 
-  lastValidDistance = result; // Cập nhật fallback
+  lastValidDistance = result;
   return result;
 }
 
@@ -164,14 +169,12 @@ void updateSensors() {
   float pct = ((DISTANCE_EMPTY - currentDistance) / (DISTANCE_EMPTY - DISTANCE_FULL)) * 100.0f;
   waterPercent = (int)constrain(pct, 0.0f, 100.0f);
 
-  // Đọc cảm biến mưa (Chân DO GPIO 34 và AO GPIO 35)
-  // - DO: LOW khi phát hiện đọng nước mưa (qua bộ so sánh LM393)
-  // - AO: ADC 12-bit (0 - 4095), điện trở giảm khi có nước tiếp xúc
+  // Đọc cảm biến mưa
   rainRawADC = analogRead(PIN_RAIN_ADC);
   bool rainDO = (digitalRead(PIN_RAIN_DO) == LOW);
   isRaining = rainDO || (rainRawADC < RAIN_ADC_LIGHT);
 
-  // [DEBUG] In ra Serial Monitor mỗi 1 giây để theo dõi rõ các giá trị
+  // [DEBUG] In ra Serial Monitor mỗi 1 giây
   static unsigned long lastSensorLog = 0;
   if (millis() - lastSensorLog >= 1000) {
     lastSensorLog = millis();
@@ -186,77 +189,132 @@ void updateSensors() {
 }
 
 // ==========================================
-// THUẬT TOÁN FSM VÀ HYSTERESIS
+// [THUẬT TOÁN FSM + HYSTERESIS + TIME DEBOUNCE 1.0S]
+// Triệt tiêu hoàn toàn rung giật trạng thái và bảo vệ thiết bị
 // ==========================================
 void evaluateSystemStateAuto() {
-  // Xác định các cấp độ mưa
+  unsigned long now = millis();
+
+  // 1. Phân loại mức mưa
   bool isLightRain = isRaining;                         // ADC < 2800 hoặc DO == LOW (Mưa nhỏ)
   bool isHeavyRain = (rainRawADC < RAIN_ADC_HEAVY);     // ADC < 1800 (Mưa to / nhúng 1 phần)
   bool isSubmerged = (rainRawADC < RAIN_ADC_SUBMERGED); // ADC < 1100 (Nhúng ngập hết vào nước / mưa xối xả)
 
-  // --- Chuyển trạng thái FSM (kết hợp cả Mực nước và Cảm biến mưa) ---
-  // Luôn đánh giá để cập nhật hiển thị LED, Còi và giám sát an toàn Failsafe
+  // 2. Xác định trạng thái đích mục tiêu (Target State) theo luật dải trễ Hysteresis
+  SystemState targetState = sysState;
   switch (sysState) {
-
     case STATE_NORMAL:
       if (waterPercent >= THRESHOLD_CRIT_ENTER || isSubmerged) {
-        sysState = STATE_CRITICAL; // Mực nước ngập sâu hoặc nhúng chìm cảm biến mưa
+        targetState = STATE_CRITICAL;
       } else if (waterPercent >= THRESHOLD_DANGER_ENTER || isHeavyRain || (isLightRain && waterPercent >= THRESHOLD_WARN_ENTER)) {
-        sysState = STATE_DANGER;   // Mực nước nguy hiểm hoặc mưa to
+        targetState = STATE_DANGER;
       } else if (waterPercent >= THRESHOLD_WARN_ENTER || isLightRain) {
-        sysState = STATE_WARNING;  // Mực nước dâng hoặc có mưa nhỏ
+        targetState = STATE_WARNING;
       }
       break;
 
     case STATE_WARNING:
       if (waterPercent >= THRESHOLD_CRIT_ENTER || isSubmerged) {
-        sysState = STATE_CRITICAL;
+        targetState = STATE_CRITICAL;
       } else if (waterPercent >= THRESHOLD_DANGER_ENTER || isHeavyRain || (isLightRain && waterPercent >= THRESHOLD_DANGER_ENTER)) {
-        sysState = STATE_DANGER;
+        targetState = STATE_DANGER;
       } else if (waterPercent < THRESHOLD_WARN_EXIT && !isLightRain) {
-        sysState = STATE_NORMAL;   // Nước cạn và tạnh mưa hoàn toàn
+        targetState = STATE_NORMAL;
       }
       break;
 
     case STATE_DANGER:
       if (waterPercent >= THRESHOLD_CRIT_ENTER || isSubmerged || (isHeavyRain && waterPercent >= THRESHOLD_DANGER_ENTER)) {
-        sysState = STATE_CRITICAL;
+        targetState = STATE_CRITICAL;
       } else if (waterPercent < THRESHOLD_DANGER_EXIT && !isHeavyRain) {
-        sysState = STATE_WARNING;  // Nước rút và lượng mưa giảm
+        targetState = STATE_WARNING;
       }
       break;
 
     case STATE_CRITICAL:
       if (waterPercent < THRESHOLD_CRIT_EXIT && !isSubmerged) {
-        sysState = STATE_DANGER;   // Rút khỏi mức ngập nghiêm trọng (dưới 53%)
+        targetState = STATE_DANGER;
       }
       break;
   }
 
-  // --- Điều khiển Bơm và Van theo trạng thái FSM (CHỈ KHI Ở CHẾ ĐỘ AUTO) ---
+  // 3. Bộ lọc chống rung thời gian chuyển trạng thái (Debounce 1.0s)
+  if (targetState != sysState) {
+    // Nếu chuyển sang CRITICAL (khẩn cấp cứu hộ, chống tràn vỡ hồ): Phản ứng tức thời WCRT <= 250ms
+    if (targetState == STATE_CRITICAL) {
+      sysState = targetState;
+      candidateState = sysState;
+      candidateStartTime = 0;
+    } else {
+      // Chuyển trạng thái bậc thang thông thường: Duy trì liên tục tối thiểu DEBOUNCE_TIME_MS (1.0s)
+      if (candidateState != targetState) {
+        candidateState = targetState;
+        candidateStartTime = now;
+      } else if (now - candidateStartTime >= DEBOUNCE_TIME_MS) {
+        sysState = candidateState;
+        candidateStartTime = 0;
+      }
+    }
+  } else {
+    // Trạng thái mục tiêu trùng với hiện tại -> reset bộ đếm debounce
+    candidateState = sysState;
+    candidateStartTime = 0;
+  }
+
+  // 4. Điều khiển Bơm và Van theo trạng thái FSM (CHỈ KHI Ở CHẾ ĐỘ AUTO)
   if (isAutoMode) {
     switch (sysState) {
       case STATE_NORMAL:
       case STATE_WARNING:
-        pumpState    = false;
+        // Ràng buộc thời gian chạy tối thiểu của máy bơm (Min-run Time 5.0s)
+        if (pumpState) {
+          if (now - pumpStartTime >= PUMP_MIN_RUN_MS) {
+            pumpState = false;
+          }
+        }
         valvePercent = 0;    // Van đóng hoàn toàn 0°
         break;
 
       case STATE_DANGER:
-        pumpState    = true; // BẬT máy bơm 5V
+        if (!pumpState) {
+          pumpState = true;
+          pumpStartTime = now; // Ghi nhận thời điểm bắt đầu bật bơm
+        }
         valvePercent = 50;   // Mở van thoát lũ 50% (90°)
         break;
 
       case STATE_CRITICAL:
-        pumpState    = true; // BẬT máy bơm 5V
+        if (!pumpState) {
+          pumpState = true;
+          pumpStartTime = now;
+        }
         valvePercent = 100;  // Mở van thoát lũ tối đa 100% (180°)
         break;
     }
+  } else {
+    // KHI Ở MANUAL MODE:
+    // A. Failsafe Timeout 30 giây mất kết nối Web Dashboard -> Tự động khôi phục AUTO
+    if (lastClientRequest > 0 && (now - lastClientRequest > 30000)) {
+      isAutoMode = true;
+      Serial.println("\n[FAILSAFE] Mat ket noi Web qua 30 giay -> Tu dong khoi phuc che do AUTO!");
+    }
+
+    // B. Safety Priority Override: Nếu ở mức CRITICAL quá 10 giây trong Manual -> Cưỡng chế chuyển AUTO
+    if (sysState == STATE_CRITICAL) {
+      if (critManualStartTime == 0) {
+        critManualStartTime = now;
+      } else if (now - critManualStartTime >= 10000) {
+        isAutoMode = true;
+        pumpState = true;
+        pumpStartTime = now;
+        valvePercent = 100;
+        critManualStartTime = 0;
+        Serial.println("\n[SAFETY OVERRIDE] Canh bao CRITICAL duy tri qua 10s o Manual -> Cuong che chuyen AUTO!");
+      }
+    } else {
+      critManualStartTime = 0;
+    }
   }
-  // KHI Ở MANUAL MODE:
-  // pumpState và valvePercent do người quản lý hoàn toàn kiểm soát qua Web,
-  // FSM tuyệt đối không ghi đè giá trị Bơm và Van.
-  // Đèn LED và Còi vẫn chạy tự động 100% theo sysState.
 
   // [DEBUG] In trạng thái FSM ra Serial khi có thay đổi
   static SystemState lastDebugState = (SystemState)99;
@@ -269,10 +327,12 @@ void evaluateSystemStateAuto() {
 }
 
 // ==========================================
-// ÁP ĐẶT ĐẦU RA (ACTUATORS & LEDS)
+// ÁP ĐẶT ĐẦU RA (ACTUATORS, SERVO SLEW-RATE & LEDS)
 // ==========================================
 void applyOutputs() {
-  // [KỸ THUẬT 1] Điều khiển Relay bằng High-Z (INPUT) khi tắt bơm
+  unsigned long now = millis();
+
+  // 1. [KỸ THUẬT 1] Điều khiển Relay bằng High-Z (INPUT) khi tắt bơm
   if (pumpState) {
     pinMode(PIN_RELAY, OUTPUT);
     digitalWrite(PIN_RELAY, LOW);   // LOW -> opto kích -> Relay đóng -> Bơm BẬT
@@ -280,22 +340,33 @@ void applyOutputs() {
     pinMode(PIN_RELAY, INPUT);      // High-Z -> triệt tiêu hoàn toàn dòng rò -> Bơm TẮT hoàn toàn
   }
 
-  // 2. Góc mở Servo (0% = 0°, 50% = 90°, 100% = 180°)
-  // CHỈ GHI XUNG (write) KHI GÓC THAY ĐỔI
-  // Khi vẫn đang ở cùng mức cảnh báo, tay quay giữ nguyên vị trí ổn định tuyệt đối
-  static int currentServoAngle = -1;
+  // 2. [KỸ THUẬT 2] Điều khiển Servo van xả với thuật toán làm mượt chống rung giật (Soft PWM Stepping)
   int targetAngle = map(valvePercent, 0, 100, 0, 180);
   targetAngle = constrain(targetAngle, 0, 180);
-  if (targetAngle != currentServoAngle) {
-    valveServo.write(targetAngle);
-    currentServoAngle = targetAngle;
-    Serial.printf("[SERVO] Xoay goc: %d do (Van %d%%)\n", targetAngle, valvePercent);
+
+  // Nội suy góc mượt mà: mỗi 20ms chỉ quay 5° hướng tới targetAngle
+  // Khi đã đạt vị trí (servoActualAngle == targetAngle), ngừng phát xung thay đổi
+  // Tay quay giữ nguyên vị trí ổn định tuyệt đối khi mực nước chưa đổi mức cảnh báo.
+  if (servoActualAngle != targetAngle) {
+    if (now - lastServoStepTime >= 20) {
+      lastServoStepTime = now;
+      if (servoActualAngle < targetAngle) {
+        servoActualAngle += 5;
+        if (servoActualAngle > targetAngle) servoActualAngle = targetAngle;
+      } else {
+        servoActualAngle -= 5;
+        if (servoActualAngle < targetAngle) servoActualAngle = targetAngle;
+      }
+      valveServo.write(servoActualAngle);
+      if (servoActualAngle == targetAngle) {
+        Serial.printf("[SERVO] Da den goc on dinh: %d do (Van %d%%)\n", targetAngle, valvePercent);
+      }
+    }
   }
 
-  // [KỸ THUẬT 3] Đèn LED & Còi Buzzer đa cấp độ - TỰ ĐỘNG THEO SYSSTATE Ở CẢ AUTO VÀ MANUAL
+  // 3. [KỸ THUẬT 3] Đèn LED & Còi Buzzer đa cấp độ - TỰ ĐỘNG THEO SYSSTATE Ở CẢ AUTO VÀ MANUAL
   // Còi Active Buzzer 5V: Dùng digitalWrite HIGH/LOW, KHÔNG dùng tone()/noTone()
   // để tránh xung đột kênh Timer LEDC với Servo PWM làm servo nhảy loạn xạ.
-  unsigned long now = millis();
   switch (sysState) {
     case STATE_NORMAL:
       digitalWrite(PIN_LED_GREEN, HIGH);
@@ -384,9 +455,7 @@ const char HTML_DASHBOARD[] PROGMEM = R"rawliteral(
     .control-btn-danger:hover  { background: #b91c1c; }
     .control-btn-valve { background: #0f766e; border-color: #14b8a6; }
     .control-btn-valve:hover { background: #0d9488; }
-    .btn-valve-active { border: 2px solid #38bdf8 !important; background: #0284c7 !important; box-shadow: 0 0 10px rgba(56, 189, 248, 0.5); }
-    .control-btn.disabled-btn { opacity: 0.45; cursor: not-allowed; }
-    .control-btn.disabled-btn:hover { transform: none; }
+    .btn-valve-active { border: 2px solid #38bdf8 !important; background: #0284c7 !important; box-shadow: 0 0 10px rgba(56, 189, 248, 0.5); font-weight: 700; }
   </style>
 </head>
 <body>
@@ -461,8 +530,8 @@ const char HTML_DASHBOARD[] PROGMEM = R"rawliteral(
 
         document.getElementById('waterVal').innerText = data.water + '%';
         document.getElementById('distVal').innerText = data.distance;
-        let h = (10.0 - data.distance).toFixed(1);
-        if (h < 0) h = '0.0';
+        let h = (data.height !== undefined) ? data.height.toFixed(1) : ((10.0 - data.distance).toFixed(1));
+        if (parseFloat(h) < 0) h = '0.0';
         const hElem = document.getElementById('heightVal');
         if (hElem) hElem.innerText = h;
         
@@ -479,16 +548,16 @@ const char HTML_DASHBOARD[] PROGMEM = R"rawliteral(
           data.state === 'DANGER'   ? 'badge-danger'  : 'badge-critical'
         );
 
-        let rainText = 'KHONG MUA';
+        let rainText = 'KHÔNG MƯA';
         let rainColor = '#94a3b8';
         if (data.rain_adc < 1100) {
-          rainText = 'NGAP / MUA CUC TO !';
+          rainText = 'NGẬP / MƯA CỰC TO !';
           rainColor = '#ef4444';
         } else if (data.rain_adc < 1800) {
-          rainText = 'MUA TO !';
+          rainText = 'MƯA TO !';
           rainColor = '#f59e0b';
         } else if (data.rain) {
-          rainText = 'MUA NHO';
+          rainText = 'MƯA NHỎ';
           rainColor = '#38bdf8';
         }
         document.getElementById('rainVal').innerText = rainText;
@@ -513,7 +582,7 @@ const char HTML_DASHBOARD[] PROGMEM = R"rawliteral(
         }
 
         const pVal = document.getElementById('pumpVal');
-        pVal.innerText = data.pump ? 'DANG BAT (ON)' : 'DA TAT (OFF)';
+        pVal.innerText = data.pump ? 'ĐANG BẬT (ON)' : 'ĐÃ TẮT (OFF)';
         pVal.style.color = data.pump ? '#10b981' : '#f87171';
 
         const btnPump = document.getElementById('btnWebPump');
@@ -542,16 +611,16 @@ const char HTML_DASHBOARD[] PROGMEM = R"rawliteral(
 
         const bVal = document.getElementById('buzzerVal');
         if (data.state === 'CRITICAL' || data.buzzer === 'CONTINUOUS') {
-          bVal.innerText = 'HU LIEN TUC';
+          bVal.innerText = 'HÚ LIÊN TỤC';
           bVal.style.color = '#ef4444';
         } else if (data.state === 'DANGER' || data.buzzer === 'FAST') {
-          bVal.innerText = 'DON DAP';
+          bVal.innerText = 'DỒN DẬP';
           bVal.style.color = '#f97316';
         } else if (data.state === 'WARNING' || data.buzzer === 'SLOW') {
-          bVal.innerText = 'BAO NHE (BIP THUA)';
+          bVal.innerText = 'BÁO NHẸ (BÍP THƯA)';
           bVal.style.color = '#f59e0b';
         } else {
-          bVal.innerText = 'YEN LANG (TAT)';
+          bVal.innerText = 'YÊN LẶNG (TẮT)';
           bVal.style.color = '#94a3b8';
         }
       } catch (err) {
@@ -576,13 +645,15 @@ const char HTML_DASHBOARD[] PROGMEM = R"rawliteral(
 )rawliteral";
 
 // ==========================================
-// CÁC HÀM XỬ LÝ REQUEST CỦA WEB SERVER
+// CÁC HÀM XỬ LÝ REST API CỦA WEB SERVER
 // ==========================================
 void handleRoot() {
   server.send_P(200, "text/html", HTML_DASHBOARD);
 }
 
 void handleStatusApi() {
+  lastClientRequest = millis(); // Cập nhật heartbeat kết nối
+
   const char* stStr = "NORMAL";
   const char* bzStr = "OFF";
   if (sysState == STATE_WARNING) {
@@ -596,11 +667,15 @@ void handleStatusApi() {
     bzStr = "CONTINUOUS";
   }
 
-  char json[256];
+  float waterHeight = DISTANCE_EMPTY - currentDistance;
+  if (waterHeight < 0.0f) waterHeight = 0.0f;
+
+  char json[280];
   snprintf(json, sizeof(json),
-    "{\"water\":%d,\"distance\":%.1f,\"rain\":%s,\"rain_adc\":%d,\"state\":\"%s\",\"mode\":\"%s\",\"pump\":%s,\"valve\":%d,\"buzzer\":\"%s\"}",
+    "{\"water\":%d,\"distance\":%.1f,\"height\":%.1f,\"rain\":%s,\"rain_adc\":%d,\"state\":\"%s\",\"mode\":\"%s\",\"pump\":%s,\"valve\":%d,\"buzzer\":\"%s\"}",
     waterPercent,
     currentDistance,
+    waterHeight,
     isRaining ? "true" : "false",
     rainRawADC,
     stStr,
@@ -614,22 +689,31 @@ void handleStatusApi() {
 }
 
 void handleControlApi() {
+  lastClientRequest = millis(); // Cập nhật heartbeat kết nối
+
+  // 1. Tham số tường minh
   if (server.hasArg("mode")) {
     String m = server.arg("mode");
     if (m == "auto") isAutoMode = true;
     else if (m == "manual") isAutoMode = false;
   }
 
-  // Nếu gửi lệnh điều khiển trực tiếp Bơm -> Chuyển sang MANUAL để người dùng kiểm soát
+  // Can thiệp Bơm trực tiếp -> tự động chuyển sang MANUAL
   if (server.hasArg("pump")) {
     String p = server.arg("pump");
     isAutoMode = false;
-    if (p == "1" || p == "on") pumpState = true;
-    else if (p == "0" || p == "off") pumpState = false;
-    else if (p == "toggle") pumpState = !pumpState;
+    if (p == "1" || p == "on") {
+      pumpState = true;
+      pumpStartTime = millis();
+    } else if (p == "0" || p == "off") {
+      pumpState = false;
+    } else if (p == "toggle") {
+      pumpState = !pumpState;
+      if (pumpState) pumpStartTime = millis();
+    }
   }
 
-  // Nếu gửi lệnh điều khiển trực tiếp Van -> Chuyển sang MANUAL để người dùng kiểm soát
+  // Can thiệp Van trực tiếp -> tự động chuyển sang MANUAL
   if (server.hasArg("valve")) {
     String v = server.arg("valve");
     isAutoMode = false;
@@ -645,7 +729,7 @@ void handleControlApi() {
     }
   }
 
-  // 2. Tiếp nhận tham số hành động (Web Dashboard UI Buttons)
+  // 2. Tham số hành động nút bấm Web Dashboard (UI Buttons)
   if (server.hasArg("action")) {
     String act = server.arg("action");
     if (act == "mode_toggle") {
@@ -655,10 +739,11 @@ void handleControlApi() {
     } else if (act == "mode_manual") {
       isAutoMode = false;
     } else if (act == "pump_toggle") {
-      isAutoMode = false;
+      isAutoMode = false; // Seamless transition
       pumpState = !pumpState;
+      if (pumpState) pumpStartTime = millis();
     } else if (act == "valve_cycle" || act == "valve_toggle" || act == "valve_mode") {
-      isAutoMode = false;
+      isAutoMode = false; // Seamless transition
       if (valvePercent == 0) valvePercent = 50;
       else if (valvePercent == 50) valvePercent = 100;
       else valvePercent = 0;
@@ -673,6 +758,8 @@ void handleControlApi() {
       valvePercent = 100;
     }
   }
+
+  // Phản hồi phần cứng ngay lập tức
   applyOutputs();
   server.send(200, "text/plain", "OK");
 }
@@ -686,16 +773,16 @@ void setup() {
 
   Serial.println("\n==========================================");
   Serial.println("FLOODGUARD - CHE DO ACCESS POINT (HARDWARE)");
+  Serial.println("DEMO TANK 10CM - HE THONG CHONG RUNG GIAT DA TANG");
   Serial.println("==========================================");
 
   // Khởi tạo GPIO cảm biến
   pinMode(PIN_TRIG, OUTPUT);
   pinMode(PIN_ECHO, INPUT);
-  pinMode(PIN_RAIN_DO, INPUT);   // Cảm biến mưa chân Digital (Input-only GPIO 34)
-  pinMode(PIN_RAIN_ADC, INPUT);  // Cảm biến mưa chân Analog  (Input-only GPIO 35)
+  pinMode(PIN_RAIN_DO, INPUT);   // Cảm biến mưa Digital (GPIO 34)
+  pinMode(PIN_RAIN_ADC, INPUT);  // Cảm biến mưa Analog  (GPIO 35)
 
-  // [KỸ THUẬT 1] Relay: Khởi động ở High-Z (INPUT)
-  // Đảm bảo bơm TẮT hoàn toàn khi boot, tránh GPIO floating kích relay
+  // [KỸ THUẬT 1] Relay: Khởi động ở High-Z (INPUT) để tránh GPIO floating kích relay khi boot
   pinMode(PIN_RELAY, INPUT);
 
   // Khởi tạo GPIO đầu ra
@@ -709,16 +796,17 @@ void setup() {
   digitalWrite(PIN_LED_RED, LOW);
   digitalWrite(PIN_BUZZER, LOW);
 
-  // Khởi tạo Servo van xả (Cấu hình chuẩn ESP32Servo để không bị xung đột Timer với tone buzzer)
+  // Khởi tạo Servo van xả với ESP32PWM allocateTimer
   ESP32PWM::allocateTimer(0);
   ESP32PWM::allocateTimer(1);
   ESP32PWM::allocateTimer(2);
   ESP32PWM::allocateTimer(3);
-  valveServo.setPeriodHertz(50); // Tần số 50Hz chuẩn cho servo SG90
+  valveServo.setPeriodHertz(50); // 50Hz chuẩn cho SG90
   valveServo.attach(PIN_SERVO, 500, 2400);
   valveServo.write(0);
+  servoActualAngle = 0;
 
-  // Khởi tạo Wi-Fi SoftAP (ESP32 tự phát sóng)
+  // Khởi tạo Wi-Fi SoftAP
   WiFi.mode(WIFI_AP);
   bool apSuccess = WiFi.softAP(AP_SSID, AP_PASS);
 
@@ -732,7 +820,7 @@ void setup() {
     Serial.println("[Wi-Fi] Khoi tao SoftAP that bai!");
   }
 
-  // Khởi tạo tên miền mDNS (http://floodguard.local)
+  // Khởi tạo mDNS (http://floodguard.local)
   if (MDNS.begin("floodguard")) {
     Serial.println("[mDNS] Truy cap bang ten mien: http://floodguard.local");
   }
@@ -747,21 +835,18 @@ void setup() {
 }
 
 void loop() {
-  // [KỸ THUẬT 3] Toàn bộ non-blocking - không có delay() chặn luồng
-
   // 1. Phục vụ yêu cầu Web Server
   server.handleClient();
 
   unsigned long now = millis();
 
   // 2. Chu kỳ đọc cảm biến và đánh giá FSM (mỗi 150ms)
-  //    Tăng lên 150ms vì readUltrasonicCM() mất ~36ms (3 mẫu x 12ms)
   if (now - lastSensorRead >= 150) {
     lastSensorRead = now;
     updateSensors();
     evaluateSystemStateAuto();
   }
 
-  // 3. Cập nhật thiết bị chấp hành, LED và nhịp còi (non-blocking)
+  // 3. Cập nhật thiết bị chấp hành, Slew-rate Servo và nhịp còi (non-blocking)
   applyOutputs();
 }

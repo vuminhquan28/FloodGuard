@@ -49,7 +49,7 @@ def draw_resistor_h(ax, xc, y, label="", val="", w=0.62, h=0.25, font_size=9.8):
         ax.text(xc, y + h/2 + 0.12, txt, fontsize=font_size, fontweight='bold', ha='center', va='bottom', zorder=10)
 
 
-def draw_fuse_h(ax, xc, y, label="F1 (2A)", w=0.58, h=0.22, font_size=11.0):
+def draw_fuse_h(ax, xc, y, label="F1 (3A)", w=0.58, h=0.22, font_size=11.0):
     """IEC fuse symbol horizontal"""
     rect = patches.Rectangle((xc - w/2, y - h/2), w, h, facecolor='#ffffff',
                              edgecolor='#000000', lw=1.6, zorder=7)
@@ -155,8 +155,8 @@ def create_circuit_diagram():
     ax.axis('off')
     fig.patch.set_facecolor('#ffffff')
 
-    # Clean outer border
-    border = patches.Rectangle((0.40, 0.40), 24.70, 12.70, facecolor='#ffffff', edgecolor='#000000', lw=1.8, zorder=1)
+    # Clean outer border (Symmetrical margins around diagram content)
+    border = patches.Rectangle((0.40, 1.00), 24.70, 12.10, facecolor='#ffffff', edgecolor='#000000', lw=1.8, zorder=1)
     ax.add_patch(border)
 
     # Header inside border
@@ -172,13 +172,13 @@ def create_circuit_diagram():
     y_gnd = 1.45    # Common GND rail
 
     # +5V Supply Entry (Top Left at x=0.55)
-    ax.text(0.55, y_5v, "+5V DC\n(2A Nguồn)", fontsize=11.0, fontweight='bold', ha='left', va='center', zorder=10)
+    ax.text(0.55, y_5v, "+5V DC\n(3A Nguồn)", fontsize=11.0, fontweight='bold', ha='left', va='center', zorder=10)
     draw_wire(ax, [(1.35, y_5v), (24.70, y_5v)], lw=2.2)
     draw_dot(ax, 1.35, y_5v, r=0.08)
 
     # Main Switch S1 at x=1.65 and Fuse F1 at x=2.40
     draw_switch_no_h(ax, 1.65, y_5v, label="S1", w=0.48, font_size=11.5)
-    draw_fuse_h(ax, 2.40, y_5v, label="F1 (2A)", w=0.55, h=0.22, font_size=11.5)
+    draw_fuse_h(ax, 2.40, y_5v, label="F1 (3A)", w=0.55, h=0.22, font_size=11.5)
 
     # Common GND Rail (Bottom)
     ax.text(0.55, y_gnd, "GND\n(Chung)", fontsize=11.0, fontweight='bold', ha='left', va='center', zorder=10)
@@ -520,29 +520,6 @@ def create_circuit_diagram():
     # Motor Label with white background mask to cleanly avoid wire intersection!
     ax.text(x_motor_br, m_yc - m_r - 0.28, "Bơm Mini 5V", fontsize=10.0, fontweight='bold', ha='center', va='top',
             bbox=dict(boxstyle="square,pad=0.12", facecolor='#ffffff', edgecolor='none'), zorder=10)
-
-    # ==========================================================
-    # LEGEND BAR AT BOTTOM (Clean & perfectly centered within borders)
-    # ==========================================================
-    ax.plot([0.50, 25.00], [1.05, 1.05], color='#000000', lw=1.0)
-    legend_line1 = (
-        "CHÚ THÍCH KÝ HIỆU TIÊU CHUẨN IEC:   "
-        "[PC] Máy tính vận hành (Web Dashboard & PlatformIO)   |   "
-        "[S1] Công tắc nguồn chính   |   "
-        "[F1, F2] Cầu chì quá dòng   |   "
-        "[R1, R2] Cầu phân áp Echo (5V → 3.3V)"
-    )
-    legend_line2 = (
-        "[R3–R6] Điện trở hạn dòng LED & Còi   |   "
-        "[H1–H3] Đèn LED chỉ thị 3 cấp   |   "
-        "[BZ] Còi báo Active Buzzer 5V   |   "
-        "[C1] Tụ lọc nguồn Servo   |   "
-        "[K1] Rơ-le điều khiển bơm (Active LOW)   |   "
-        "[D1] Diode dập xung ngược   |   "
-        "[M] Bơm mini 5V"
-    )
-    ax.text(12.75, 0.80, legend_line1, fontsize=9.4, ha='center', va='center', zorder=10)
-    ax.text(12.75, 0.54, legend_line2, fontsize=9.4, ha='center', va='center', zorder=10)
 
     for p in out_paths:
         fig.savefig(p, dpi=300, bbox_inches='tight', facecolor='#ffffff')

@@ -24,7 +24,7 @@ Giao diện Web Dashboard được thiết kế theo ngôn ngữ hiện đại \
 \begin{figure}[H]
     \centering
     \vspace{-4pt}
-    \includegraphics[width=0.72\textwidth]{figures/dashboard_mockup.png}
+    \includegraphics[width=0.88\textwidth]{figures/dashboard_normal.png}
     \vspace{-4pt}
     \caption{Giao diện Web Dashboard thời gian thực của trạm FloodGuard trên trình duyệt}
     \label{fig:dashboard_mockup}
@@ -47,7 +47,34 @@ Nhằm cung cấp khả năng nhận diện trực quan nhanh chóng và chính 
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.98\textwidth]{figures/dashboard_4states.png}
+    \begin{subfigure}[b]{0.49\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{figures/dashboard_normal.png}
+        \caption{Cấp 1: Trạng thái NORMAL}
+        \label{fig:dash_normal}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.49\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{figures/dashboard_warning.png}
+        \caption{Cấp 2: Trạng thái WARNING}
+        \label{fig:dash_warning}
+    \end{subfigure}
+    \vskip 6pt
+    \begin{subfigure}[b]{0.49\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{figures/dashboard_danger.png}
+        \caption{Cấp 3: Trạng thái DANGER}
+        \label{fig:dash_danger}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.49\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{figures/dashboard_critical.png}
+        \caption{Cấp 4: Trạng thái CRITICAL}
+        \label{fig:dash_critical}
+    \end{subfigure}
+    \vspace{2pt}
     \caption{Giao diện Web Dashboard trạm FloodGuard thực tế tại 4 cấp độ cảnh báo FSM}
     \label{fig:dashboard_4states}
 \end{figure}
@@ -71,7 +98,7 @@ Chi tiết hiển thị và hành vi của từng cấp độ cảnh báo trên 
     \item \textbf{Cấp 3 -- Trạng thái DANGER (Nguy hiểm / Bơm thoát nước / Mở van 50\%):}
     \begin{itemize}
         \item \textit{Điều kiện kích hoạt:} Cột nước dâng cao chạm khoảng $3.0\,\text{cm} < h \le 4.5\,\text{cm}$ ($38\% \le P \le 55\%$, $5.5\,\text{cm} \le d < 7.0\,\text{cm}$) hoặc có mưa to xối xả ($\text{ADC} < 1800$).
-        \item \textit{Chỉ báo Web Dashboard:} Huy hiệu chuyển sang \texttt{DANGER} màu cam đỏ rực (\texttt{\#f97316}), thanh đo mực nước chuyển sang sắc đỏ đậm. Thẻ lượng mưa báo động \textit{''MƯA TO !''}.
+        \item \textit{Chỉ báo Dashboard:} Huy hiệu chuyển sang \texttt{DANGER} màu cam đỏ rực (\texttt{\#f97316}), thanh đo mực nước chuyển sang sắc đỏ đậm. Thẻ lượng mưa báo động \textit{''MƯA TO !''}.
         \item \textit{Trạng thái thiết bị:} Máy bơm 5V lập tức chuyển sang trạng thái \textbf{\textit{''ĐANG BẬT (ON)''}} với màu xanh lá nổi bật (\texttt{\#10b981}), Van xả xoay góc $90^\circ$ tương ứng \textbf{\textit{''50\% (MỞ NỬA)''}} (nút \texttt{Van 50\%} được kích hoạt sáng viền xanh), Còi báo động chuyển sang \textit{''BÁO DỒN DẬP''} (chu kỳ $300\,\text{ms}$: kêu $150\,\text{ms}$, tắt $150\,\text{ms}$).
     \end{itemize}
 
@@ -193,7 +220,11 @@ Mối quan hệ tương tác thời gian giữa Người vận hành (trình duy
 
 \begin{enumerate}
     \item \textbf{Luồng 1 -- Giám sát đo đạc tuần hoàn (Polling Telemetry Loop):} Trình duyệt JavaScript tự động kích hoạt hàm \texttt{fetch('/api/status')} đều đặn mỗi $1000\,\text{ms}$. Vi điều khiển đọc dữ liệu cảm biến sạch, đóng gói chuỗi JSON và phản hồi mã HTTP 200 OK. Phía trình duyệt bóc tách JSON và cập nhật thanh đo mực nước, cột nước đáy, góc mở van xả, mức mưa và thẻ huy hiệu tương ứng.
-    \item \textbf{Luồng 2 -- Can thiệp điều khiển người dùng (Command Dispatch):} Khi kỹ thuật viên nhấp nút can thiệp (ví dụ Bật/Tắt bơm hoặc chọn góc mở van $0\%, 50\%, 100\%$), trình duyệt gửi lệnh \texttt{GET /api/control?action=...}. Vi điều khiển tự động nhận diện ý định can thiệp thủ công, lập tức chuyển biến cờ \texttt{isAutoMode = false} (sang chế độ \texttt{MANUAL}) và áp đặt trạng thái phần cứng (đóng/ngắt rơ-le hoặc quay Servo SG90) ngay tức thì, sau đó phản hồi chuỗi xác nhận \texttt{"OK"}. Giao diện Web lập tức cập nhật trạng thái nút bấm và tô sáng viền nút van được chọn mà không cần người dùng phải bấm nút đổi chế độ trước.
+    \item \textbf{Luồng 2 -- Can thiệp điều khiển người dùng (Command Dispatch):} Khi kỹ thuật viên nhấp nút can thiệp (ví dụ Bật/Tắt bơm hoặc chọn góc mở van $0\%, 50\%, 100\%$), trình duyệt gửi lệnh API:
+    \newline
+    \texttt{GET /api/control?action=...}
+    \newline
+    Vi điều khiển tự động nhận diện ý định can thiệp thủ công, lập tức chuyển biến cờ \texttt{isAutoMode = false} (sang chế độ \texttt{MANUAL}) và áp đặt trạng thái phần cứng (đóng/ngắt rơ-le hoặc quay Servo SG90) ngay tức thì, sau đó phản hồi chuỗi xác nhận \texttt{"OK"}. Giao diện Web lập tức cập nhật trạng thái nút bấm và tô sáng viền nút van được chọn mà không cần người dùng phải bấm nút đổi chế độ trước.
 \end{enumerate}
 
 \section{Đặc Tả Chi Tiết Các Nút Bấm \& Logic Điều Khiển Can Thiệp Trên Web Dashboard}
@@ -206,7 +237,7 @@ Nhằm cung cấp khả năng can thiệp trực tiếp từ xa cho cán bộ k�
 \setlength{\tabcolsep}{3.5pt}
 \small
 \renewcommand{\arraystretch}{1.25}
-\begin{longtable}{|>{\raggedright\arraybackslash}p{2.2cm}|>{\raggedright\arraybackslash}p{2.7cm}|>{\raggedright\arraybackslash}p{2.5cm}|>{\centering\arraybackslash}p{1.8cm}|>{\raggedright\arraybackslash}p{5.3cm}|}
+\begin{longtable}{|>{\raggedright\arraybackslash}p{2.2cm}|>{\raggedright\arraybackslash}p{2.85cm}|>{\raggedright\arraybackslash}p{2.5cm}|>{\centering\arraybackslash}p{1.8cm}|>{\raggedright\arraybackslash}p{5.15cm}|}
 \caption{Bảng đặc tả chức năng và mã định danh các nút điều khiển trên Web Dashboard} \label{tab:web_buttons_spec} \\
 \hline
 \textbf{Tên nút trên Web} & \textbf{ID phần tử} & \textbf{Tham số Action API} & \textbf{Chế độ áp dụng} & \textbf{Hành vi phần cứng \& Phản hồi đồ họa} \\ \hline
@@ -265,7 +296,11 @@ Khác với các thiết kế IoT đơn giản thông thường (khi người d�
     \item \textbf{Thuật Toán Triệt Tiêu Rung Giật Servo SG90 (Servo Anti-Jitter Algorithm):}
     \begin{itemize}
         \item \textit{Nguyên nhân hiện tượng rung giật:} Động cơ servo analog giá rẻ (SG90) rất nhạy cảm với xung nhịp điều khiển. Nếu hàm \lstinline|valveServo.write(angle)| bị gọi liên tục ở mỗi vòng quét của \lstinline|loop()| (hàng chục nghìn lần/giây), mạch phản hồi chiết áp bên trong servo sẽ liên tục thực hiện vi điều chỉnh góc quay, phát ra tiếng rè cơ khí và nhảy rung loạn xạ.
-        \item \textit{Giải pháp:} Firmware cài đặt biến lưu góc quay hiện thời \lstinline|static int currentServoAngle = -1|. Lệnh \lstinline|valveServo.write(targetAngle)| chỉ được kích hoạt duy nhất một lần khi góc mở mục tiêu thực sự thay đổi ($0^\circ \leftrightarrow 90^\circ \leftrightarrow 180^\circ$). Khi mực nước hồ dao động nhưng vẫn nằm trong cùng một cấp độ cảnh báo, servo giữ nguyên vị trí ổn định tuyệt đối mà không nhận thêm bất kỳ xung ghi đè nào.
+        \item \textit{Giải pháp:} Firmware cài đặt biến lưu góc quay hiện thời:
+        \newline
+        \lstinline|static int currentServoAngle = -1|
+        \newline
+        Lệnh \lstinline|valveServo.write(targetAngle)| chỉ được kích hoạt duy nhất một lần khi góc mở mục tiêu thực sự thay đổi ($0^\circ \leftrightarrow 90^\circ \leftrightarrow 180^\circ$). Khi mực nước hồ dao động nhưng vẫn nằm trong cùng một cấp độ cảnh báo, servo giữ nguyên vị trí ổn định tuyệt đối mà không nhận thêm bất kỳ xung ghi đè nào.
     \end{itemize}
 
     \item \textbf{Cách Ly Bộ Định Thời Phần Cứng (Hardware Timer Isolation):}
@@ -301,7 +336,11 @@ const char HTML_DASHBOARD[] PROGMEM = R"rawliteral(
 \end{lstlisting}
 \begin{enumerate}
     \item \textbf{Cơ chế bộ nhớ Flash trên ESP32:} Khác với vi điều khiển AVR 8-bit (như Arduino Uno) đòi hỏi từ khóa \texttt{PROGMEM} và các hàm truy xuất đặc biệt, ESP32 sở hữu khối quản lý bộ nhớ phần cứng (MMU) có khả năng ánh xạ trực tiếp phân vùng Flash vào không gian địa chỉ bộ nhớ tuyến tính của CPU (vùng DROM / IROM). Khai báo \texttt{const char[]} giúp trình biên dịch đặt toàn bộ chuỗi $14.2\,\text{KB}$ vào phân vùng \texttt{.rodata} trong bộ nhớ Flash mà không tiêu tốn RAM khi khởi động.
-    \item \textbf{Truyền phát trực tiếp bằng \texttt{server.send\_P()}:} Trong hàm phục vụ yêu cầu gốc \texttt{handleRoot()}, vi điều khiển gọi \texttt{server.send\_P(200,} \texttt{"text/html",} \texttt{HTML\_DASHBOARD)}. Phương thức này đọc và truyền thẳng các đoạn dữ liệu từ Flash vào bộ đệm socket mạng TCP/IP của lwIP mà không cần cấp phát thêm một chuỗi đệm tạm thời trên heap RAM.
+    \item \textbf{Truyền phát trực tiếp bằng \texttt{server.send\_P()}:} Trong hàm phục vụ yêu cầu gốc \texttt{handleRoot()}, vi điều khiển gọi lệnh:
+    \newline
+    \texttt{server.send\_P(200, "text/html", HTML\_DASHBOARD)}
+    \newline
+    Phương thức này đọc và truyền thẳng các đoạn dữ liệu từ Flash vào bộ đệm socket mạng TCP/IP của lwIP mà không cần cấp phát thêm một chuỗi đệm tạm thời trên heap RAM.
     \item \textbf{Triệt tiêu hiện tượng phân mảnh RAM (Heap Fragmentation):} Nhờ cơ chế \textit{zero-copy streaming} của \texttt{send\_P()}, hệ thống tránh hoàn toàn việc cấp phát và giải phóng liên tục $14.2\,\text{KB}$ bộ nhớ động mỗi khi có client tải trang, duy trì tính ổn định tuyệt đối cho vi điều khiển trong quá trình vận hành dài hạn.
 \end{enumerate}
 

@@ -5,7 +5,16 @@
 \label{sec:firmware_architecture}
 
 \subsection{Sơ Đồ Phân Khối Chức Năng Firmware}
-Phần mềm điều khiển trạm FloodGuard được xây dựng trên nền tảng vi điều khiển ESP32 với cấu trúc module hóa phân tầng rõ ràng, đảm bảo tính độc lập giữa khối thu thập dữ liệu, khối xử lý logic thuật toán và khối điều khiển phần cứng. Kiến trúc phần mềm bao gồm 7 phân hệ chính:
+Phần mềm điều khiển trạm FloodGuard được xây dựng trên nền tảng vi điều khiển ESP32 với cấu trúc module hóa phân tầng rõ ràng, đảm bảo tính độc lập giữa khối thu thập dữ liệu, khối xử lý logic thuật toán và khối điều khiển phần cứng. Sơ đồ phân khối chức năng toàn diện và luồng dữ liệu liên phân hệ được thể hiện trên Hình~\ref{fig:firmware_modules}.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.78\textwidth, height=0.43\textheight, keepaspectratio]{figures/firmware_modules_diagram.png}
+    \caption{Sơ đồ phân khối chức năng kiến trúc phần mềm nhúng vi điều khiển ESP32}
+    \label{fig:firmware_modules}
+\end{figure}
+
+Kiến trúc phần mềm bao gồm 7 phân hệ chính phối hợp nhịp nhàng theo chu trình thời gian thực:
 \begin{enumerate}
     \setlength{\itemsep}{1pt}
     \setlength{\parskip}{0pt}
@@ -67,7 +76,16 @@ Trong lập trình hệ thống nhúng với ESP32:
 \end{enumerate}
 
 \subsection{Lưu Đồ Thuật Toán Vòng Lặp Chính \texttt{setup()} / \texttt{loop()}}
-Quy trình vận hành phần mềm nhúng được thực thi tuần hoàn theo hai giai đoạn:
+Quy trình vận hành của phần mềm nhúng vi điều khiển ESP32 được thực thi tuần hoàn theo hai giai đoạn: giai đoạn cấu hình khởi tạo hệ thống (\texttt{setup()}) và giai đoạn vòng lặp thực thi điều phối bất đồng bộ (\texttt{loop()}). Lưu đồ thuật toán chi tiết của toàn bộ chu trình được minh họa trên Hình~\ref{fig:main_loop_flowchart}.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.72\textwidth, height=0.62\textheight, keepaspectratio]{figures/main_loop_flowchart.png}
+    \caption{Lưu đồ thuật toán vòng lặp thực thi chính \texttt{setup()} và \texttt{loop()} của hệ thống FloodGuard}
+    \label{fig:main_loop_flowchart}
+\end{figure}
+
+Hai giai đoạn vận hành được phân rã kỹ thuật chi tiết như sau:
 \begin{enumerate}
     \item \textbf{Giai đoạn khởi tạo (\texttt{setup()}):}
     \begin{itemize}
@@ -76,7 +94,7 @@ Quy trình vận hành phần mềm nhúng được thực thi tuần hoàn theo
         \item Khởi tạo chân Relay ở chế độ \texttt{INPUT} (High-Z) để đảm bảo máy bơm không bị kích hoạt giật khi boot.
         \item Gắn chân PWM cho Servo van xả lũ và kéo về góc đóng $0^\circ$.
         \item Khởi động mạng Wi-Fi SoftAP với SSID \texttt{FloodGuard\_AP} (IP: \texttt{192.168.4.1}) và tên miền mDNS \texttt{floodguard.local}.
-        \item Đăng ký các hàm định tuyến xử lý Web Server (\texttt{/}, \texttt{/api/status}, \texttt{/api/control}) và khởi chạy \texttt{server.begin()}.
+        \item Đăng ký các hàm định tuyến Web Server (\texttt{/}, \texttt{/api/status}, \texttt{/api/control}) và khởi chạy \texttt{server.begin()}.
     \end{itemize}
     \item \textbf{Giai đoạn vòng lặp chính (\texttt{loop()}):}
     \begin{itemize}
@@ -143,7 +161,7 @@ P_{\text{raw}} = \frac{d_{\text{empty}} - d_{\text{filtered}}}{d_{\text{empty}} 
 \text{waterPercent} = \text{constrain}(P_{\text{raw}}, 0, 100)
 \end{equation}
 
-\subsection{Bảng Ngưỡng Cảm Biến Mưa FC-37 \& Cơ Sở Chọn Ngưỡng}
+\subsection[Bảng Ngưỡng Cảm Biến Mưa FC-37 \& Cơ Sở Chọn Ngưỡng]{Bảng Ngưỡng Cảm Biến Mưa FC-37\\ \& Cơ Sở Chọn Ngưỡng}
 Cảm biến mưa FC-37 sử dụng tấm điện cực mạ niken kết hợp mạch so sánh điện áp LM393. Khi các giọt nước mưa tiếp xúc với bề mặt, cầu điện trở giữa các đường mạch đồng bị suy giảm, làm thay đổi điện áp tại chân ngõ ra tương tự \texttt{AO}. Vi điều khiển ESP32 đọc tín hiệu này qua bộ chuyển đổi ADC 12-bit (\texttt{ADC1\_CH7}, dải giá trị $0 - 4095$ tương ứng với $0 - 3.3\,\text{V}$). 
 
 Dựa trên thực nghiệm kiểm chuẩn với các điều kiện thời tiết mô phỏng, các ngưỡng phân cấp lượng mưa được thiết lập trong Bảng~\ref{tab:rain_thresholds}.
@@ -229,7 +247,7 @@ Ma trận chuyển dịch giữa các trạng thái được xác định chặt
 \setlength{\tabcolsep}{4.5pt}
 \small
 \renewcommand{\arraystretch}{1.25}
-\begin{longtable}{|>{\raggedright\arraybackslash}p{2.8cm}|>{\raggedright\arraybackslash}p{4.35cm}|>{\raggedright\arraybackslash}p{2.9cm}|>{\raggedright\arraybackslash}p{4.45cm}|}
+\begin{longtable}{|>{\raggedright\arraybackslash}p{2.85cm}|>{\raggedright\arraybackslash}p{4.30cm}|>{\raggedright\arraybackslash}p{2.9cm}|>{\raggedright\arraybackslash}p{4.45cm}|}
 \caption{Bảng ma trận chuyển trạng thái của thuật toán FSM kết hợp dải trễ Hysteresis} \label{tab:fsm_transitions} \\
 \hline
 \textbf{Trạng thái hiện tại} & \textbf{Điều kiện kích hoạt chuyển dịch (Guards)} & \textbf{Trạng thái kế tiếp} & \textbf{Hành động thực thi khi vào trạng thái} \\ \hline
@@ -385,18 +403,20 @@ Song song với dải trễ biên độ, hệ thống bổ sung hai ràng buộc
     \item \textbf{Thời gian vận hành tối thiểu của máy bơm (\textit{Minimum Run/Dwell Time}):} Khi máy bơm được kích hoạt bật, nó bắt buộc phải chạy tối thiểu $t_{\text{min\_run}} = 5.0\,\text{s}$ trước khi được phép ngắt, ngay cả khi mực nước tụt xuống dưới ngưỡng tắt tức thì. Cơ chế này giúp bảo vệ cuộn hút Relay và giảm thiểu tối đa hiện tượng quá nhiệt động cơ do dòng điện khởi động lặp lại liên tục.
 \end{enumerate}
 
+\clearpage
 \subsection{Đồ Thị So Sánh Đáp Ứng Khi Có và Không Có Hysteresis}
 Hình~\ref{fig:hysteresis_graph} minh họa kết quả mô phỏng đáp ứng của rơ-le máy bơm khi mực nước dao động hình sin quanh biên ngưỡng $40\%$.
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.95\textwidth]{figures/hysteresis_response.png}
+    \includegraphics[width=\textwidth, height=0.68\textheight, keepaspectratio]{figures/hysteresis_response.png}
     \caption{So sánh đáp ứng điều khiển máy bơm: Không có Hysteresis (A) và Có Hysteresis (B)}
     \label{fig:hysteresis_graph}
 \end{figure}
 
 Ở trường hợp A (không có dải trễ), rơ-le máy bơm bị đóng ngắt tới 8 lần trong vòng 10 giây, gây tổn hại cơ học và nguy cơ cháy tiếp điểm. Ở trường hợp B (áp dụng Hysteresis kết hợp Debouncing), máy bơm chỉ đóng dứt khoát 1 lần khi nước vượt $44\%$ ($d \le 6.5\,\text{cm}$) và chỉ ngắt khi nước rút sâu ổn định dưới $41\%$ ($d > 6.72\,\text{cm}$).
 
+\clearpage
 \subsection{Thuật Toán Điều Khiển Mượt Servo Van Xả (\textit{Soft PWM Stepping})}
 Để tránh hiện tượng động cơ Servo quay giật đột ngột từ $0^\circ$ lên $180^\circ$ trong 1 chu kỳ điều khiển (gây rung lắc gãy khớp nối cơ khí cửa van và tiêu thụ dòng đỉnh lớn gây sụt áp nguồn), hệ thống áp dụng bộ giới hạn tốc độ quay (\textit{Slew-rate Limiter}):
 \begin{lstlisting}[language=C++]
@@ -501,7 +521,11 @@ Tuy nhiên, do hoạt động đồng bộ, nếu máy khách truyền dữ li�
 \subsection{Bảo Vệ Hệ Thống Bằng Phần Cứng Task Watchdog Timer (TWDT)}
 Khác với cơ chế bảo vệ Failsafe $30\,\text{s}$ ở tầng ứng dụng mạng Web (Mục~\ref{sec:failsafe_mode}), để phòng ngừa tình huống vi điều khiển bị treo CPU do sốc điện, xung nhiễu nguồn hoặc bẫy lặp phần mềm vô hạn, FloodGuard tích hợp trực tiếp bộ giám sát Task Watchdog Timer (TWDT) của hệ điều hành thời gian thực ESP-IDF FreeRTOS.
 
-Bộ giám sát TWDT được gắn vào tác vụ chính \texttt{loopTask} thông qua API \texttt{esp\_task\_wdt\_add(NULL)} với chu kỳ timeout được cấu hình là $3000\,\text{ms}$ ($3\,\text{s}$). Lệnh xóa cờ \texttt{esp\_task\_wdt\_reset()} được gọi đều đặn ở đầu mỗi chu kỳ \texttt{loop()}. Nếu sau $3\,\text{s}$ vòng lặp không thể quay lại điểm xóa cờ (ví dụ do hàm \texttt{pulseIn()} bị treo phần cứng hoặc hàm Web bị nghẽn socket), ngắt phần cứng TWDT sẽ ngay lập tức được kích hoạt, ghi lại nhật ký lỗi (core dump) và thực hiện Reset phần cứng tự động để đưa toàn bộ trạm về trạng thái an toàn ban đầu.
+Bộ giám sát TWDT được gắn vào tác vụ chính \texttt{loopTask} thông qua API:
+\newline
+\texttt{esp\_task\_wdt\_add(NULL)}
+\newline
+với chu kỳ timeout được cấu hình là $3000\,\text{ms}$ ($3\,\text{s}$). Lệnh xóa cờ \texttt{esp\_task\_wdt\_reset()} được gọi đều đặn ở đầu mỗi chu kỳ \texttt{loop()}. Nếu sau $3\,\text{s}$ vòng lặp không thể quay lại điểm xóa cờ (ví dụ do hàm \texttt{pulseIn()} bị treo phần cứng hoặc hàm Web bị nghẽn socket), ngắt phần cứng TWDT sẽ ngay lập tức được kích hoạt, ghi lại nhật ký lỗi (core dump) và thực hiện Reset phần cứng tự động để đưa toàn bộ trạm về trạng thái an toàn ban đầu.
 
 \section{Xử Lý Sự Cố \& Ma Trận An Toàn (Fault Handling Matrix)}
 

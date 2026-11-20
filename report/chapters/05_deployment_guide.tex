@@ -113,7 +113,7 @@ Toàn bộ sơ đồ nguyên lý kết nối mạch điện và bảng phân cô
 
 Đặc biệt, trong quá trình lắp ráp phần cứng thực nghiệm, cần tuân thủ nghiêm ngặt 3 quy chuẩn an toàn điện sau:
 \begin{enumerate}
-    \item \textbf{Cấp nguồn độc lập cho Servo và Máy bơm:} Động cơ Servo SG90 và máy bơm mini khi khởi động hoặc đảo chiều quay có thể hút dòng đỉnh tức thời (\textit{Stall Current}) từ $500\,\text{mA} - 1.2\,\text{A}$. Tuyệt đối không lấy nguồn từ chân $3.3\,\text{V}$ hoặc chân $5\,\text{V}$ của cổng USB máy tính để nuôi trực tiếp hai thiết bị này, tránh gây sụt áp kích hoạt mạch bảo vệ (\textit{Brownout Detector}) làm ESP32 bị reset ngắt quãng. Bắt buộc sử dụng adapter nguồn ngoài DC $5\,\text{V} - 2\,\text{A}$ riêng biệt.
+    \item \textbf{Cấp nguồn độc lập cho Servo và Máy bơm:} Động cơ Servo SG90 và máy bơm mini khi khởi động hoặc đảo chiều quay có thể hút dòng đỉnh tức thời (\textit{Stall Current}) từ $500\,\text{mA} - 1.2\,\text{A}$. Tuyệt đối không lấy nguồn từ chân $3.3\,\text{V}$ hoặc chân $5\,\text{V}$ của cổng USB máy tính để nuôi trực tiếp hai thiết bị này, tránh gây sụt áp kích hoạt mạch bảo vệ (\textit{Brownout Detector}) làm ESP32 bị reset ngắt quãng. Khuyến cáo sử dụng adapter nguồn ngoài DC $5\,\text{V} - 3\,\text{A}$ riêng biệt.
     \item \textbf{Đồng nhất mức điện áp tham chiếu (Common GND):} Nối chung chân cực âm (GND) của bộ nguồn ngoài với chân GND của bo mạch ESP32 để đảm bảo xung điều khiển PWM cho Servo và mức kích logic cho Relay (\textbf{Active LOW}) hoạt động chuẩn xác, không bị sai lệch áp.
     \item \textbf{Bảo vệ xung quá độ \& Hạn dòng:} Mắc thêm một tụ hóa $100\,\mu\text{F} - 470\,\mu\text{F}$ song song tại hai cực nguồn cấp cho Servo để dập xung nhiễu quá độ, đồng thời đảm bảo các đèn LED chỉ thị luôn nối tiếp qua điện trở hạn dòng $R = 220\,\Omega$.
 \end{enumerate}
@@ -224,7 +224,11 @@ Giao diện Dark Glassmorphism sẽ hiển thị trực quan toàn bộ trạng 
     \end{itemize}
     \item \textbf{Can thiệp đóng mở van \& máy bơm:}
     \begin{itemize}
-        \item Nhấn nút \textbf{BẬT / TẮT MÁY BƠM}: ESP32 nhận lệnh API \texttt{/api/control?pump=1} (hoặc \texttt{pump=0}, hoặc \texttt{action=pump\_toggle}) và kích đóng rơ-le ngay lập tức.
+        \item Nhấn nút \textbf{BẬT / TẮT MÁY BƠM}: ESP32 nhận lệnh API:
+        \newline
+        \texttt{/api/control?pump=1} (hoặc \texttt{pump=0}, hoặc \texttt{action=pump\_toggle})
+        \newline
+        và kích đóng rơ-le ngay lập tức.
         \item Thao tác van xả lũ: Nhấn các nút chọn góc van (\textbf{0\%}, \textbf{50\%}, hoặc \textbf{100\%}), ESP32 nhận lệnh API (\texttt{valve=0}, \texttt{valve=50}, hoặc \texttt{valve=100}) và điều chế xung PWM xoay góc Servo tương ứng ($0^\circ, 90^\circ, 180^\circ$).
     \end{itemize}
 \end{enumerate}
@@ -318,7 +322,7 @@ $\bullet$ Đổi cổng USB hoặc thay cáp nạp có bọc chống nhiễu. \\
 ESP32 tự khởi động lại (\texttt{Brownout detector}) 
 & Servo SG90 hoặc Relay hút dòng đỉnh đột biến làm sụt áp nguồn cấp cho ESP32 ($< 2.7\,\text{V}$). 
 & $\bullet$ Tuyệt đối không nuôi Servo bằng chân 3V3 của ESP32.\newline
-$\bullet$ Dùng adapter ngoài DC $5\,\text{V} - 2\,\text{A}$ và nối chung cực GND.\newline
+$\bullet$ Dùng adapter ngoài DC $5\,\text{V} - 3\,\text{A}$ và nối chung cực GND.\newline
 $\bullet$ Hàn thêm tụ hóa $220\,\mu\text{F} - 470\,\mu\text{F}$ lọc nguồn tại chân Servo. \\ \hline
 Không thấy sóng Wi-Fi \texttt{FloodGuard\_AP} 
 & ESP32 chưa hoàn tất khởi tạo khối thu phát sóng RF hoặc ăng-ten ngầm bị che chắn bởi vật cản kim loại. 

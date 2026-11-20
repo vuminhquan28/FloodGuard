@@ -131,10 +131,11 @@ def make_fsm_diagram():
 # Water oscillating around threshold: With vs Without Hysteresis
 # =============================================================
 def make_hysteresis_graph():
-    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(13.0, 7.5), dpi=300, sharex=True)
+    # Large format: 12.0 x 10.5 inches, high-contrast monochrome
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12.0, 10.5), dpi=300, sharex=True)
     fig.patch.set_facecolor('#ffffff')
 
-    t = np.linspace(0, 30, 600)
+    t = np.linspace(0, 30, 800)
     # Simulated water level oscillating around 40% threshold
     water = 38.0 + 4.0 * np.sin(0.8 * t) + 1.2 * np.sin(3.5 * t)
 
@@ -144,20 +145,25 @@ def make_hysteresis_graph():
     for i in range(len(water)):
         pump_no_hyst[i] = 1.0 if water[i] >= threshold else 0.0
 
-    ax1.plot(t, water, color='#000000', lw=1.6, label='Mực nước thực tế (%)')
-    ax1.axhline(threshold, color='#666666', linestyle='--', lw=1.2, label='Ngưỡng cố định (40%)')
-    ax1.step(t, pump_no_hyst * 8 + 48, color='#000000', lw=1.5, linestyle='-', label='Trạng thái Relay Bơm (ON/OFF)')
-    ax1.set_ylabel('Mực nước & Relay', fontsize=10.5, fontweight='bold')
+    ax1.plot(t, water, color='#000000', lw=2.2, label='Mực nước đo thực tế (%)')
+    ax1.axhline(threshold, color='#555555', linestyle='--', lw=1.8, label='Ngưỡng chuyển trạng thái cố định (40%)')
+    ax1.step(t, pump_no_hyst * 8 + 48, color='#000000', lw=2.0, linestyle='-', label='Trạng thái Relay Bơm (ON / OFF)')
+
+    ax1.set_ylabel('Mực nước & Trạng thái Relay', fontsize=12.0, fontweight='bold')
     ax1.set_title('A) Khi KHÔNG CÓ Dải Trễ (Hysteresis): Rung giật đóng/ngắt liên tục (Chattering)',
-                  fontsize=11.0, fontweight='bold')
-    ax1.set_ylim(32, 60)
-    ax1.grid(True, linestyle=':', alpha=0.6)
-    ax1.legend(loc='upper right', fontsize=9.0)
+                  fontsize=13.0, fontweight='bold', pad=10)
+    ax1.set_xlim(-0.5, 30.5)
+    ax1.set_ylim(31, 61)
+    ax1.grid(True, linestyle=':', alpha=0.7, color='#888888')
+    ax1.tick_params(labelsize=11.0)
+    ax1.legend(loc='upper right', fontsize=10.2, framealpha=0.95, edgecolor='#000000')
 
     # Add text annotation pointing out chattering
-    ax1.annotate('Hiện tượng rung giật\n(Bật/tắt 8 lần trong 10s!)', xy=(12.0, 48.0), xytext=(14.5, 54.0),
-                 arrowprops=dict(arrowstyle="->", lw=1.2, color="#000000"),
-                 fontsize=8.5, fontweight='bold')
+    ax1.annotate('Hiện tượng rung giật (Chattering):\nBật / Tắt 8 lần trong 10 giây!', 
+                 xy=(12.0, 48.0), xytext=(13.2, 51.5),
+                 arrowprops=dict(arrowstyle="->", lw=1.5, color="#000000"),
+                 fontsize=10.0, fontweight='bold',
+                 bbox=dict(boxstyle="round,pad=0.35", facecolor='#ffffff', edgecolor='#000000', lw=1.0))
 
     # 2. With Hysteresis (Enter = 41%, Exit = 38%)
     th_enter = 41.0
@@ -173,22 +179,29 @@ def make_hysteresis_graph():
                 state = 0.0
         pump_hyst[i] = state
 
-    ax2.plot(t, water, color='#000000', lw=1.6, label='Mực nước thực tế (%)')
-    ax2.axhline(th_enter, color='#333333', linestyle='--', lw=1.2, label='Ngưỡng kích hoạt bật (41%)')
-    ax2.axhline(th_exit, color='#666666', linestyle=':', lw=1.2, label='Ngưỡng hạ ngắt bơm (38%)')
-    ax2.step(t, pump_hyst * 8 + 48, color='#000000', lw=1.8, label='Trạng thái Relay Bơm (ON/OFF)')
-    ax2.set_xlabel('Thời gian t (giây)', fontsize=10.5, fontweight='bold')
-    ax2.set_ylabel('Mực nước & Relay', fontsize=10.5, fontweight='bold')
-    ax2.set_title('B) Khi CÓ Dải Trễ Hysteresis (Δ = 3%): Đóng/ngắt dứt khoát, triệt tiêu rung lắc',
-                  fontsize=11.0, fontweight='bold')
-    ax2.set_ylim(32, 60)
-    ax2.grid(True, linestyle=':', alpha=0.6)
-    ax2.legend(loc='upper right', fontsize=9.0)
+    # Shaded band for Hysteresis zone
+    ax2.axhspan(th_exit, th_enter, color='#f0f0f0', alpha=0.8, label='Dải trễ an toàn (Δ = 3%: 38% - 41%)')
+    ax2.plot(t, water, color='#000000', lw=2.2, label='Mực nước đo thực tế (%)')
+    ax2.axhline(th_enter, color='#222222', linestyle='--', lw=1.8, label='Ngưỡng kích hoạt bật bơm (41%)')
+    ax2.axhline(th_exit, color='#666666', linestyle=':', lw=1.8, label='Ngưỡng hạ ngắt bơm (38%)')
+    ax2.step(t, pump_hyst * 8 + 48, color='#000000', lw=2.2, label='Trạng thái Relay Bơm (ON / OFF)')
+
+    ax2.set_xlabel('Thời gian mô phỏng t (giây)', fontsize=12.0, fontweight='bold')
+    ax2.set_ylabel('Mực nước & Trạng thái Relay', fontsize=12.0, fontweight='bold')
+    ax2.set_title('B) Khi CÓ Dải Trễ Hysteresis (Δ = 3%): Đóng/ngắt dứt khoát, triệt tiêu hoàn toàn rung giật',
+                  fontsize=13.0, fontweight='bold', pad=10)
+    ax2.set_xlim(-0.5, 30.5)
+    ax2.set_ylim(31, 61)
+    ax2.grid(True, linestyle=':', alpha=0.7, color='#888888')
+    ax2.tick_params(labelsize=11.0)
+    ax2.legend(loc='upper right', fontsize=10.2, framealpha=0.95, edgecolor='#000000')
 
     # Add text annotation
-    ax2.annotate('Bơm bật ổn định dứt điểm\nKhông bị tắt đột ngột', xy=(10.0, 56.0), xytext=(12.5, 54.0),
-                 arrowprops=dict(arrowstyle="->", lw=1.2, color="#000000"),
-                 fontsize=8.5, fontweight='bold')
+    ax2.annotate('Bơm bật dứt khoát và duy trì ổn định\nTriệt tiêu hoàn toàn rung giật tiệm cận!', 
+                 xy=(10.5, 56.0), xytext=(12.5, 51.5),
+                 arrowprops=dict(arrowstyle="->", lw=1.5, color="#000000"),
+                 fontsize=10.0, fontweight='bold',
+                 bbox=dict(boxstyle="round,pad=0.35", facecolor='#ffffff', edgecolor='#000000', lw=1.0))
 
     save_fig(fig, "hysteresis_response.png")
 

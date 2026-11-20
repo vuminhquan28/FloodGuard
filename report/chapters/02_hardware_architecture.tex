@@ -11,11 +11,26 @@ Hệ thống FloodGuard gồm 5 khối chức năng chính được tích hợp 
     \item \textbf{Khối máy tính vận hành (Operator PC/Laptop):} Trạm máy tính kết nối không dây qua sóng Wi-Fi SoftAP để mở giao diện Web Dashboard giám sát và can thiệp điều khiển; đồng thời kết nối có dây qua cổng Micro-USB phục vụ nạp firmware PlatformIO và theo dõi Serial Debug Monitor.
 \end{enumerate}
 
+Mối quan hệ phối ghép phần cứng và các luồng giao tiếp tín hiệu -- điều khiển giữa 5 khối chức năng trên được minh họa trực quan trong sơ đồ kiến trúc tổng quan trên trang nằm ngang kế tiếp (Hình~\ref{fig:system_architecture}).
+
+\begin{landscape}
+\thispagestyle{empty}
+\begin{center}
+    \vspace*{\fill}
+    \includegraphics[width=\linewidth, height=0.78\textheight, keepaspectratio]{figures/system_architecture.png}
+    \captionof{figure}{Sơ đồ tổng quan kiến trúc hệ thống trạm FloodGuard}
+    \label{fig:system_architecture}
+    \vspace{0.4cm}
+    {\small\thepage}
+    \vspace*{\fill}
+\end{center}
+\end{landscape}
+
 \section{Giải Pháp Điều Khiển Qua Mạng Không Dây Cục Bộ Thay Cho Nút Nhấn Cơ Học}
 
 Trong thiết kế trạm FloodGuard, giao diện giám sát và điều khiển can thiệp được chuyển dịch hoàn toàn sang \textbf{giao diện Web Dashboard thông qua mạng không dây cục bộ (Local Wi-Fi / SoftAP)} thay cho các nút bấm vật lý tại chỗ. Giải pháp này xuất phát từ các lập luận kỹ thuật và thực tiễn vận hành:
 \begin{enumerate}
-    \item \textbf{Đảm bảo an toàn tính mạng cho người vận hành:} Mục tiêu cốt lõi của trạm bơm chống ngập là vận hành tự trị $24/7$. Khi xảy ra thiên tai mưa bão ngập lụt, khu vực hồ thu và trạm bơm tiềm ẩn nguy cơ giông sét đánh, sụt lở mép bờ và rò rỉ điện từ các đường dây động lực ngâm trong nước. Việc điều khiển không dây cho phép kỹ thuật viên đứng từ vị trí khô ráo an toàn (trong xe chỉ huy hoặc trên tầng cao tòa nhà cách trạm $15 - 30\,\text{m}$) để theo dõi và ra lệnh.
+    \item \textbf{Đảm bảo an toàn cho người vận hành:} Mục tiêu cốt lõi của trạm bơm chống ngập là vận hành tự trị $24/7$. Khi xảy ra thiên tai mưa bão ngập lụt, khu vực hồ thu và trạm bơm tiềm ẩn nguy cơ giông sét đánh, sụt lở mép bờ và rò rỉ điện từ các đường dây động lực ngâm trong nước. Việc điều khiển không dây cho phép kỹ thuật viên đứng từ vị trí khô ráo an toàn (trong xe chỉ huy hoặc trên tầng cao tòa nhà cách trạm $15 - 30\,\text{m}$) để theo dõi và ra lệnh.
     \item \textbf{Cung cấp đầy đủ ngữ cảnh dữ liệu trước khi can thiệp:} Khác với nút bấm vật lý vốn chỉ cho phép thao tác "mù" mà không biết chính xác mực nước hay trạng thái van xả, Web Dashboard hiển thị toàn bộ đồ họa số hóa (phần trăm nước, khoảng cách cm, cấp độ mưa, trạng thái FSM). Người vận hành có đầy đủ cơ sở thông tin kỹ thuật trước khi quyết định kích hoạt máy bơm hoặc xoay van xả lũ.
     \item \textbf{Phân tích rủi ro \& Giải pháp Dừng khẩn cấp (Emergency Stop):}
     Việc không trang bị nút bấm cơ học đồng nghĩa với việc nếu thiết bị di động hết pin hoặc mạng Wi-Fi bị nhiễu sóng nặng, người tại chỗ không thể can thiệp tức thời. Để giảm thiểu rủi ro này:
@@ -25,6 +40,7 @@ Trong thiết kế trạm FloodGuard, giao diện giám sát và điều khiển
     \end{itemize}
 \end{enumerate}
 
+\clearpage
 \section{Bảng Phân Công Chân GPIO}
 \begingroup
 \small
@@ -64,21 +80,116 @@ Trong thiết kế trạm FloodGuard, giao diện giám sát và điều khiển
 
 \section{Sơ Đồ Nguyên Lý Mạch Điện \& Kết Nối Ngoại Vi}
 
-Sơ đồ nguyên lý mạch điện chi tiết kết nối giữa vi điều khiển ESP32 với toàn bộ cảm biến, cơ cấu chấp hành, thiết bị chỉ thị và máy tính vận hành được minh họa trong Hình~\ref{fig:circuit_diagram}.
+Sơ đồ nguyên lý mạch điện chi tiết kết nối giữa vi điều khiển ESP32 với toàn bộ cảm biến, cơ cấu chấp hành, thiết bị chỉ thị và máy tính vận hành được minh họa trên trang nằm ngang kế tiếp (Hình~\ref{fig:circuit_diagram}).
 
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=\textwidth]{figures/circuit_diagram.png}
-    \caption{Sơ đồ nguyên lý mạch điện chuẩn IEC và phân vùng các khối chấp hành trạm FloodGuard}
+\begin{landscape}
+\thispagestyle{empty}
+\begin{center}
+    \vspace*{\fill}
+    \includegraphics[width=\linewidth, height=0.78\textheight, keepaspectratio]{figures/circuit_diagram.png}
+    \captionof{figure}{Sơ đồ nguyên lý mạch điện chuẩn IEC và phân vùng các khối chấp hành trạm FloodGuard}
     \label{fig:circuit_diagram}
-\end{figure}
+    \vspace{0.4cm}
+    {\small\thepage}
+    \vspace*{\fill}
+\end{center}
+\end{landscape}
 
 Dựa trên sơ đồ nguyên lý nối dây và phân vùng các khối chấp hành, các nguyên lý phối ghép phần cứng và giải pháp bảo vệ mạch điện được phân tích chi tiết:
+
+\subsection{Phân Tích Nguồn Cấp và Cân Đối Công Suất}
+\label{subsec:power_analysis}
+
+\begin{enumerate}
+    \item Lựa chọn nguồn cấp cho hệ thống:
+    Hệ thống FloodGuard sử dụng bộ nguồn một chiều DC $5\,\text{V} - 3\,\text{A}$ làm nguồn cấp chính, với công suất đầu ra danh định:
+    \begin{equation}
+        P_{\text{nguồn}} = U \times I = 5 \times 3 = 15\,\text{W}
+    \end{equation}
+
+    Việc lựa chọn điện áp $5\,\text{V}$ xuất phát từ yêu cầu tương thích với phần lớn thiết bị được sử dụng trong mô hình, bao gồm ESP32 DevKit V1, cảm biến HC-SR04, Servo SG90, module Relay $5\,\text{V}$, còi Buzzer và máy bơm mini $5\,\text{V}$.
+
+    Cụ thể:
+    \begin{itemize}
+        \item \textit{ESP32 DevKit V1:} Nhận nguồn $5\,\text{V}$ thông qua cổng USB hoặc chân \texttt{VIN}. Bộ ổn áp tích hợp trên bo mạch chuyển đổi điện áp xuống $3.3\,\text{V}$ để cung cấp cho vi điều khiển và các mạch logic.
+        \item \textit{HC-SR04:} Hoạt động trong dải điện áp $4.5 - 5.5\,\text{V}$, do đó sử dụng nguồn $5\,\text{V}$.
+        \item \textit{FC-37:} Module cảm biến mưa được cấp nguồn $3.3\,\text{V}$ từ chân \texttt{3V3} của ESP32 trong sơ đồ thiết kế, nhằm bảo đảm mức điện áp logic đầu ra phù hợp với GPIO.
+        \item \textit{Servo SG90:} Hoạt động trong dải điện áp khoảng $4.8 - 6\,\text{V}$, sử dụng nguồn $5\,\text{V}$ để điều khiển cơ cấu van xả.
+        \item \textit{Module Relay:} Sử dụng cuộn hút $5\,\text{V}$ để thực hiện đóng/ngắt nguồn cấp cho máy bơm.
+        \item \textit{Buzzer và LED:} Được điều khiển từ các chân GPIO của ESP32 thông qua các linh kiện hạn dòng phù hợp.
+        \item \textit{Máy bơm mini:} Sử dụng động cơ DC $5\,\text{V}$, nhận nguồn trực tiếp từ bộ nguồn thông qua tiếp điểm Relay.
+    \end{itemize}
+
+    Việc sử dụng nguồn $5\,\text{V}$ giúp đơn giản hóa cấu trúc cấp điện, giảm số lượng bộ chuyển đổi điện áp và thuận tiện cho quá trình lắp ráp, kiểm thử. Riêng ESP32 sử dụng mức logic $3.3\,\text{V}$ nên các tín hiệu đầu vào phải được bảo đảm không vượt quá giới hạn điện áp cho phép của GPIO.
+
+    \item Phân tích sơ đồ phân phối nguồn:
+    Theo sơ đồ nguyên lý Hình~\ref{fig:circuit_diagram}, nguồn DC $5\,\text{V}$ được phân phối đến các khối chức năng thông qua đường $+5\,\text{V}$ và GND chung, cụ thể:
+    \begin{itemize}
+        \item \textit{Nhánh điều khiển:} ESP32 DevKit V1 nhận nguồn $5\,\text{V}$ qua cổng USB hoặc chân \texttt{VIN}, sau đó ổn áp xuống $3.3\,\text{V}$ cho vi điều khiển. Cảm biến HC-SR04 sử dụng nguồn $5\,\text{V}$, module FC-37 sử dụng nguồn $3.3\,\text{V}$. Các tín hiệu \texttt{TRIG}, \texttt{ECHO}, \texttt{DO} và \texttt{AO} được kết nối với GPIO tương ứng để thu thập dữ liệu.
+        \item \textit{Nhánh Servo:} Servo SG90 sử dụng nguồn $5\,\text{V}$ và nhận tín hiệu PWM từ \texttt{GPIO 27}. Tụ $C_1 = 220\,\mu\text{F}$ được mắc song song giữa nguồn và GND nhằm hỗ trợ ổn định điện áp, hạn chế sụt áp tức thời khi Servo khởi động hoặc thay đổi tải.
+        \item \textit{Nhánh máy bơm:} Máy bơm mini $5\,\text{V}$ được cấp nguồn trực tiếp từ adapter thông qua tiếp điểm \texttt{COM -- NO} của Relay. Relay nhận tín hiệu điều khiển từ \texttt{GPIO 23}, thực hiện đóng/ngắt nguồn máy bơm theo trạng thái hệ thống. Cách đấu nối này giúp tách dòng tải của động cơ khỏi đường cấp nguồn qua bo ESP32.
+        \item \textit{GND chung:} GND của ESP32, Relay, nguồn ngoài và các thiết bị liên quan được kết nối chung để bảo đảm điện áp tham chiếu cho tín hiệu điều khiển, đồng thời cần bố trí đường dây hợp lý để hạn chế sụt áp và nhiễu.
+    \end{itemize}
+
+    \item Phân tích các linh kiện bảo vệ và ổn định mạch điện:
+    Sơ đồ sử dụng các điện trở, tụ điện, diode và cầu chì nhằm hạn chế dòng điện, bảo vệ linh kiện và tăng độ ổn định:
+    \begin{itemize}
+        \item \textit{$R_1 = 1\,\text{k}\Omega$ và $R_2 = 2\,\text{k}\Omega$ -- Mạch phân áp HC-SR04:} Tín hiệu \texttt{ECHO} của HC-SR04 có mức điện áp $5\,\text{V}$, trong khi GPIO ESP32 sử dụng logic $3.3\,\text{V}$. Hai điện trở tạo mạch phân áp, giảm điện áp trước khi đưa vào \texttt{GPIO 12}:
+        \begin{equation}
+            U_{\text{out}} = U_{\text{in}} \times \frac{R_2}{R_1 + R_2} = 5 \times \frac{2000}{1000 + 2000} \approx 3.33\,\text{V}
+        \end{equation}
+        Mạch phân áp giúp bảo vệ GPIO ESP32 khỏi tín hiệu đầu vào vượt mức điện áp cho phép.
+        \item \textit{$R_3, R_4, R_5 = 220\,\Omega$ -- Hạn dòng LED:} Mỗi LED được mắc nối tiếp với một điện trở để hạn chế dòng điện qua LED và GPIO. Với LED đỏ có điện áp thuận khoảng $2\,\text{V}$:
+        \begin{equation}
+            I_{\text{LED}} = \frac{3.3 - 2.0}{220} \approx 5.9\,\text{mA}
+        \end{equation}
+        \item \textit{$R_6 = 100\,\Omega$ -- Điện trở Buzzer:} Mắc nối tiếp với Buzzer nhằm hạn chế dòng điện và giảm tải cho chân \texttt{GPIO 4}. Giá trị điện trở cần phù hợp với đặc tính dòng điện của Buzzer.
+        \item \textit{Diode $D_1$ -- Bảo vệ Relay:} Mắc ngược chiều song song với cuộn hút Relay K1, tạo đường dẫn cho dòng điện cảm ứng khi ngắt cuộn dây, hạn chế xung điện áp ngược và bảo vệ mạch điều khiển.
+        \item \textit{Cầu chì $F_1, F_2$:} $F_1$ bảo vệ đường nguồn chính, $F_2$ bảo vệ riêng nhánh máy bơm khi xảy ra sự cố quá dòng hoặc ngắn mạch.
+        \item \textit{Tụ $C_1 = 220\,\mu\text{F}$:} Hỗ trợ giảm biến động điện áp trên nhánh Servo khi tải thay đổi đột ngột.
+    \end{itemize}
+
+    \item Cân đối công suất của hệ thống:
+    Công suất tiêu thụ của thiết bị được xác định theo công thức:
+    \begin{equation}
+        P = U \times I
+    \end{equation}
+    Trong đó, máy bơm mini $5\,\text{V}$ có dòng điện làm việc dự kiến $0.5 - 0.8\,\text{A}$ và dòng khởi động có thể đạt $1.5\,\text{A}$. Servo SG90 có dòng điện dự kiến $0.5 - 1.2\,\text{A}$ tùy trạng thái tải.
+
+    \begin{table}[H]
+        \centering
+        \small
+        \renewcommand{\arraystretch}{1.2}
+        \caption{Tổng hợp nhu cầu công suất các thiết bị chấp hành chính}
+        \label{tab:power_budget}
+        \begin{tabular}{|l|c|c|c|}
+            \hline
+            \textbf{Thiết bị} & \textbf{Điện áp} & \textbf{Dòng điện dự kiến} & \textbf{Công suất} \\ \hline
+            Máy bơm khi hoạt động & $5\,\text{V}$ & $0.5 - 0.8\,\text{A}$ & $2.5 - 4.0\,\text{W}$ \\ \hline
+            Máy bơm khi khởi động & $5\,\text{V}$ & $1.5\,\text{A}$ & $7.5\,\text{W}$ \\ \hline
+            Servo SG90 & $5\,\text{V}$ & $0.5 - 1.2\,\text{A}$ & $2.5 - 6.0\,\text{W}$ \\ \hline
+        \end{tabular}
+    \end{table}
+
+    Trong trường hợp cả hai thiết bị đồng thời đạt dòng điện cực đại theo thông số thiết kế:
+    \begin{equation}
+        I_{\text{tải}} = 1.5 + 1.2 = 2.7\,\text{A}
+    \end{equation}
+    \begin{equation}
+        P_{\text{tải}} = 5 \times 2.7 = 13.5\,\text{W}
+    \end{equation}
+    Bộ nguồn $5\,\text{V} - 3\,\text{A}$ có công suất danh định $15\,\text{W}$. Như vậy, riêng máy bơm và Servo đã có thể tiêu thụ $13.5\,\text{W}$, chưa tính ESP32, cảm biến và các thiết bị phụ trợ. Do đó, cần kiểm tra khả năng đáp ứng của nguồn thông qua đo điện áp và dòng điện khi các thiết bị hoạt động đồng thời; không thể khẳng định nguồn luôn đủ tải chỉ dựa trên thông số danh định.
+
+    \item Kết luận về phương án cấp nguồn:
+    Hệ thống FloodGuard sử dụng nguồn DC $5\,\text{V} - 3\,\text{A}$ ($15\,\text{W}$), phân phối đến các khối điều khiển và chấp hành theo từng nhánh. Các linh kiện bảo vệ và ổn định gồm cầu chì $F_1, F_2$, mạch phân áp $R_1 - R_2$, điện trở hạn dòng LED $R_3 - R_5$, điện trở $R_6$, diode $D_1$ và tụ $C_1$.
+
+    Thiết kế này giúp bảo vệ GPIO, hạn chế dòng điện và xung điện áp ngược, đồng thời hỗ trợ ổn định nguồn cho các cơ cấu chấp hành. Khả năng đáp ứng tải của bộ nguồn cần được xác nhận qua kiểm thử thực tế trước khi vận hành liên tục.
+\end{enumerate}
 
 \subsection{Khối Chấp Hành Công Suất: Relay 5V, Diode Flyback \& Nguồn Cấp Máy Bơm}
 Máy bơm nước mini $5\,\text{V}$ sử dụng động cơ DC có chổi than, tiêu thụ dòng điện làm việc định mức khoảng $0.5 - 0.8\,\text{A}$ và có thể lên tới $1.5\,\text{A}$ khi khởi động (\textit{Inrush current}). Để vận hành an toàn:
 \begin{enumerate}
-    \item \textbf{Phân tách nguồn cấp động lực:} Nguồn cấp cho máy bơm được lấy từ chân \texttt{VIN} (nối với bộ nguồn $5\,\text{V} - 2\,\text{A}$ bên ngoài), tuyệt đối không lấy từ chân \texttt{3V3} của ESP32 nhằm tránh hiện tượng sụt áp gây khởi động lại vi điều khiển (\textit{Brown-out Reset}).
+    \item \textbf{Phân tách nguồn cấp động lực:} Nguồn cấp cho máy bơm được lấy từ chân \texttt{VIN} (nối với bộ nguồn $5\,\text{V} - 3\,\text{A}$ bên ngoài), tuyệt đối không lấy từ chân \texttt{3V3} của ESP32 nhằm tránh hiện tượng sụt áp gây khởi động lại vi điều khiển (\textit{Brown-out Reset}).
     \item \textbf{Bảo vệ cách ly quang (Optocoupler) \& Diode dập xung ngược (Flyback Diode):} Module Relay tích hợp optocoupler PC817 cách ly hoàn toàn điện áp $3.3\,\text{V}$ của vi điều khiển với cuộn hút $5\,\text{V}$. Cuộn hút Relay được mắc song song với một Diode dập xung ngược (\textit{Flyback Diode}) phân cực ngược để triệt tiêu sức điện động cảm ứng $e = -L\frac{di}{dt}$ sinh ra khi ngắt dòng điện cuộn dây, ngăn chặn xung điện áp cao đánh thủng transistor kích mở.
     \item \textbf{Cơ chế điều khiển Active LOW kết hợp trạng thái High-Z:}
     Module Relay đóng tiếp điểm khi chân tín hiệu \texttt{IN} được kéo xuống mức \texttt{LOW} ($0\,\text{V}$). Do vi điều khiển ESP32 chỉ xuất mức \texttt{HIGH} ở $3.3\,\text{V}$, sự chênh lệch $5\,\text{V} - 3.3\,\text{V} = 1.7\,\text{V}$ có thể làm rò dòng qua LED phát quang nội của optocoupler khiến Relay không nhả hoàn toàn. Hệ thống xử lý triệt để hiện tượng này bằng cách:
@@ -89,13 +200,22 @@ Máy bơm nước mini $5\,\text{V}$ sử dụng động cơ DC có chổi than,
 \end{enumerate}
 
 \subsection{Khối Cảm Biến: Bảo Vệ Điện Áp Echo \& Chân Strapping GPIO 12}
+\label{subsec:sensor_circuit_design}
 \begin{enumerate}
-    \item \textbf{Cảm biến siêu âm HC-SR04 (GPIO 13 Trig, GPIO 12 Echo):}
-    Cảm biến HC-SR04 sử dụng nguồn cấp $5\,\text{V}$. Chân \texttt{Echo} xuất ra xung vuông mức biên độ $5\,\text{V}$. Do các chân GPIO của ESP32 chỉ dung nạp điện áp tối đa $3.3\,\text{V}$, chân \texttt{Echo} được mắc qua mạch phân áp trở hoặc điện trở hạn dòng bảo vệ kết hợp diode kẹp áp nội của vi điều khiển để hạ mức điện áp an toàn xuống $\approx 3.3\,\text{V}$. Về mặt vật lý lắp đặt, cảm biến có vùng mù ở khoảng cách $< 2\,\text{cm}$ và góc phát chùm tia hình nón $\pm 15^\circ$; do đó khi gá đặt trên mô hình demo thực nghiệm (khoảng cách cảm biến tới đáy bể cạn là $10.0\,\text{cm}$), mặt loa được bố trí cách mức nước đầy tối đa ($100\%$) ít nhất $2.0\,\text{cm}$ và chiếu vuông góc xuống tâm bể để tránh dội sóng nhiễu vào thành bể.
-    \item \textbf{Lưu ý kỹ thuật đặc biệt với chân Strapping MTDI (GPIO 12):}
-    Trên vi điều khiển ESP32, \texttt{GPIO 12} là chân cấu hình khởi động (\textit{Strapping Pin MTDI}). Tại thời điểm cấp nguồn/reset, chip sẽ đọc mức logic của chân này: nếu ở mức \texttt{LOW}, chip chọn điện áp cấp cho bộ nhớ SPI Flash nội là $3.3\,\text{V}$ (bình thường); nếu bị kéo lên mức \texttt{HIGH}, chip chuyển sang chế độ Flash $1.8\,\text{V}$ dẫn tới treo vi điều khiển (vòng lặp Boot loop). Trong mạch thiết kế, chân \texttt{Echo} của cảm biến HC-SR04 ở trạng thái nghỉ luôn duy trì mức \texttt{LOW} ($0\,\text{V}$), do đó hoàn toàn an toàn và không cản trở quá trình khởi động bình thường của ESP32.
-    \item \textbf{Cảm biến mưa FC-37 (GPIO 34 DO, GPIO 35 AO):}
-    Module sử dụng nguồn $3.3\,\text{V}$. Chân \texttt{GPIO 34} và \texttt{GPIO 35} đều thuộc nhóm chân chỉ đọc (\textit{Input-only}) của ESP32, không tích hợp điện trở kéo nội (\textit{Internal Pull-up/Pull-down}). Trên module thương mại FC-37, bo mạch so sánh LM393 đã tích hợp sẵn điện trở kéo lên $10\,\text{k}\Omega$ cho chân ngõ ra số DO và mạch phân áp cho AO. Tuy nhiên, nếu cáp tín hiệu từ module về ESP32 bị tuột hoặc hở mạch, chân GPIO 35 thả nổi (\textit{floating}) có thể đọc ra điện áp thấp do điện dung ký sinh, dẫn tới nguy cơ thuật toán nhận diện nhầm là ngập cảm biến (\texttt{isSubmerged}). Do đó, thiết kế phần cứng khuyến nghị lắp thêm một điện trở kéo ngoại $100\,\text{k}\Omega$ lên $3.3\,\text{V}$ trực tiếp tại chân GPIO 35 để đảm bảo an toàn phần cứng (\textit{Hardware Failsafe}).
+    \item Cảm biến siêu âm HC-SR04 (GPIO 13 -- Trig, GPIO 12 -- Echo):
+    HC-SR04 sử dụng nguồn $5\,\text{V}$, trong đó chân \texttt{Echo} xuất tín hiệu xung vuông mức $5\,\text{V}$. Do GPIO ESP32 chỉ chịu được điện áp tối đa $3.3\,\text{V}$, tín hiệu \texttt{Echo} được đưa qua mạch phân áp $R_1 = 1\,\text{k}\Omega$ và $R_2 = 2\,\text{k}\Omega$ để giảm xuống khoảng $3.3\,\text{V}$ trước khi kết nối với \texttt{GPIO 12}.
+    
+    Về lắp đặt, cảm biến có vùng mù dưới $2\,\text{cm}$ và góc phát $\pm 15^\circ$. Trong mô hình, cảm biến cách đáy bể $10\,\text{cm}$, được bố trí hướng vuông góc xuống tâm bể và cách mức nước tối đa ít nhất $2\,\text{cm}$ nhằm hạn chế nhiễu do sóng phản xạ từ thành bể.
+
+    \item Lưu ý về chân Strapping MTDI (GPIO 12):
+    \texttt{GPIO 12} là chân cấu hình khởi động (\textit{Strapping Pin MTDI}) của ESP32. Khi khởi động, mức \texttt{LOW} giúp lựa chọn điện áp Flash $3.3\,\text{V}$, trong khi mức \texttt{HIGH} có thể khiến chip chọn $1.8\,\text{V}$ và gây lỗi khởi động.
+    
+    Trong thiết kế, chân \texttt{Echo} của HC-SR04 ở trạng thái nghỉ duy trì mức \texttt{LOW} ($0\,\text{V}$), do đó không gây ảnh hưởng đến quá trình khởi động bình thường của ESP32.
+
+    \item Cảm biến mưa FC-37 (GPIO 34 -- DO, GPIO 35 -- AO):
+    Module FC-37 sử dụng nguồn $3.3\,\text{V}$. \texttt{GPIO 34} và \texttt{GPIO 35} là các chân chỉ đọc (\textit{Input-only}), không hỗ trợ điện trở kéo nội. Module FC-37 tích hợp IC so sánh LM393, điện trở kéo lên cho ngõ ra DO và mạch phân áp cho AO.
+    
+    Tuy nhiên, khi dây tín hiệu AO bị hở hoặc tuột, \texttt{GPIO 35} có thể rơi vào trạng thái thả nổi (\textit{Floating}), gây sai lệch dữ liệu và nhận diện nhầm trạng thái ngập nước (\texttt{isSubmerged}). Vì vậy, thiết kế khuyến nghị bổ sung điện trở kéo lên ngoài $100\,\text{k}\Omega$ giữa \texttt{GPIO 35} và nguồn $3.3\,\text{V}$ để ổn định tín hiệu khi đường truyền bị hở.
 \end{enumerate}
 
 \subsection{Khối Động Cơ Servo SG90 (GPIO 27)}
@@ -112,22 +232,26 @@ Máy bơm nước mini $5\,\text{V}$ sử dụng động cơ DC có chổi than,
 \end{enumerate}
 
 \subsection{Khối Máy Tính Vận Hành: Giao Tiếp Wi-Fi SoftAP \& Cáp USB PlatformIO}
-Trên sơ đồ nguyên lý mạch điện (Hình~\ref{fig:circuit_diagram}), khối máy tính vận hành (PC / Laptop) đóng vai trò là trạm điều hành giám sát trung tâm và công cụ nạp mã nguồn bảo trì hệ thống. Máy tính tương tác trực tiếp với vi điều khiển ESP32 thông qua hai kênh truyền thông vật lý và logic độc lập:
+\label{subsec:pc_interface}
+Trên sơ đồ nguyên lý Hình~\ref{fig:circuit_diagram}, máy tính (PC/Laptop) đóng vai trò trạm giám sát, điều khiển và bảo trì hệ thống. Máy tính giao tiếp với ESP32 thông qua hai kênh độc lập:
 
 \begin{enumerate}
-    \item \textbf{Kênh truyền thông không dây (Wi-Fi 2.4 GHz SoftAP):}
+    \item Kênh truyền thông không dây (Wi-Fi 2.4\,GHz SoftAP):
     \begin{itemize}
-        \item \textit{Phương thức kết nối:} Vi điều khiển ESP32 khởi tạo một điểm truy cập không dây cục bộ (SoftAP) độc lập với SSID \texttt{FloodGuard\_AP}, bảo mật WPA2-PSK và cấp phát địa chỉ IP tự động cho máy tính qua giao thức DHCP nội bộ.
-        \item \textit{Giao thức truyền tải:} Máy tính mở trình duyệt Web kết nối tới địa chỉ IP tĩnh của trạm \texttt{192.168.4.1} (hoặc tên miền \texttt{http://floodguard.local} qua mDNS). Dữ liệu giám sát telemetry được cập nhật định kỳ mỗi $1000\,\text{ms}$ qua endpoint \texttt{/api/status} với payload JSON $\approx 210\,\text{byte}$.
-        \item \textit{Can thiệp điều khiển:} Khi người vận hành chuyển sang chế độ thủ công (\texttt{MANUAL}) và ra lệnh kích hoạt bơm hoặc chỉnh góc van xả, máy tính gửi các yêu cầu HTTP GET/POST tới endpoint \texttt{/api/control?mode=manual\&pump=1\&valve=90}. Quá trình truyền thông diễn ra hoàn toàn cục bộ, không phụ thuộc vào hạ tầng Internet hay trạm phát sóng viễn thông công cộng, đảm bảo độ sẵn sàng cao trong điều kiện thiên tai bão lũ.
+        \item \textit{Kết nối:} ESP32 tạo điểm truy cập Wi-Fi cục bộ (SoftAP) với SSID \newline \texttt{FloodGuard\_AP}, bảo mật WPA2-PSK và cấp phát địa chỉ IP tự động qua DHCP.
+        \item \textit{Giám sát:} Máy tính truy cập địa chỉ \texttt{192.168.4.1} hoặc tên miền \newline \texttt{http://floodguard.local} qua mDNS. Dữ liệu telemetry được cập nhật mỗi $1000\,\text{ms}$ thông qua endpoint \texttt{/api/status}, với payload JSON khoảng $210\,\text{byte}$.
+        \item \textit{Điều khiển:} Ở chế độ thủ công (MANUAL), máy tính gửi yêu cầu HTTP GET/POST đến \texttt{/api/control} để điều khiển máy bơm và góc Servo. Giao tiếp diễn ra trong mạng nội bộ, không phụ thuộc Internet hay hạ tầng viễn thông bên ngoài.
     \end{itemize}
-    
-    \item \textbf{Kênh truyền thông có dây (Cáp Micro-USB qua cầu nạp CP2102):}
+
+    \item Kênh truyền thông có dây (Micro-USB qua CP2102):
     \begin{itemize}
-        \item \textit{Nạp mã nguồn nhúng (Firmware Upload):} Cáp Micro-USB kết nối cổng USB của máy tính với chip chuyển đổi USB-to-UART CP2102 tích hợp sẵn trên bo mạch ESP32 DevKit V1. Môi trường phát triển PlatformIO IDE sử dụng các chân tín hiệu DTR và RTS điều khiển tự động mạch transistor kép để kéo chân \texttt{EN} (Reset) và \texttt{GPIO 0} (Boot mode) xuống mức thấp, tự động đưa vi điều khiển vào chế độ nhận firmware nạp vào bộ nhớ Flash $4\,\text{MB}$ mà kỹ thuật viên không cần thao tác bấm giữ nút vật lý tại hiện trường.
-        \item \textit{Giám sát Serial Debug Monitor ($115200\,\text{bps}$):} Kênh UART phần cứng cho phép máy tính thu thập trực tiếp luồng log dữ liệu thời gian thực từ vi điều khiển: các giá trị khoảng cách thô và sau lọc trung vị, giá trị ADC cảm biến mưa, thời gian thực thi của từng tác vụ (Task execution time) và nhật ký chuyển đổi trạng thái FSM. Đây là công cụ kỹ thuật then chốt phục vụ công tác hiệu chuẩn sai số, đánh giá thời gian đáp ứng tồi nhất (WCRT) và khoanh vùng sự cố phần cứng.
+        \item \textit{Nạp Firmware:} Cáp Micro-USB kết nối máy tính với chip chuyển đổi USB-to-UART CP2102 trên ESP32 DevKit V1. PlatformIO IDE sử dụng tín hiệu DTR và RTS để điều khiển tự động chân \texttt{EN} (Reset) và \texttt{GPIO 0} (Boot), đưa ESP32 vào chế độ nạp Firmware mà không cần thao tác nút nhấn thủ công.
+        \item \textit{Giám sát Serial Debug Monitor:} Giao tiếp UART ở tốc độ $115200\,\text{bps}$ cho phép theo dõi dữ liệu khoảng cách, giá trị ADC cảm biến mưa, thời gian thực thi tác vụ và nhật ký chuyển trạng thái FSM. Đây là công cụ hỗ trợ hiệu chuẩn cảm biến, đánh giá thời gian đáp ứng và xác định lỗi phần cứng.
     \end{itemize}
+
+    \item Giải pháp bảo vệ nguồn và chống xung ngược:
     
-    \item \textbf{Giải pháp bảo vệ cách ly nguồn và chống xung ngược:}
-    Trong cấu hình vận hành tiêu chuẩn, ESP32 và các tải động lực (động cơ bơm, Servo SG90) nhận nguồn công suất từ bộ nguồn DC $5\,\text{V} - 2\,\text{A}$ bên ngoài thông qua chân \texttt{VIN}. Nhờ mạch diode Schottky bảo vệ nguồn nội trên bo mạch ESP32 DevKit V1, nguồn điện cấp từ cáp USB máy tính ($5\,\text{V}$ VBUS) được tự động cách ly khỏi đường nguồn công suất khi nguồn ngoài đang cấp điện. Thiết kế này ngăn chặn triệt để nguy cơ sụt áp cổng USB máy tính do dòng khởi động của động cơ, đồng thời loại trừ nguy cơ các xung điện áp quá độ từ cuộn cảm động cơ đánh thủng bo mạch chủ của máy tính vận hành.
+    Trong cấu hình vận hành, ESP32 và các cơ cấu chấp hành sử dụng nguồn DC $5\,\text{V}$--$3\,\text{A}$ bên ngoài thông qua đường cấp nguồn \texttt{VIN}. Mạch bảo vệ nguồn trên bo ESP32 DevKit V1 giúp hạn chế dòng điện cấp ngược giữa nguồn USB và nguồn ngoài, tùy thuộc thiết kế cụ thể của phiên bản bo mạch.
+
+    Việc sử dụng nguồn ngoài cho hệ thống giúp hạn chế tình trạng dòng khởi động của động cơ gây sụt áp trên cổng USB máy tính. Đồng thời, các linh kiện bảo vệ phù hợp trên nhánh động cơ giúp hạn chế xung điện áp ngược, giảm nguy cơ ảnh hưởng đến vi điều khiển và thiết bị kết nối.
 \end{enumerate}
